@@ -198,10 +198,13 @@ class DatabaseManager:
                 if record.get("user_id") is None:
                     record["user_id"] = owner_id
 
-    # -- email verification codes ----------------------------------------
+    # -- email verification / password-reset codes ----------------------
     def create_verification_code(self, email: str, code_hash: str,
-                                 expires_at: datetime) -> dict:
-        """Store a hashed verification code. Returns the row dict."""
+                                 expires_at: datetime,
+                                 purpose: str = "verify") -> dict:
+        """Store a hashed code. ``purpose`` is 'verify' (sign-up) or
+        'reset' (password reset) — the two kinds never mix. Returns the
+        row dict."""
         email = _normalise_email(email)
         code_id = str(uuid.uuid4())
         created_at = _utcnow()
@@ -209,32 +212,48 @@ class DatabaseManager:
             with self._connect() as conn, conn.cursor() as cur:
                 cur.execute(
                     "INSERT INTO email_verification_codes"
-                    " (id, email, code_hash, expires_at, attempts, created_at)"
-                    " VALUES (%s, %s, %s, %s, 0, %s)",
-                    (code_id, email, code_hash, expires_at, created_at),
+                    " (id, email, code_hash, purpose, expires_at, attempts, created_at)"
+                    " VALUES (%s, %s, %s, %s, %s, 0, %s)",
+                    (code_id, email, code_hash, purpose, expires_at, created_at),
                 )
         else:
             self._codes[code_id] = {
                 "id": code_id, "email": email, "code_hash": code_hash,
-                "expires_at": expires_at, "attempts": 0, "created_at": created_at,
+                "purpose": purpose, "expires_at": expires_at, "attempts": 0,
+                "created_at": created_at,
             }
         return self._codes.get(code_id) or {
             "id": code_id, "email": email, "code_hash": code_hash,
-            "expires_at": expires_at, "attempts": 0, "created_at": created_at,
+            "purpose": purpose, "expires_at": expires_at, "attempts": 0,
+            "created_at": created_at,
         }
 
-    def get_latest_verification_code(self, email: str) -> dict | None:
-        """The newest code for *email* (any expiry — callers check it)."""
+    def get_latest_verification_code(self, email: str,
+                                     purpose: str | None = None) -> dict | None:
+        """The newest code for *email* (any expiry — callers check it).
+
+        With ``purpose`` set, only codes of that purpose are returned,
+        so a sign-up code is never accepted as a reset code (or the
+        reverse). Without it, the newest code of any purpose is returned
+        (the pre-reset behaviour)."""
         email = _normalise_email(email)
         if self.using_postgres:
+            query = (
+                "SELECT id, email, code_hash, purpose, expires_at, attempts, created_at"
+                " FROM email_verification_codes WHERE email = %s"
+            )
+            params: list = [email]
+            if purpose is not None:
+                query += " AND purpose = %s"
+                params.append(purpose)
+            query += " ORDER BY created_at DESC LIMIT 1"
             with self._connect() as conn, conn.cursor() as cur:
-                cur.execute(
-                    "SELECT id, email, code_hash, expires_at, attempts, created_at"
-                    " FROM email_verification_codes WHERE email = %s"
-                    " ORDER BY created_at DESC LIMIT 1", (email,))
+                cur.execute(query, params)
                 row = cur.fetchone()
             return self._row_to_code(row) if row else None
-        codes = [c for c in self._codes.values() if c["email"] == email]
+        codes = [c for c in self._codes.values()
+                 if c["email"] == email
+                 and (purpose is None or c.get("purpose", "verify") == purpose)]
         if not codes:
             return None
         return dict(max(codes, key=lambda c: c["created_at"]))
@@ -245,7 +264,7 @@ class DatabaseManager:
             with self._connect() as conn, conn.cursor() as cur:
                 cur.execute("UPDATE email_verification_codes SET attempts = attempts + 1"
                             " WHERE id = %s", (code_id,))
-                cur.execute("SELECT id, email, code_hash, expires_at, attempts, created_at"
+                cur.execute("SELECT id, email, code_hash, purpose, expires_at, attempts, created_at"
                             " FROM email_verification_codes WHERE id = %s", (code_id,))
                 row = cur.fetchone()
             return self._row_to_code(row) if row else None
@@ -255,28 +274,47 @@ class DatabaseManager:
         code["attempts"] = code.get("attempts", 0) + 1
         return dict(code)
 
-    def delete_verification_codes(self, email: str) -> None:
-        """Delete every code for *email* (used after successful verification)."""
+    def delete_verification_codes(self, email: str,
+                                  purpose: str | None = None) -> None:
+        """Delete codes for *email* (used after a successful verification
+        or password reset). With ``purpose`` set, only codes of that
+        purpose are deleted."""
         email = _normalise_email(email)
         if self.using_postgres:
+            query = "DELETE FROM email_verification_codes WHERE email = %s"
+            params: list = [email]
+            if purpose is not None:
+                query += " AND purpose = %s"
+                params.append(purpose)
             with self._connect() as conn, conn.cursor() as cur:
-                cur.execute("DELETE FROM email_verification_codes WHERE email = %s",
-                            (email,))
+                cur.execute(query, params)
         else:
-            for code_id in [k for k, c in self._codes.items() if c["email"] == email]:
+            for code_id in [k for k, c in self._codes.items()
+                            if c["email"] == email
+                            and (purpose is None
+                                 or c.get("purpose", "verify") == purpose)]:
                 del self._codes[code_id]
 
-    def count_recent_codes(self, email: str, since: datetime) -> int:
-        """How many codes were created for *email* at/after *since*."""
+    def count_recent_codes(self, email: str, since: datetime,
+                           purpose: str | None = None) -> int:
+        """How many codes were created for *email* at/after *since*
+        (optionally only of one ``purpose``)."""
         email = _normalise_email(email)
         if self.using_postgres:
+            query = ("SELECT COUNT(*) FROM email_verification_codes"
+                     " WHERE email = %s AND created_at >= %s")
+            params: list = [email, since]
+            if purpose is not None:
+                query += " AND purpose = %s"
+                params.append(purpose)
             with self._connect() as conn, conn.cursor() as cur:
-                cur.execute("SELECT COUNT(*) FROM email_verification_codes"
-                            " WHERE email = %s AND created_at >= %s", (email, since))
+                cur.execute(query, params)
                 row = cur.fetchone()
             return int(row[0]) if row else 0
         return sum(1 for c in self._codes.values()
-                   if c["email"] == email and c["created_at"] >= since)
+                   if c["email"] == email and c["created_at"] >= since
+                   and (purpose is None
+                        or c.get("purpose", "verify") == purpose))
 
     # -- entries ---------------------------------------------------------
     def _matches_user(self, stored_user_id: str | None, user_id: str | None) -> bool:
@@ -553,7 +591,7 @@ class DatabaseManager:
 
     @staticmethod
     def _row_to_code(row) -> dict:
-        keys = ("id", "email", "code_hash", "expires_at", "attempts", "created_at")
+        keys = ("id", "email", "code_hash", "purpose", "expires_at", "attempts", "created_at")
         data = dict(zip(keys, row))
         data["id"] = str(data["id"])
         return data

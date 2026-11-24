@@ -18,10 +18,15 @@ CREATE TABLE IF NOT EXISTS users (
     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
+-- Email codes, both for sign-up verification (purpose 'verify') and
+-- password reset (purpose 'reset'). The purpose keeps the two kinds
+-- of code apart: a sign-up code can never reset a password, and a
+-- reset code can never verify an account.
 CREATE TABLE IF NOT EXISTS email_verification_codes (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     email TEXT NOT NULL,
     code_hash TEXT NOT NULL,
+    purpose TEXT NOT NULL DEFAULT 'verify',
     expires_at TIMESTAMPTZ NOT NULL,
     attempts INT NOT NULL DEFAULT 0,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
@@ -29,6 +34,7 @@ CREATE TABLE IF NOT EXISTS email_verification_codes (
 
 CREATE INDEX IF NOT EXISTS idx_users_email ON users (email);
 CREATE INDEX IF NOT EXISTS idx_verification_codes_email ON email_verification_codes (email);
+CREATE INDEX IF NOT EXISTS idx_verification_codes_purpose ON email_verification_codes (email, purpose);
 CREATE INDEX IF NOT EXISTS idx_verification_codes_expires_at ON email_verification_codes (expires_at);
 
 CREATE TABLE IF NOT EXISTS diary_entries (
@@ -98,6 +104,7 @@ CREATE INDEX IF NOT EXISTS idx_memory_files_created_at ON memory_files (created_
 ALTER TABLE diary_entries ADD COLUMN IF NOT EXISTS user_id UUID;
 ALTER TABLE mood_records ADD COLUMN IF NOT EXISTS user_id UUID;
 ALTER TABLE memory_files ADD COLUMN IF NOT EXISTS user_id UUID;
+ALTER TABLE email_verification_codes ADD COLUMN IF NOT EXISTS purpose TEXT NOT NULL DEFAULT 'verify';
 
 CREATE INDEX IF NOT EXISTS idx_entries_user_id ON diary_entries (user_id);
 CREATE INDEX IF NOT EXISTS idx_mood_records_user_id ON mood_records (user_id);

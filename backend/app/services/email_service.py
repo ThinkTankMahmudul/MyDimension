@@ -1,4 +1,4 @@
-"""Email service: send sign-up verification codes via Gmail SMTP.
+"""Email service: send sign-up verification and password-reset codes via SMTP.
 
 Uses only the standard library (``smtplib`` + ``email``) — no new
 dependency. The service never crashes the app: if SMTP is not
@@ -30,7 +30,7 @@ class EmailSendError(Exception):
 
 
 class EmailService:
-    """Send verification codes through Gmail SMTP (STARTTLS, 10s timeout)."""
+    """Send verification codes through SMTP (STARTTLS, 10s timeout)."""
 
     def __init__(self, host: str | None = None, port: int | None = None) -> None:
         # Host/port are read from settings on every send, not snapshotted
@@ -50,18 +50,12 @@ class EmailService:
             )
 
     def send_verification_code(self, to_email: str, name: str, code: str) -> None:
-        """Send the 6-digit verification code to *to_email*.
+        """Send the 6-digit sign-up verification code to *to_email*.
 
         Bilingual (Bangla + English) plain-text + HTML mail; the code is
         shown large in the HTML part and is valid for 10 minutes.
         """
-        self._require_configured()
-        host = self._host_override or settings.smtp_host
-        port = self._port_override or settings.smtp_port
-        sender = settings.smtp_user or ""
-
         subject = "MyDimension — Your verification code / যাচাইকরণ কোড"
-
         text_body = (
             f"Hello {name},\n\n"
             f"Your MyDimension verification code is: {code}\n\n"
@@ -74,7 +68,6 @@ class EmailService:
             "If you did not request this, please ignore this email.\n"
             "— MyDimension"
         )
-
         html_body = (
             "<html><body style=\"font-family: Arial, sans-serif; color: #1f2937;\">"
             f"<p>Hello {name},</p>"
@@ -92,6 +85,55 @@ class EmailService:
             "— MyDimension</p>"
             "</body></html>"
         )
+        self._send_mail(to_email, subject, text_body, html_body)
+
+    def send_password_reset_code(self, to_email: str, name: str, code: str) -> None:
+        """Send the 6-digit password-reset code to *to_email*.
+
+        Same format as the verification mail, but worded as a password
+        reset so the user is never confused about which code this is.
+        """
+        subject = "MyDimension — Your password reset code / পাসওয়ার্ড রিসেট কোড"
+        text_body = (
+            f"Hello {name},\n\n"
+            f"Your MyDimension password reset code is: {code}\n\n"
+            f"This code is valid for {CODE_TTL_MINUTES} minutes. "
+            "Enter it in the app together with your new password.\n\n"
+            f"আসসালামু আলাইকুম {name},\n"
+            f"আপনার MyDimension পাসওয়ার্ড রিসেট কোড: {code}\n\n"
+            f"এই কোডটি {CODE_TTL_MINUTES} মিনিটের জন্য বৈধ। "
+            "অ্যাপে নতুন পাসওয়ার্ডের সঙ্গে কোডটি লিখুন।\n\n"
+            "If you did not request a password reset, please ignore "
+            "this email — your password has not been changed.\n"
+            "— MyDimension"
+        )
+        html_body = (
+            "<html><body style=\"font-family: Arial, sans-serif; color: #1f2937;\">"
+            f"<p>Hello {name},</p>"
+            "<p>Your MyDimension password reset code is:</p>"
+            f"<p style=\"font-size: 32px; font-weight: bold; letter-spacing: 6px; "
+            "color: #0F766E;\">"
+            f"{code}</p>"
+            f"<p>This code is valid for {CODE_TTL_MINUTES} minutes. "
+            "Enter it in the app together with your new password.</p>"
+            f"<p>আসসালামু আলাইকুম {name},<br>"
+            f"আপনার MyDimension পাসওয়ার্ড রিসেট কোড: <b>{code}</b><br>"
+            f"এই কোডটি {CODE_TTL_MINUTES} মিনিটের জন্য বৈধ।</p>"
+            "<p style=\"color: #6b7280; font-size: 13px;\">"
+            "If you did not request a password reset, please ignore this "
+            "email — your password has not been changed.<br>"
+            "— MyDimension</p>"
+            "</body></html>"
+        )
+        self._send_mail(to_email, subject, text_body, html_body)
+
+    def _send_mail(self, to_email: str, subject: str,
+                   text_body: str, html_body: str) -> None:
+        """Send one multipart (plain + HTML) mail over SMTP."""
+        self._require_configured()
+        host = self._host_override or settings.smtp_host
+        port = self._port_override or settings.smtp_port
+        sender = settings.smtp_user or ""
 
         message = MIMEMultipart("alternative")
         message["Subject"] = subject

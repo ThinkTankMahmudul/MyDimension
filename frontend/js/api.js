@@ -49,7 +49,7 @@
     }
     // Pre-auth endpoints never carry a session, so a 401 there is not
     // an expired session — it must reach the form, not showLogin.
-    var preAuth = path === '/api/auth/register' || path === '/api/auth/verify-code' || path === '/api/auth/resend-code';
+    var preAuth = path === '/api/auth/register' || path === '/api/auth/verify-code' || path === '/api/auth/resend-code' || path === '/api/auth/forgot-password' || path === '/api/auth/reset-password';
     if (res.status === 401 && !preAuth && !path.startsWith('/api/auth/login') && path !== '/api/auth/password-status') {
       // Session expired or not signed in: hand control to auth.js.
       // The password-login endpoint is excluded: its 401 means "wrong
@@ -122,6 +122,25 @@
     // was sent in the last 60 seconds or more than 5 in an hour.
     resendCode: function (email) {
       return json('/api/auth/resend-code', 'POST', { email: email });
+    },
+    // Password reset. POST /api/auth/forgot-password { email } -> a
+    // generic { detail } (always 200: the server never says whether
+    // the account exists). 429 if a reset code was sent in the last
+    // 60 seconds or more than 5 in an hour; 503 if email is not set up.
+    forgotPassword: function (email) {
+      return json('/api/auth/forgot-password', 'POST', { email: email });
+    },
+    // POST /api/auth/reset-password { email, code, new_password } ->
+    // { detail }. 400 = wrong/expired code or short password, 429 =
+    // too many attempts.
+    resetPassword: function (email, code, newPassword) {
+      return json('/api/auth/reset-password', 'POST', { email: email, code: code, new_password: newPassword });
+    },
+    // POST /api/auth/change-password { current_password, new_password }
+    // (signed in) -> { detail }. 400 = current password wrong or new
+    // password too short.
+    changePassword: function (currentPassword, newPassword) {
+      return json('/api/auth/change-password', 'POST', { current_password: currentPassword, new_password: newPassword });
     },
 
     // Entries. Entry fields: id, title, content, mood, tags, summary,

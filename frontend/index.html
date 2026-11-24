@@ -44,7 +44,6 @@
         <label class="check remember"><input type="checkbox" id="rememberMe"> Remember me</label>
         <button type="button" class="link-btn" id="forgotPasswordBtn">Forgot Password?</button>
       </div>
-      <p id="forgotHint" class="small muted hidden" role="status"></p>
       <button class="btn btn-block login-btn" type="submit"><span>Login</span></button>
     </form>
     <p id="passwordHint" class="small muted hidden"></p>
@@ -87,6 +86,34 @@
             </form>
             <p class="small muted auth-switch"><span data-i18n="auth.didntGetCode">Didn&apos;t get the code?</span> <button type="button" class="link-btn" id="resendCodeBtn" data-i18n="auth.resend">Resend code</button></p>
             <p class="small auth-switch"><button type="button" class="link-btn" id="useDifferentEmailBtn" data-i18n="auth.useDifferentEmail">Use a different email</button></p>
+          </div>
+          <div id="resetPanel" class="hidden">
+            <h2 class="auth-title" data-i18n="auth.resetTitle">Reset Password</h2>
+            <p class="small muted" data-i18n="auth.resetHint">Enter your email and we will send you a 6-digit reset code.</p>
+            <div id="resetError" class="error-box hidden" role="alert"></div>
+            <form id="forgotForm" novalidate>
+              <div class="field login-field"><label for="resetEmail" data-i18n="auth.emailAddress">Email Address</label>
+                <div class="pill-input">
+                  <input id="resetEmail" type="email" data-i18n-placeholder="auth.emailAddress" placeholder="Email Address" autocomplete="email" required>
+                </div></div>
+              <button class="btn btn-block login-btn" type="submit"><span data-i18n="auth.sendResetCode">Send Reset Code</span></button>
+            </form>
+            <form id="resetForm" class="hidden" novalidate>
+              <p class="small muted" id="resetCodeHint">We sent a 6-digit reset code to <strong id="resetCodeEmail"></strong>. It expires in 10 minutes.</p>
+              <div class="field login-field"><label for="resetCode" data-i18n="auth.resetCode">Reset code</label>
+                <input id="resetCode" class="verify-code-input" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" required>
+              </div>
+              <div class="field login-field"><label for="resetNewPassword" data-i18n="auth.newPassword">New password</label>
+                <div class="pill-input">
+                  <input id="resetNewPassword" type="password" data-i18n-placeholder="auth.newPassword" placeholder="New password" autocomplete="new-password" required>
+                </div></div>
+              <div class="field login-field"><label for="resetConfirmPassword" data-i18n="auth.confirmPassword">Confirm Password</label>
+                <div class="pill-input">
+                  <input id="resetConfirmPassword" type="password" data-i18n-placeholder="auth.confirmPassword" placeholder="Confirm Password" autocomplete="new-password" required>
+                </div></div>
+              <button class="btn btn-block login-btn" type="submit"><span data-i18n="auth.resetPasswordBtn">Reset Password</span></button>
+            </form>
+            <p class="small muted auth-switch"><span data-i18n="auth.haveAccount">Already have an account?</span> <button type="button" class="link-btn" id="showLoginFromResetBtn" data-i18n="auth.backToLogin">Login</button></p>
           </div>
         </div>
       </div>
@@ -359,6 +386,8 @@
         <div class="page-head"><h2 data-i18n="set.title">Settings</h2></div>
         <div class="card"><h3 data-i18n="set.passwordTitle">Set / Change Password</h3>
           <p class="small muted" data-i18n="set.passwordHint">Sign in with your User ID and password instead of Google. Your password is stored only as a secure hash — never in plain text, and never shown here.</p>
+          <div class="field"><label for="currentPassword" data-i18n="set.currentPassword">Current password</label>
+            <input id="currentPassword" type="password" data-i18n-placeholder="set.currentPasswordPh" placeholder="Your current password" autocomplete="current-password"></div>
           <div class="field"><label for="newPassword" data-i18n="set.newPassword">New password</label>
             <input id="newPassword" type="password" data-i18n-placeholder="set.newPasswordPh" placeholder="At least 4 characters" autocomplete="new-password"></div>
           <div class="field"><label for="confirmPassword" data-i18n="set.confirmPassword">Confirm new password</label>

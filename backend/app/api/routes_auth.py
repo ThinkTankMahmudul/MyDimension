@@ -1,7 +1,9 @@
 """Authentication routes: Google OAuth login, callback, logout, /api/me,
 plus User ID + Password login (POST /api/auth/login) and password setup
 (POST /api/auth/set-password), plus email-verification sign-up for new
-users (POST /api/auth/register, /api/auth/verify-code, /api/auth/resend-code).
+users (POST /api/auth/register, /api/auth/verify-code, /api/auth/resend-code),
+plus password reset (POST /api/auth/forgot-password, /api/auth/reset-password)
+and change password while signed in (POST /api/auth/change-password).
 
 Google OAuth stays available as an alternative. The password login
 checks a PBKDF2 hash stored in the database (never a plain-text
@@ -11,6 +13,8 @@ login methods. No public registration existed before; the new
 register endpoints create unverified users and email them a 6-digit
 code (see services/email_service.py). Verified users sign in with
 their email + password and use ``require_user`` for data routes.
+Reset codes live in the same table as verification codes but with
+``purpose='reset'``, so the two kinds of code can never be mixed up.
 """
 from __future__ import annotations
 
@@ -156,6 +160,28 @@ class ResendCodeRequest(BaseModel):
     email: str = ""
 
 
+class ForgotPasswordRequest(BaseModel):
+    """Forgot-password body (email only — the reply never says whether
+    the account exists)."""
+
+    email: str = ""
+
+
+class ResetPasswordRequest(BaseModel):
+    """Reset-password body: email + emailed code + new password."""
+
+    email: str = ""
+    code: str = ""
+    new_password: str = ""
+
+
+class ChangePasswordRequest(BaseModel):
+    """Change-password body (signed-in user only)."""
+
+    current_password: str = ""
+    new_password: str = ""
+
+
 def _set_session_cookie(response: Response, email: str) -> None:
     """Set the signed HttpOnly session cookie for any verified user.
 
@@ -167,21 +193,83 @@ def _set_session_cookie(response: Response, email: str) -> None:
                         samesite="lax", max_age=7 * 24 * 3600, path="/")
 
 
-def _send_new_code(email: str, name: str) -> None:
-    """Create a fresh 6-digit code (hashed, 10-minute expiry) and email it."""
+def _send_new_code(email: str, name: str, purpose: str = "verify") -> None:
+    """Create a fresh 6-digit code (hashed, 10-minute expiry) and email it.
+
+    ``purpose`` is 'verify' (sign-up) or 'reset' (password reset); the
+    code is stored and mailed with that purpose, so the two flows
+    never accept each other's codes."""
     code = f"{secrets.randbelow(1_000_000):06d}"  # may start with 0
     expires_at = _utcnow() + timedelta(minutes=CODE_TTL_MINUTES)
-    db_manager.create_verification_code(email, hash_password(code), expires_at)
-    email_service.send_verification_code(email, name, code)
+    db_manager.create_verification_code(email, hash_password(code), expires_at, purpose)
+    if purpose == "reset":
+        email_service.send_password_reset_code(email, name, code)
+    else:
+        email_service.send_verification_code(email, name, code)
 
 
-def _check_code_limit(email: str) -> None:
-    """At most MAX_CODES_PER_HOUR codes per email in the last hour (429)."""
+def _check_code_limit(email: str, purpose: str = "verify") -> None:
+    """At most MAX_CODES_PER_HOUR codes of one purpose per email in the
+    last hour (429)."""
     since = _utcnow() - timedelta(hours=1)
-    if db_manager.count_recent_codes(email, since) >= MAX_CODES_PER_HOUR:
+    if db_manager.count_recent_codes(email, since, purpose) >= MAX_CODES_PER_HOUR:
         raise HTTPException(
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
             detail="Too many verification codes sent. Please try again later.")
+
+
+def _check_resend_cooldown(email: str, purpose: str = "verify") -> None:
+    """Refuse a new code of one purpose within 60 seconds of the last
+    one (429)."""
+    latest = db_manager.get_latest_verification_code(email, purpose)
+    if latest is None:
+        return
+    created_at = latest["created_at"]
+    if isinstance(created_at, str):
+        created_at = datetime.fromisoformat(created_at)
+    if created_at.tzinfo is None:
+        created_at = created_at.replace(tzinfo=timezone.utc)
+    if (_utcnow() - created_at).total_seconds() < RESEND_COOLDOWN_SECONDS:
+        raise HTTPException(status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                            detail="Please wait a minute before requesting a new code.")
+
+
+def _load_code_or_raise(email: str, purpose: str, expired_detail: str) -> dict:
+    """Load the newest unexpired code of one purpose, or raise.
+
+    - No code, or expired -> 400 (``expired_detail``).
+    - 5 wrong attempts already -> 429 (blocked 15 minutes; request a
+      new code).
+    """
+    latest = db_manager.get_latest_verification_code(email, purpose)
+    if latest is None:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                            detail=expired_detail)
+    expires_at = latest["expires_at"]
+    if isinstance(expires_at, str):
+        expires_at = datetime.fromisoformat(expires_at)
+    if expires_at.tzinfo is None:
+        expires_at = expires_at.replace(tzinfo=timezone.utc)
+    if expires_at <= _utcnow():
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                            detail=expired_detail)
+    if latest.get("attempts", 0) >= MAX_CODE_ATTEMPTS:
+        raise HTTPException(status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                            detail="Too many incorrect attempts. Please wait 15 minutes and request a new code.")
+    return latest
+
+
+def _update_password_for_email(email: str, new_hash: str) -> None:
+    """Save a new PBKDF2 password hash for *email*.
+
+    Regular users keep their hash in the ``users`` row only. The owner
+    signs in through ``auth_settings`` (User ID + Password login), so
+    for the owner's email both stores are updated — otherwise a reset
+    would change one password and leave the login password untouched.
+    """
+    db_manager.update_user_password(email, new_hash)
+    if email == settings.admin_email:
+        db_manager.set_password_hash(new_hash)
 
 
 @router.post("/api/auth/register")
@@ -243,21 +331,9 @@ def verify_code(payload: VerifyCodeRequest, response: Response):
     if not EMAIL_RE.match(email) or not code:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
                             detail="Please enter your email and the verification code.")
-    latest = db_manager.get_latest_verification_code(email)
-    if latest is None:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
-                            detail="Verification code has expired or was not found. Please request a new code.")
-    expires_at = latest["expires_at"]
-    if isinstance(expires_at, str):
-        expires_at = datetime.fromisoformat(expires_at)
-    if expires_at.tzinfo is None:
-        expires_at = expires_at.replace(tzinfo=timezone.utc)
-    if expires_at <= _utcnow():
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
-                            detail="Verification code has expired or was not found. Please request a new code.")
-    if latest.get("attempts", 0) >= MAX_CODE_ATTEMPTS:
-        raise HTTPException(status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-                            detail="Too many incorrect attempts. Please wait 15 minutes and request a new code.")
+    latest = _load_code_or_raise(
+        email, "verify",
+        "Verification code has expired or was not found. Please request a new code.")
     if not verify_password(code, latest.get("code_hash")):
         db_manager.increment_code_attempts(str(latest["id"]))
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
@@ -289,16 +365,7 @@ def resend_code(payload: ResendCodeRequest):
     if not email_service.is_configured:
         raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
                             detail="Email is not configured yet. Please try again later.")
-    latest = db_manager.get_latest_verification_code(email)
-    if latest is not None:
-        created_at = latest["created_at"]
-        if isinstance(created_at, str):
-            created_at = datetime.fromisoformat(created_at)
-        if created_at.tzinfo is None:
-            created_at = created_at.replace(tzinfo=timezone.utc)
-        if (_utcnow() - created_at).total_seconds() < RESEND_COOLDOWN_SECONDS:
-            raise HTTPException(status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-                                detail="Please wait a minute before requesting a new code.")
+    _check_resend_cooldown(email, "verify")
     _check_code_limit(email)
     try:
         _send_new_code(email, user["name"])
@@ -306,6 +373,104 @@ def resend_code(payload: ResendCodeRequest):
         raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
                             detail=str(exc)) from exc
     return {"detail": "A new verification code has been sent."}
+
+
+@router.post("/api/auth/forgot-password")
+def forgot_password(payload: ForgotPasswordRequest):
+    """Email a 6-digit password-reset code to a registered, verified user.
+
+    The reply is always the same generic 200 — whether the email is
+    unknown, unverified, or a real account — so nobody can probe which
+    email addresses have an account here. A code is only created and
+    sent for a verified user. Email not configured -> 503 (for every
+    email alike, so that leaks nothing either).
+    - Within 60 seconds of the last reset code, or more than 5 reset
+      codes in an hour -> 429.
+    """
+    email = _normalise_email(payload.email)
+    generic = {"detail": "If an account exists for this email, a password reset code has been sent."}
+    if not EMAIL_RE.match(email):
+        return generic
+    if not email_service.is_configured:
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                            detail="Email is not configured yet. Please try again later.")
+    user = db_manager.get_user_by_email(email)
+    if user is None or not user.get("is_verified"):
+        return generic
+    _check_resend_cooldown(email, "reset")
+    _check_code_limit(email, "reset")
+    try:
+        _send_new_code(email, user["name"], "reset")
+    except (EmailNotConfiguredError, EmailSendError) as exc:
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                            detail=str(exc)) from exc
+    return generic
+
+
+@router.post("/api/auth/reset-password")
+def reset_password(payload: ResetPasswordRequest):
+    """Reset a password with the emailed 6-digit code.
+
+    - Bad email / missing code / password under 4 chars -> 400.
+    - No (unexpired) reset code -> 400 "expired or was not found".
+    - 5 wrong attempts on the same code -> 429 (blocked 15 minutes;
+      request a new code).
+    - Wrong code -> attempts + 1, 400 "Incorrect reset code."
+    - Correct code -> new PBKDF2 hash saved (for the owner, both the
+      users row and the owner login hash), reset codes deleted.
+    A sign-up verification code is never accepted here: codes are
+    looked up by purpose 'reset' only.
+    """
+    email = _normalise_email(payload.email)
+    code = (payload.code or "").strip()
+    new_password = payload.new_password or ""
+    if not EMAIL_RE.match(email) or not code:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                            detail="Please enter your email, the reset code and a new password.")
+    if len(new_password) < 4:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                            detail="Password must be at least 4 characters.")
+    latest = _load_code_or_raise(
+        email, "reset",
+        "Reset code has expired or was not found. Please request a new code.")
+    if not verify_password(code, latest.get("code_hash")):
+        db_manager.increment_code_attempts(str(latest["id"]))
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                            detail="Incorrect reset code.")
+    user = db_manager.get_user_by_email(email)
+    if user is None or not user.get("is_verified"):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                            detail="Reset code has expired or was not found. Please request a new code.")
+    _update_password_for_email(email, hash_password(new_password))
+    db_manager.delete_verification_codes(email, "reset")
+    return {"detail": "Password reset. You can now sign in with your new password."}
+
+
+@router.post("/api/auth/change-password")
+def change_password(payload: ChangePasswordRequest,
+                    user: dict = Depends(require_user)):
+    """Change the signed-in user's password.
+
+    The current password must match (the owner's User ID login hash
+    for the owner, the users-row hash for everyone else), and the new
+    password must be at least 4 characters. For the owner both
+    password stores are updated, so the User ID login keeps working.
+    """
+    email = user["email"]
+    new_password = payload.new_password or ""
+    if len(new_password) < 4:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                            detail="Password must be at least 4 characters.")
+    if user.get("is_owner"):
+        stored_hash = db_manager.get_password_hash()
+    else:
+        row = db_manager.get_user_by_email(email)
+        stored_hash = row.get("password_hash") if row else None
+    if not verify_password(payload.current_password or "", stored_hash):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                            detail="Current password is incorrect.")
+    _update_password_for_email(email, hash_password(new_password))
+    return {"detail": "Password changed."}
 
 
 @router.get("/api/auth/password-status")

@@ -21,6 +21,9 @@
   var resendTimer = null;
   var resendSecondsLeft = 0;
 
+  // Password-reset state: the email waiting for a reset code.
+  var pendingResetEmail = null;
+
   // i18n shortcut (falls back to the key itself when i18n is absent).
   function tr(key, vars) {
     return window.MyDimensionI18n ? window.MyDimensionI18n.t(key, vars) : key;
@@ -117,9 +120,19 @@
     var err = document.getElementById('verifyError');
     if (err) err.classList.add('hidden');
   }
+  function showResetError(message) {
+    var err = document.getElementById('resetError');
+    if (!err) return;
+    err.textContent = message;
+    err.classList.remove('hidden');
+  }
+  function hideResetError() {
+    var err = document.getElementById('resetError');
+    if (err) err.classList.add('hidden');
+  }
 
-  // Back to the Login face: hide the sign-up / verification panels,
-  // clear their errors and stop any resend countdown.
+  // Back to the Login face: hide the sign-up / verification / reset
+  // panels, clear their errors and stop any resend countdown.
   function resetAuthFlip() {
     var flip = document.getElementById('authFlip');
     if (flip) flip.classList.remove('flipped');
@@ -127,8 +140,16 @@
     if (signup) signup.classList.remove('hidden');
     var panel = document.getElementById('verifyPanel');
     if (panel) panel.classList.add('hidden');
+    var reset = document.getElementById('resetPanel');
+    if (reset) reset.classList.add('hidden');
+    var forgot = document.getElementById('forgotForm');
+    if (forgot) forgot.classList.remove('hidden');
+    var resetForm = document.getElementById('resetForm');
+    if (resetForm) resetForm.classList.add('hidden');
+    pendingResetEmail = null;
     hideSignupError();
     hideVerifyError();
+    hideResetError();
     stopResendCountdown();
   }
 
@@ -137,14 +158,41 @@
     hideLoginError();
     hideSignupError();
     hideVerifyError();
+    hideResetError();
     var panel = document.getElementById('verifyPanel');
     if (panel) panel.classList.add('hidden');
+    var reset = document.getElementById('resetPanel');
+    if (reset) reset.classList.add('hidden');
     var form = document.getElementById('signupForm');
     if (form) form.classList.remove('hidden');
     var flip = document.getElementById('authFlip');
     if (flip) flip.classList.add('flipped');
     var name = document.getElementById('signupName');
     if (name) name.focus();
+  }
+
+  // Flip to the back face and show the password-reset panel instead
+  // of the sign-up form (step 1: ask for the email).
+  function showForgot() {
+    hideLoginError();
+    hideSignupError();
+    hideVerifyError();
+    hideResetError();
+    var form = document.getElementById('signupForm');
+    if (form) form.classList.add('hidden');
+    var panel = document.getElementById('verifyPanel');
+    if (panel) panel.classList.add('hidden');
+    var reset = document.getElementById('resetPanel');
+    if (reset) reset.classList.remove('hidden');
+    var forgot = document.getElementById('forgotForm');
+    if (forgot) forgot.classList.remove('hidden');
+    var resetForm = document.getElementById('resetForm');
+    if (resetForm) resetForm.classList.add('hidden');
+    pendingResetEmail = null;
+    var flip = document.getElementById('authFlip');
+    if (flip) flip.classList.add('flipped');
+    var email = document.getElementById('resetEmail');
+    if (email) email.focus();
   }
 
   // Flip back to the Login face (errors cleared).
@@ -284,6 +332,81 @@
     }
   }
 
+  // Forgot password, step 1: ask for the reset code. The server
+  // always answers 200 (it never says whether the account exists), so
+  // step 2 is shown either way; a real account gets the code by email.
+  async function submitForgot(e) {
+    e.preventDefault();
+    hideResetError();
+    var emailEl = document.getElementById('resetEmail');
+    var email = emailEl ? emailEl.value.trim().toLowerCase() : '';
+    if (!EMAIL_RE.test(email)) { showResetError(tr('auth.invalidEmail')); return; }
+    var btn = e.target.querySelector('button[type="submit"]');
+    if (btn) { btn.disabled = true; btn.classList.add('is-busy'); }
+    try {
+      await window.MyDimensionApi.forgotPassword(email);
+      pendingResetEmail = email;
+      var emailStrong = document.getElementById('resetCodeEmail');
+      if (emailStrong) emailStrong.textContent = email;
+      updateResetCodeHint(email);
+      document.getElementById('forgotForm').classList.add('hidden');
+      document.getElementById('resetForm').classList.remove('hidden');
+      var code = document.getElementById('resetCode');
+      if (code) { code.value = ''; code.focus(); }
+    } catch (err) {
+      showResetError(err && err.message ? err.message : 'Could not send the reset code. Please try again.');
+    } finally {
+      if (btn) { btn.disabled = false; btn.classList.remove('is-busy'); }
+    }
+  }
+
+  // The reset-code hint sentence, rebuilt from the i18n string so the
+  // wording follows the app language — same pattern as updateVerifyHint.
+  function updateResetCodeHint(email) {
+    var hint = document.getElementById('resetCodeHint');
+    var emailEl = document.getElementById('resetCodeEmail');
+    if (!hint || !emailEl) return;
+    emailEl.textContent = email;
+    var msg = tr('auth.resetCodeHint', { email: '\u0000' });
+    var parts = msg.split('\u0000');
+    hint.textContent = '';
+    hint.appendChild(document.createTextNode(parts[0] || ''));
+    hint.appendChild(emailEl);
+    hint.appendChild(document.createTextNode(parts[1] || ''));
+  }
+
+  // Forgot password, step 2: code + new password. On success the card
+  // flips back to the login form (the new password works from there).
+  async function submitReset(e) {
+    e.preventDefault();
+    hideResetError();
+    var codeEl = document.getElementById('resetCode');
+    var code = codeEl ? codeEl.value.trim() : '';
+    var newPassword = document.getElementById('resetNewPassword').value;
+    var confirm = document.getElementById('resetConfirmPassword').value;
+    if (!/^\d{6}$/.test(code)) {
+      showResetError(tr('auth.enterCode'));
+      if (codeEl) codeEl.focus();
+      return;
+    }
+    if (!pendingResetEmail) { showResetError(tr('auth.enterCode')); return; }
+    if (newPassword.length < 4) { showResetError(tr('auth.passwordTooShort')); return; }
+    if (newPassword !== confirm) { showResetError(tr('auth.passwordsNoMatch')); return; }
+    var btn = e.target.querySelector('button[type="submit"]');
+    if (btn) { btn.disabled = true; btn.classList.add('is-busy'); }
+    try {
+      await window.MyDimensionApi.resetPassword(pendingResetEmail, code, newPassword);
+      if (window.MyDimensionApp && window.MyDimensionApp.toast) {
+        window.MyDimensionApp.toast(tr('auth.resetSuccess'));
+      }
+      showLoginForm();
+    } catch (err) {
+      showResetError(err && err.message ? err.message : 'That code is incorrect. Please try again.');
+    } finally {
+      if (btn) { btn.disabled = false; btn.classList.remove('is-busy'); }
+    }
+  }
+
   // User ID + Password sign-in. On success the session cookie is set
   // by the server; re-check /api/me to enter the app.
   async function loginPassword(username, password) {
@@ -328,6 +451,27 @@
       return { ok: true, message: 'Password saved. You can now sign in with your User ID and password.' };
     } catch (err) {
       return { ok: false, message: err && err.message ? err.message : 'Could not save the password. Please try again.' };
+    }
+  }
+
+  // Change the password from Settings (signed in). The current
+  // password is checked first; returns true on success. The password
+  // is never logged or displayed.
+  async function changePassword(currentPassword, newPassword, confirmPassword) {
+    if (!currentPassword) {
+      return { ok: false, message: tr('auth.currentPasswordRequired') };
+    }
+    if (!newPassword || newPassword.length < 4) {
+      return { ok: false, message: tr('auth.passwordTooShort') };
+    }
+    if (newPassword !== confirmPassword) {
+      return { ok: false, message: tr('auth.passwordsNoMatch') };
+    }
+    try {
+      await window.MyDimensionApi.changePassword(currentPassword, newPassword);
+      return { ok: true, message: tr('auth.passwordChanged') };
+    } catch (err) {
+      return { ok: false, message: err && err.message ? err.message : 'Could not change the password. Please try again.' };
     }
   }
 
@@ -416,6 +560,10 @@
     if (pendingVerifyEmail && panel && !panel.classList.contains('hidden')) {
       updateVerifyHint(pendingVerifyEmail);
     }
+    var resetForm = document.getElementById('resetForm');
+    if (pendingResetEmail && resetForm && !resetForm.classList.contains('hidden')) {
+      updateResetCodeHint(pendingResetEmail);
+    }
     if (resendSecondsLeft > 0) updateResendButton();
   });
 
@@ -449,11 +597,27 @@
     this.value = this.value.replace(/\D/g, '').slice(0, 6);
   });
 
+  // Password reset controls (on the back face of the flip card).
+  var forgotBtn = document.getElementById('forgotPasswordBtn');
+  if (forgotBtn) forgotBtn.addEventListener('click', showForgot);
+  var forgotForm = document.getElementById('forgotForm');
+  if (forgotForm) forgotForm.addEventListener('submit', submitForgot);
+  var resetForm = document.getElementById('resetForm');
+  if (resetForm) resetForm.addEventListener('submit', submitReset);
+  var showLoginFromResetBtn = document.getElementById('showLoginFromResetBtn');
+  if (showLoginFromResetBtn) showLoginFromResetBtn.addEventListener('click', showLoginForm);
+  var resetCodeInput = document.getElementById('resetCode');
+  if (resetCodeInput) resetCodeInput.addEventListener('input', function () {
+    this.value = this.value.replace(/\D/g, '').slice(0, 6);
+  });
+
   window.MyDimensionAuth = {
     checkAuth: checkAuth, login: login, logout: logout,
     showLogin: showLogin, showApp: showApp,
     loginPassword: loginPassword, setPassword: setPassword,
+    changePassword: changePassword,
     showSignup: showSignup, showLoginForm: showLoginForm,
+    showForgot: showForgot,
     refreshPasswordHint: refreshPasswordHint,
     getUser: function () { return currentUser; },
     displayName: displayName, refreshServiceStatus: refreshServiceStatus

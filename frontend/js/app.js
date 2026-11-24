@@ -527,23 +527,30 @@
       this.classList.toggle('on', show);
       input.focus();
     });
-    // Forgot password: there is no reset on this page yet — login is
-    // User ID + password only.
-    document.getElementById('forgotPasswordBtn').addEventListener('click', function () {
-      var hint = document.getElementById('forgotHint');
-      hint.textContent = 'Forgot your password? There is no password reset on this page yet.';
-      hint.classList.remove('hidden');
-      document.getElementById('loginUsername').focus();
-    });
+    // Forgot password: handled in auth.js — flips the card to the
+    // reset panel (email, then code + new password).
     // Set / change password from Settings.
     document.getElementById('savePasswordBtn').addEventListener('click', async function () {
       var msg = document.getElementById('passwordMsg');
-      var result = await window.MyDimensionAuth.setPassword(
-        document.getElementById('newPassword').value,
-        document.getElementById('confirmPassword').value);
+      var current = document.getElementById('currentPassword').value;
+      var result;
+      if (current) {
+        // Signed-in user changing their password: the current one is
+        // checked first (works for the owner and registered users).
+        result = await window.MyDimensionAuth.changePassword(
+          current,
+          document.getElementById('newPassword').value,
+          document.getElementById('confirmPassword').value);
+      } else {
+        // First-time setup (owner only): no current password to check.
+        result = await window.MyDimensionAuth.setPassword(
+          document.getElementById('newPassword').value,
+          document.getElementById('confirmPassword').value);
+      }
       msg.textContent = result.message;
       msg.classList.remove('hidden');
       if (result.ok) {
+        document.getElementById('currentPassword').value = '';
         document.getElementById('newPassword').value = '';
         document.getElementById('confirmPassword').value = '';
       }
