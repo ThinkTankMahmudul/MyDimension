@@ -73,6 +73,10 @@ class DatabaseManager:
         The schema file is idempotent (CREATE TABLE IF NOT EXISTS /
         ADD COLUMN IF NOT EXISTS), so this is safe on a live database
         that already has data.
+
+        Statements run one at a time: a single failed statement (e.g. an
+        index on a column an older table does not have yet) must not abort
+        the rest of the migration.
         """
         if not self.using_postgres:
             logger.info("Dev fallback store: no schema to create.")
@@ -80,8 +84,19 @@ class DatabaseManager:
         schema_path = Path(__file__).resolve().parents[3] / "migrations" / "schema.sql"
         try:
             sql = schema_path.read_text(encoding="utf-8")
+            # Drop full-line comments first: some contain ';' (e.g. "-- ...;
+            # display ..."), which would corrupt a naive split on ';'.
+            sql = "\n".join(
+                line for line in sql.splitlines()
+                if not line.strip().startswith("--")
+            )
+            statements = [s.strip() for s in sql.split(";") if s.strip()]
             with self._connect() as conn, conn.cursor() as cur:
-                cur.execute(sql)
+                for stmt in statements:
+                    try:
+                        cur.execute(stmt)
+                    except Exception as exc:  # one bad statement: log, continue
+                        logger.warning("Schema statement skipped: %s (%s)", stmt[:80], exc)
             logger.info("PostgreSQL schema initialised.")
         except Exception as exc:  # never crash startup on a DB problem
             logger.warning("Could not initialise PostgreSQL schema: %s", exc)

@@ -34,7 +34,6 @@ CREATE TABLE IF NOT EXISTS email_verification_codes (
 
 CREATE INDEX IF NOT EXISTS idx_users_email ON users (email);
 CREATE INDEX IF NOT EXISTS idx_verification_codes_email ON email_verification_codes (email);
-CREATE INDEX IF NOT EXISTS idx_verification_codes_purpose ON email_verification_codes (email, purpose);
 CREATE INDEX IF NOT EXISTS idx_verification_codes_expires_at ON email_verification_codes (expires_at);
 
 CREATE TABLE IF NOT EXISTS diary_entries (
@@ -105,6 +104,10 @@ ALTER TABLE diary_entries ADD COLUMN IF NOT EXISTS user_id UUID;
 ALTER TABLE mood_records ADD COLUMN IF NOT EXISTS user_id UUID;
 ALTER TABLE memory_files ADD COLUMN IF NOT EXISTS user_id UUID;
 ALTER TABLE email_verification_codes ADD COLUMN IF NOT EXISTS purpose TEXT NOT NULL DEFAULT 'verify';
+-- Purpose index lives here (after the ALTER): creating it earlier failed
+-- on live databases whose codes table predates the purpose column, and
+-- one failed statement used to abort the whole schema initialisation.
+CREATE INDEX IF NOT EXISTS idx_verification_codes_purpose ON email_verification_codes (email, purpose);
 
 CREATE INDEX IF NOT EXISTS idx_entries_user_id ON diary_entries (user_id);
 CREATE INDEX IF NOT EXISTS idx_mood_records_user_id ON mood_records (user_id);
