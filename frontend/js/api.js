@@ -44,10 +44,12 @@
       // Network / offline — do not invent data.
       throw new Error('Could not reach the server. Check your connection and try again.');
     }
-    if (res.status === 401 && !path.startsWith('/api/auth/login')) {
+    if (res.status === 401 && !path.startsWith('/api/auth/login') && path !== '/api/auth/password-status') {
       // Session expired or not signed in: hand control to auth.js.
       // The password-login endpoint is excluded: its 401 means "wrong
       // User ID or password" and its server detail must reach the form.
+      // password-status is excluded too: it is public, and calling
+      // showLogin from it would loop (showLogin refreshes the hint).
       if (window.MyDimensionAuth && window.MyDimensionAuth.showLogin) {
         window.MyDimensionAuth.showLogin();
       }

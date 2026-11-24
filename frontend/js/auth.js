@@ -24,10 +24,22 @@
   }
 
   function showLogin() {
-    document.getElementById('loginView').classList.remove('hidden');
+    document.getElementById('loginView').classList.remove('hidden', 'login-exit');
     document.getElementById('appView').classList.add('hidden');
+    var card = document.getElementById('loginCard');
+    if (card) card.classList.remove('shake');
     var err = document.getElementById('loginError');
     if (err) err.classList.add('hidden');
+    // Remember me: prefill the saved User ID, if the owner asked for it.
+    try {
+      var saved = localStorage.getItem('mydimension-remember-user');
+      var userInput = document.getElementById('loginUsername');
+      var remember = document.getElementById('rememberMe');
+      if (userInput && saved) {
+        userInput.value = saved;
+        if (remember) remember.checked = true;
+      }
+    } catch (e) { /* private mode; login still works */ }
     refreshPasswordHint();
   }
 
@@ -52,6 +64,13 @@
     if (!err) return;
     err.textContent = message;
     err.classList.remove('hidden');
+    // Wrong credentials: the card shakes lightly (video-style feedback).
+    var card = document.getElementById('loginCard');
+    if (card) {
+      card.classList.remove('shake');
+      void card.offsetWidth; // restart the animation
+      card.classList.add('shake');
+    }
   }
 
   // User ID + Password sign-in. On success the session cookie is set
@@ -63,7 +82,18 @@
     }
     try {
       await window.MyDimensionApi.loginPassword(username, password);
+      // Success: let the login card fade out, then enter the app.
+      var wrap = document.getElementById('loginView');
+      if (wrap) wrap.classList.add('login-exit');
+      await new Promise(function (res) { setTimeout(res, 320); });
       var user = await checkAuth();
+      if (user) {
+        try {
+          var remember = document.getElementById('rememberMe');
+          if (remember && remember.checked) localStorage.setItem('mydimension-remember-user', username);
+          else localStorage.removeItem('mydimension-remember-user');
+        } catch (e) { /* private mode; login still works */ }
+      }
       return !!user;
     } catch (err) {
       // Generic message only — never says whether the ID or the
@@ -76,8 +106,8 @@
   // Set / change the password from Settings (signed-in admin only).
   // Returns true on success; the password is never logged or displayed.
   async function setPassword(newPassword, confirmPassword) {
-    if (!newPassword || newPassword.length < 8) {
-      return { ok: false, message: 'Password must be at least 8 characters.' };
+    if (!newPassword || newPassword.length < 4) {
+      return { ok: false, message: 'Password must be at least 4 characters.' };
     }
     if (newPassword !== confirmPassword) {
       return { ok: false, message: 'The two passwords do not match.' };

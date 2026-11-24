@@ -103,9 +103,9 @@ class PasswordLoginRequest(BaseModel):
 
 
 class SetPasswordRequest(BaseModel):
-    """Set (first time) or change the owner password. Minimum 8 chars."""
+    """Set (first time) or change the owner password. Minimum 4 chars."""
 
-    new_password: str = Field(min_length=8, max_length=200)
+    new_password: str = Field(min_length=4, max_length=200)
 
 
 def _set_session_cookie(response: Response, email: str) -> None:

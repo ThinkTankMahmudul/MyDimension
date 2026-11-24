@@ -52,7 +52,7 @@ def test_set_password_requires_login():
 
 
 def test_set_password_rejects_short_password():
-    resp = client.post("/api/auth/set-password", json={"new_password": "short"},
+    resp = client.post("/api/auth/set-password", json={"new_password": "abc"},
                        cookies=AUTH_COOKIES)
     assert resp.status_code == 422
 

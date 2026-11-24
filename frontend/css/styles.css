@@ -33,9 +33,23 @@ img{max-width:100%} .hidden{display:none!important}
 .muted{color:var(--muted)} .small{font-size:.85rem}
 :focus-visible{outline:3px solid var(--lavender);outline-offset:2px}
 
-/* ---------- Login ---------- */
-.login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;background:linear-gradient(160deg,var(--pale-mint),#fff 60%,var(--lav))}
-.login-card{background:var(--surface);border:1px solid var(--border);border-radius:20px;box-shadow:var(--shadow);max-width:460px;width:100%;padding:36px 32px;text-align:center}
+/* ---------- Login (video-style neumorphic sign-in) ----------
+ * Same design-board palette only — #0F766E, #14B8A6, #A7F3D0, #EDE9FE,
+ * #FFFFFF, #E4FAF5, #12B89A, #AFA0E8, #245C49, #26352F. No blue gradient,
+ * no new colours. Floating soft circles (mint / lavender), a white
+ * rounded card, a lock icon in a teal-gradient circle, pill inputs,
+ * and a gradient Login button that fills + shimmers. */
+.login-wrap{position:relative;overflow:hidden;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:48px 24px;background:linear-gradient(160deg,var(--pale-mint),#fff 60%,var(--lav))}
+.bg-circle{position:absolute;border-radius:50%;pointer-events:none;box-shadow:0 18px 40px rgba(38,53,47,.10),inset 0 2px 10px rgba(255,255,255,.9)}
+.bg1{width:280px;height:280px;top:-70px;left:-60px;background:radial-gradient(circle at 35% 30%,#E4FAF5,#A7F3D0 70%);animation:floatY 11s ease-in-out infinite alternate}
+.bg2{width:210px;height:210px;bottom:-60px;right:-40px;background:radial-gradient(circle at 35% 30%,#FFFFFF,#EDE9FE 70%);animation:floatY 13s ease-in-out infinite alternate-reverse}
+.bg3{width:130px;height:130px;top:18%;right:12%;background:radial-gradient(circle at 35% 30%,#A7F3D0,#14B8A6 75%);opacity:.55;animation:floatY 9s ease-in-out infinite alternate}
+.login-card{position:relative;z-index:1;background:var(--surface);border:1px solid var(--border);border-radius:28px;box-shadow:0 24px 60px rgba(38,53,47,.14),0 4px 14px rgba(38,53,47,.06);max-width:420px;width:100%;padding:34px 32px 30px;text-align:center;animation:loginCardIn .55s cubic-bezier(.2,.7,.3,1) both}
+.login-lock{width:76px;height:76px;border-radius:50%;background:linear-gradient(135deg,var(--primary),var(--secondary));display:flex;align-items:center;justify-content:center;margin:0 auto 10px;box-shadow:0 10px 24px rgba(15,118,110,.35),inset 0 2px 6px rgba(255,255,255,.35)}
+.login-motif{margin:2px auto 6px}
+.login-motif svg{display:block;margin:0 auto}
+.login-card h1{margin:0 0 4px;font-size:1.7rem}
+.login-sub{color:var(--muted);margin:0 0 4px}
 .logo-mark{width:64px;height:64px;border-radius:18px;background:linear-gradient(135deg,var(--primary),var(--secondary));display:inline-flex;align-items:center;justify-content:center;box-shadow:0 8px 20px rgba(15,118,110,.35)}
 .logo-mark.sm{width:40px;height:40px;border-radius:12px}
 .g-badge{background:#fff;border-radius:50%;width:26px;height:26px;display:inline-flex;align-items:center;justify-content:center;flex:none}
@@ -47,6 +61,39 @@ img{max-width:100%} .hidden{display:none!important}
 #passwordLoginForm{margin-top:16px;text-align:left}
 #passwordLoginForm .btn{margin-top:4px}
 .error-box{background:#FDF0EC;border:1px solid #F5C6B8;color:#8A3B26;border-radius:var(--radius-sm);padding:10px 12px;margin:12px 0;text-align:left}
+
+/* Neumorphic login extras: floating circles, pill inputs, animated button. */
+@keyframes floatY{from{transform:translateY(-14px) translateX(0)}to{transform:translateY(16px) translateX(10px)}}
+@keyframes loginCardIn{from{opacity:0;transform:translateY(18px) scale(.98)}to{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes shakeX{10%,90%{transform:translateX(-1px)}20%,80%{transform:translateX(2px)}30%,50%,70%{transform:translateX(-4px)}40%,60%{transform:translateX(4px)}}
+@keyframes shimmerSweep{from{transform:translateX(-140%) skewX(-18deg)}to{transform:translateX(240%) skewX(-18deg)}}
+.login-card.shake{animation:shakeX .45s ease both}
+.login-wrap.login-exit{opacity:0;transition:opacity .35s ease}
+.login-wrap.login-exit .login-card{transform:translateY(-12px) scale(.98);transition:transform .35s ease}
+.pill-input{display:flex;align-items:center;gap:8px;background:var(--pale-mint);border:1.5px solid var(--border);border-radius:999px;padding:2px 8px 2px 16px;transition:border-color .2s ease,box-shadow .2s ease,background .2s ease}
+.pill-input:focus-within{border-color:var(--secondary);background:var(--surface);box-shadow:0 0 0 4px rgba(20,184,166,.16)}
+.pill-input input{flex:1;min-width:0;border:0;outline:none;background:transparent;padding:12px 4px}
+.pill-ico{display:flex;color:var(--muted);flex:none}
+.pill-input:focus-within .pill-ico{color:var(--primary)}
+.eye-btn{border:0;background:transparent;color:var(--muted);padding:8px;border-radius:50%;display:flex;flex:none}
+.eye-btn:hover{color:var(--primary)}
+.eye-btn .eye-slash{display:none}
+.eye-btn.on .eye-slash{display:block}
+.login-field{margin-bottom:12px}
+.login-row{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:2px 0 16px;font-size:.88rem}
+.remember{font-weight:500}
+.link-btn{border:0;background:none;padding:0;color:var(--primary);font-weight:600;font-size:.88rem}
+.link-btn:hover{text-decoration:underline}
+.login-btn{position:relative;overflow:hidden;border-radius:999px;padding:13px 18px;background:linear-gradient(90deg,var(--primary),var(--secondary),var(--primary));background-size:200% 100%;transition:background-position .5s ease,transform .15s ease,box-shadow .2s ease;box-shadow:0 10px 22px rgba(15,118,110,.30)}
+.login-btn:hover{background-position:100% 0}
+.login-btn::after{content:"";position:absolute;top:0;bottom:0;width:40%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.45),transparent);transform:translateX(-140%) skewX(-18deg);pointer-events:none}
+.login-btn:hover::after{animation:shimmerSweep .7s ease}
+.login-btn.is-busy{background-position:100% 0}
+.login-btn.is-busy::after{animation:shimmerSweep 1.1s ease infinite}
+.login-google{margin:18px 0 6px}
+.google-link{border:0;background:none;padding:0;color:var(--forest);font-weight:600;font-size:.9rem}
+.google-link:hover{text-decoration:underline}
+#forgotHint{margin:0 0 12px}
 
 /* ---------- Buttons / forms ---------- */
 .btn{display:inline-flex;align-items:center;gap:8px;justify-content:center;border:0;border-radius:12px;padding:11px 18px;font-weight:600;background:linear-gradient(90deg,var(--primary),var(--secondary));color:#fff;text-decoration:none}

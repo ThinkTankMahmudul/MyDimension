@@ -499,11 +499,30 @@
       e.preventDefault();
       var btn = e.target.querySelector('button[type="submit"]');
       btn.disabled = true;
+      btn.classList.add('is-busy');
       try {
         await window.MyDimensionAuth.loginPassword(
           document.getElementById('loginUsername').value.trim(),
           document.getElementById('loginPassword').value);
-      } finally { btn.disabled = false; }
+      } finally { btn.disabled = false; btn.classList.remove('is-busy'); }
+    });
+    // Show / hide the password (eye icon on the pill input).
+    document.getElementById('togglePassword').addEventListener('click', function () {
+      var input = document.getElementById('loginPassword');
+      var show = input.type === 'password';
+      input.type = show ? 'text' : 'password';
+      this.setAttribute('aria-pressed', String(show));
+      this.setAttribute('aria-label', show ? 'Hide password' : 'Show password');
+      this.classList.toggle('on', show);
+      input.focus();
+    });
+    // Forgot password: there is no reset email — the owner signs in
+    // with Google and changes the password in Settings.
+    document.getElementById('forgotPasswordBtn').addEventListener('click', function () {
+      var hint = document.getElementById('forgotHint');
+      hint.textContent = 'Forgot your password? Sign in with Google below, then change it in Settings.';
+      hint.classList.remove('hidden');
+      document.getElementById('loginBtn').focus();
     });
     // Set / change password from Settings.
     document.getElementById('savePasswordBtn').addEventListener('click', async function () {
@@ -719,7 +738,13 @@
   }
 
   /* ---------- init ---------- */
+  var initialized = false;
   async function init() {
+    // Guard against double init (e.g. DOMContentLoaded firing twice):
+    // without it every handler — including the password eye toggle —
+    // would be bound twice and fire twice per click.
+    if (initialized) return;
+    initialized = true;
     applyTheme();
     bindEvents();
     var user = await window.MyDimensionAuth.checkAuth();
