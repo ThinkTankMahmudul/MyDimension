@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="800" height="480" viewBox="0 0 800 480" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Mosque at dawn">
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="480" viewBox="0 0 800 480" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Hot-air balloon over green mountains at dawn">
   <defs>
     <linearGradient id="futureSky" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0" stop-color="#EDE9FE"/>
@@ -38,45 +38,40 @@
     <path d="M580 120 q5 -5 10 0 q5 -5 10 0"/>
   </g>
 
-  <!-- desert dunes -->
-  <path d="M0 360 Q200 300 400 350 T800 340 V480 H0 Z" fill="#EDE9FE"/>
-  <path d="M0 410 Q250 360 500 400 T800 390 V480 H0 Z" fill="#AFA0E8" opacity=".45"/>
-
-  <!-- mosque -->
+  <!-- paper plane -->
   <g>
-    <rect x="190" y="330" width="420" height="60" fill="#245C49"/>
-    <rect x="340" y="310" width="120" height="20" fill="#245C49"/>
-    <path d="M310 330 C310 255 350 220 400 220 C450 220 490 255 490 330 Z" fill="#0F766E"/>
-    <line x1="400" y1="220" x2="400" y2="198" stroke="#0F766E" stroke-width="3"/>
-    <path transform="translate(400 190)" d="M0 -8 A8 8 0 1 0 0 8 A6.5 6.5 0 1 1 0 -8 Z" fill="#14B8A6"/>
-    <path d="M230 330 C230 292 248 274 266 274 C284 274 302 292 302 330 Z" fill="#0F766E"/>
-    <path d="M498 330 C498 292 516 274 534 274 C552 274 570 292 570 330 Z" fill="#0F766E"/>
-    <rect x="160" y="215" width="20" height="175" fill="#245C49"/>
-    <rect x="152" y="292" width="36" height="10" fill="#245C49"/>
-    <path d="M160 215 Q170 185 180 215 Z" fill="#0F766E"/>
-    <line x1="170" y1="185" x2="170" y2="168" stroke="#0F766E" stroke-width="2.5"/>
-    <rect x="620" y="215" width="20" height="175" fill="#245C49"/>
-    <rect x="612" y="292" width="36" height="10" fill="#245C49"/>
-    <path d="M620 215 Q630 185 640 215 Z" fill="#0F766E"/>
-    <line x1="630" y1="185" x2="630" y2="168" stroke="#0F766E" stroke-width="2.5"/>
-    <g fill="#A7F3D0" opacity=".95">
-      <path d="M225 390 L225 362 A9 11 0 0 1 243 362 L243 390 Z"/>
-      <path d="M300 390 L300 362 A9 11 0 0 1 318 362 L318 390 Z"/>
-      <path d="M482 390 L482 362 A9 11 0 0 1 500 362 L500 390 Z"/>
-      <path d="M557 390 L557 362 A9 11 0 0 1 575 362 L575 390 Z"/>
-      <path d="M385 390 L385 348 A15 18 0 0 1 415 348 L415 390 Z"/>
-    </g>
+    <path d="M620 200 L690 178 L648 232 Z" fill="#FFFFFF" stroke="#0F766E" stroke-width="2" stroke-linejoin="round"/>
+    <path d="M648 232 L690 178 L656 210 Z" fill="#A7F3D0"/>
+    <path d="M560 214 Q590 200 618 202" fill="none" stroke="#0F766E" stroke-width="2" stroke-dasharray="5 6" opacity=".6"/>
   </g>
 
-  <!-- lanterns on the dunes -->
+  <!-- mountains -->
+  <path d="M-20 480 L170 250 L360 480 Z" fill="#245C49"/>
+  <path d="M150 278 L170 250 L192 282 L178 278 L170 290 L158 276 Z" fill="#FFFFFF"/>
+  <path d="M440 480 L620 230 L800 480 Z" fill="#0F766E"/>
+  <path d="M598 262 L620 230 L644 264 L628 258 L620 272 L606 258 Z" fill="#FFFFFF"/>
+  <path d="M240 480 L400 330 L560 480 Z" fill="#12B89A" opacity=".85"/>
+
+  <!-- hot-air balloon -->
   <g>
-    <circle cx="90" cy="420" r="26" fill="#A7F3D0" opacity=".35"/>
-    <path d="M82 408 h16 l-3 24 h-10 Z" fill="#245C49"/>
-    <path d="M84 408 Q90 398 96 408 Z" fill="#245C49"/>
-    <rect x="88" y="404" width="4" height="5" fill="#245C49"/>
-    <circle cx="710" cy="412" r="26" fill="#A7F3D0" opacity=".35"/>
-    <path d="M702 400 h16 l-3 24 h-10 Z" fill="#245C49"/>
-    <path d="M704 400 Q710 390 716 400 Z" fill="#245C49"/>
-    <rect x="708" y="396" width="4" height="5" fill="#245C49"/>
+    <circle cx="400" cy="212" r="58" fill="#14B8A6"/>
+    <path d="M400 154 a58 58 0 0 1 0 116 a20 58 0 0 1 0 -116 Z" fill="#0F766E"/>
+    <path d="M400 154 a58 58 0 0 0 0 116 a20 58 0 0 0 0 -116 Z" fill="#A7F3D0" opacity=".8"/>
+    <ellipse cx="378" cy="188" rx="10" ry="16" fill="#FFFFFF" opacity=".55"/>
+    <line x1="362" y1="258" x2="382" y2="296" stroke="#26352F" stroke-width="2.5"/>
+    <line x1="438" y1="258" x2="418" y2="296" stroke="#26352F" stroke-width="2.5"/>
+    <line x1="400" y1="270" x2="400" y2="296" stroke="#26352F" stroke-width="2.5"/>
+    <rect x="380" y="296" width="40" height="30" rx="6" fill="#26352F"/>
+    <rect x="386" y="304" width="28" height="5" rx="2.5" fill="#A7F3D0"/>
+  </g>
+
+  <!-- rolling hills -->
+  <path d="M0 410 Q250 360 500 400 T800 390 V480 H0 Z" fill="#EDE9FE"/>
+  <path d="M0 440 Q260 400 520 428 T800 424 V480 H0 Z" fill="#AFA0E8" opacity=".45"/>
+
+  <!-- small trees on the hills -->
+  <g fill="#245C49">
+    <path d="M90 420 L104 388 L118 420 Z"/><rect x="101" y="420" width="6" height="12"/>
+    <path d="M690 416 L704 384 L718 416 Z"/><rect x="701" y="416" width="6" height="12"/>
   </g>
 </svg>

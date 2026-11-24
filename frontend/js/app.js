@@ -193,10 +193,10 @@
       badge.classList.toggle('hidden', !todays.length);
     }
     if (!todays.length) {
-      box.innerHTML = '<p class="small muted">' + t('dash.nothingToday') + '</p>';
+      box.innerHTML = '<div class="activity-empty"><span class="activity-empty-ico" aria-hidden="true">🌙</span><p class="small muted">' + t('dash.nothingToday') + '</p></div>';
     } else {
       box.innerHTML = todays.map(function (e) {
-        return '<div class="activity-item"><span class="activity-ico" aria-hidden="true">✎</span>' +
+        return '<div class="activity-item"><span class="activity-ico" aria-hidden="true">' + (window.MyDimensionJournal.MOOD_EMOJI[e.mood] || '📖') + '</span>' +
           '<div><p><strong>' + window.MyDimensionJournal.esc(e.title) + '</strong></p>' +
           '<p class="small muted">' + t('dash.newEntryActivity') + ' · ' + window.MyDimensionJournal.esc(window.MyDimensionJournal.relTime(e.created_at)) + '</p></div></div>';
       }).join('');

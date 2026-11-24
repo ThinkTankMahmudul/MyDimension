@@ -89,17 +89,18 @@
   function coverClass(e, i) { return 'cover-' + ((i || 0) % 6); }
 
   // Dashboard cover illustrations (local SVG, no external images).
-  // Islamic styling only: mosque dome + minarets, crescent moon, stars,
-  // arabesque geometry — drawn in the design-board palette.
+  // Neutral space / nature scenes only: astronaut, ringed planet,
+  // crescent moon, stars, hot-air balloon, mountains, sailboat —
+  // drawn in the design-board palette.
   var COVER_ART = ['assets/cover-diary.svg', 'assets/cover-future.svg', 'assets/cover-sunset.svg'];
-  var COVER_ALT = ['Night mosque under a crescent moon', 'Mosque at dawn', 'Mosque arch at sunset'];
+  var COVER_ALT = ['Astronaut under a crescent moon beside a ringed planet', 'Hot-air balloon over mountains at dawn', 'Sailboat on calm water at sunset'];
   function coverArt(i) { return COVER_ART[((i || 0) % 3 + 3) % 3]; }
   function coverArtAlt(i) { return COVER_ALT[((i || 0) % 3 + 3) % 3]; }
 
   function entryCard(e, i) {
     var excerpt = e.body.length > 180 ? e.body.slice(0, 180) + '…' : e.body;
     return '<article class="entry"><div class="entry-row">' +
-      '<span class="entry-thumb ' + coverClass(e, i) + '" aria-hidden="true">' + (MOOD_EMOJI[e.mood] || '✎') + '</span>' +
+      '<span class="entry-thumb ' + coverClass(e, i) + '" aria-hidden="true"><img class="entry-thumb-img" src="' + coverArt(i) + '" alt="" loading="lazy"><span class="entry-thumb-emoji">' + (MOOD_EMOJI[e.mood] || '✎') + '</span></span>' +
       '<div class="entry-body"><h4><a href="#/entry/' + esc(e.id) + '">' + esc(e.title) + '</a></h4>' +
       '<div class="entry-meta">' + esc(fmtDate(e.date)) + (e.created_at ? ' · ' + esc(fmtTime(e.created_at)) : '') +
       (e.mood ? ' · <span class="mood-pill">' + esc(MOOD_EMOJI[e.mood] || '') + ' ' + esc(window.MyDimensionI18n ? window.MyDimensionI18n.moodLabel(e.mood) : e.mood) + '</span>' : '') +

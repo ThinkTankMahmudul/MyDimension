@@ -3,7 +3,10 @@
  * Same-origin, cookies included. No secrets / keys here.
  * Verified against the backend routes (schemas.py / api/*.py):
  *   GET  /health                      -> { status, app, storage, ai_configured, drive_configured }
- *   GET  /api/me                      -> { email, is_owner }  (no name/picture/status fields)
+ *   GET  /api/me                      -> { email, is_owner, name? }  (no picture/status fields)
+ *   POST /api/auth/register { name, email, password } -> { detail, email } (code sent)
+ *   POST /api/auth/verify-code { email, code } -> { email, name, is_owner } + session cookie
+ *   POST /api/auth/resend-code { email } -> { detail }
  *   GET  /api/entries?search=&mood=&month=YYYY-MM   (no q/date params)
  *   POST /api/entries  { title, content, mood, tags }
  *   PUT  /api/entries/{id}  { title?, content?, mood?, tags?, summary? }
@@ -44,7 +47,10 @@
       // Network / offline — do not invent data.
       throw new Error('Could not reach the server. Check your connection and try again.');
     }
-    if (res.status === 401 && !path.startsWith('/api/auth/login') && path !== '/api/auth/password-status') {
+    // Pre-auth endpoints never carry a session, so a 401 there is not
+    // an expired session — it must reach the form, not showLogin.
+    var preAuth = path === '/api/auth/register' || path === '/api/auth/verify-code' || path === '/api/auth/resend-code';
+    if (res.status === 401 && !preAuth && !path.startsWith('/api/auth/login') && path !== '/api/auth/password-status') {
       // Session expired or not signed in: hand control to auth.js.
       // The password-login endpoint is excluded: its 401 means "wrong
       // User ID or password" and its server detail must reach the form.
@@ -83,7 +89,7 @@
     // (/api/me returns only email + is_owner).
     getHealth: function () { return request('/health'); },
 
-    // Auth / profile. Response shape (backend): { email, is_owner }
+    // Auth / profile. Response shape (backend): { email, is_owner, name? }
     getMe: function () { return request('/api/me'); },
     logout: function () { return json('/auth/logout', 'POST', {}); },
 
@@ -97,6 +103,25 @@
     getPasswordStatus: function () { return request('/api/auth/password-status'); },
     setPassword: function (newPassword) {
       return json('/api/auth/set-password', 'POST', { new_password: newPassword });
+    },
+
+    // Sign-up (email verification). POST /api/auth/register
+    // { name, email, password } -> { detail, email } (200: code sent).
+    // 400 = validation, 409 = email already verified, 429 = too many
+    // codes, 503 = email not configured.
+    register: function (name, email, password) {
+      return json('/api/auth/register', 'POST', { name: name, email: email, password: password });
+    },
+    // POST /api/auth/verify-code { email, code } -> { email, name,
+    // is_owner } + session cookie. 400 = wrong/expired code, 429 =
+    // too many attempts.
+    verifyCode: function (email, code) {
+      return json('/api/auth/verify-code', 'POST', { email: email, code: code });
+    },
+    // POST /api/auth/resend-code { email } -> { detail }. 429 if a code
+    // was sent in the last 60 seconds or more than 5 in an hour.
+    resendCode: function (email) {
+      return json('/api/auth/resend-code', 'POST', { email: email });
     },
 
     // Entries. Entry fields: id, title, content, mood, tags, summary,

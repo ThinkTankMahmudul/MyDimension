@@ -5,14 +5,26 @@
  * The frontend never checks an email allowlist and never stores a
  * token: the backend verifies the identity and enforces the configured
  * owner, and the session lives in a cookie.
- * /api/me returns only { email, is_owner } — the display name is derived
- * from the owner email for the greeting/sidebar, and service status
+ * /api/me returns { email, is_owner, name? } — when the server sends a
+ * name it is shown as-is; otherwise the display name is derived from
+ * the owner email for the greeting/sidebar, and service status
  * (Drive / Gemini / database) comes from the public /health endpoint.
  */
 (function () {
   'use strict';
 
   var currentUser = null;
+
+  // Sign-up state: the email waiting for a verification code, and the
+  // 60-second resend countdown.
+  var pendingVerifyEmail = null;
+  var resendTimer = null;
+  var resendSecondsLeft = 0;
+
+  // i18n shortcut (falls back to the key itself when i18n is absent).
+  function tr(key, vars) {
+    return window.MyDimensionI18n ? window.MyDimensionI18n.t(key, vars) : key;
+  }
 
   // Display name for the known owner account; any other owner email is
   // prettified from its local part. Display only — never an auth check.
@@ -35,6 +47,8 @@
     if (card) card.classList.remove('shake');
     var err = document.getElementById('loginError');
     if (err) err.classList.add('hidden');
+    // Always land on the Login face, never mid-sign-up / verification.
+    resetAuthFlip();
     // Remember me: prefill the saved User ID, if the owner asked for it.
     try {
       var saved = localStorage.getItem('mydimension-remember-user');
@@ -76,6 +90,197 @@
       card.classList.remove('shake');
       void card.offsetWidth; // restart the animation
       card.classList.add('shake');
+    }
+  }
+
+  function hideLoginError() {
+    var err = document.getElementById('loginError');
+    if (err) err.classList.add('hidden');
+  }
+  function showSignupError(message) {
+    var err = document.getElementById('signupError');
+    if (!err) return;
+    err.textContent = message;
+    err.classList.remove('hidden');
+  }
+  function hideSignupError() {
+    var err = document.getElementById('signupError');
+    if (err) err.classList.add('hidden');
+  }
+  function showVerifyError(message) {
+    var err = document.getElementById('verifyError');
+    if (!err) return;
+    err.textContent = message;
+    err.classList.remove('hidden');
+  }
+  function hideVerifyError() {
+    var err = document.getElementById('verifyError');
+    if (err) err.classList.add('hidden');
+  }
+
+  // Back to the Login face: hide the sign-up / verification panels,
+  // clear their errors and stop any resend countdown.
+  function resetAuthFlip() {
+    var flip = document.getElementById('authFlip');
+    if (flip) flip.classList.remove('flipped');
+    var signup = document.getElementById('signupForm');
+    if (signup) signup.classList.remove('hidden');
+    var panel = document.getElementById('verifyPanel');
+    if (panel) panel.classList.add('hidden');
+    hideSignupError();
+    hideVerifyError();
+    stopResendCountdown();
+  }
+
+  // Flip to the Sign Up face (errors cleared).
+  function showSignup() {
+    hideLoginError();
+    hideSignupError();
+    hideVerifyError();
+    var panel = document.getElementById('verifyPanel');
+    if (panel) panel.classList.add('hidden');
+    var form = document.getElementById('signupForm');
+    if (form) form.classList.remove('hidden');
+    var flip = document.getElementById('authFlip');
+    if (flip) flip.classList.add('flipped');
+    var name = document.getElementById('signupName');
+    if (name) name.focus();
+  }
+
+  // Flip back to the Login face (errors cleared).
+  function showLoginForm() {
+    hideLoginError();
+    resetAuthFlip();
+    var user = document.getElementById('loginUsername');
+    if (user) user.focus();
+  }
+
+  // The verification hint sentence, rebuilt from the i18n string so
+  // the wording follows the app language — with #verifyEmail kept as
+  // the email itself inside the sentence.
+  function updateVerifyHint(email) {
+    var hint = document.getElementById('verifyHint');
+    var emailEl = document.getElementById('verifyEmail');
+    if (!hint || !emailEl) return;
+    emailEl.textContent = email;
+    var msg = tr('auth.verifyHint', { email: '\u0000' });
+    var parts = msg.split('\u0000');
+    hint.textContent = '';
+    hint.appendChild(document.createTextNode(parts[0] || ''));
+    hint.appendChild(emailEl);
+    hint.appendChild(document.createTextNode(parts[1] || ''));
+  }
+
+  function updateResendButton() {
+    var btn = document.getElementById('resendCodeBtn');
+    if (!btn) return;
+    if (resendSecondsLeft > 0) {
+      btn.disabled = true;
+      btn.textContent = tr('auth.resendIn', { seconds: resendSecondsLeft });
+    } else {
+      btn.disabled = false;
+      btn.textContent = tr('auth.resend');
+    }
+  }
+
+  function stopResendCountdown() {
+    if (resendTimer) { clearInterval(resendTimer); resendTimer = null; }
+    resendSecondsLeft = 0;
+    updateResendButton();
+  }
+
+  function startResendCountdown() {
+    stopResendCountdown();
+    resendSecondsLeft = 60;
+    updateResendButton();
+    resendTimer = setInterval(function () {
+      resendSecondsLeft -= 1;
+      if (resendSecondsLeft <= 0) { stopResendCountdown(); return; }
+      updateResendButton();
+    }, 1000);
+  }
+
+  var EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+  // Sign-up submit: validate locally, then ask the backend to send a
+  // verification code. On success the form is replaced by the
+  // verification panel (still on the back face of the flip).
+  async function submitSignup(e) {
+    e.preventDefault();
+    hideSignupError();
+    var name = document.getElementById('signupName').value.trim();
+    var email = document.getElementById('signupEmail').value.trim().toLowerCase();
+    var password = document.getElementById('signupPassword').value;
+    var confirm = document.getElementById('signupConfirm').value;
+    if (!name) { showSignupError(tr('auth.nameRequired')); return; }
+    if (!EMAIL_RE.test(email)) { showSignupError(tr('auth.invalidEmail')); return; }
+    if (password.length < 4) {
+      showSignupError(window.MyDimensionI18n && window.MyDimensionI18n.getLanguage() === 'bn'
+        ? 'পাসওয়ার্ড কমপক্ষে ৪ অক্ষরের হতে হবে।'
+        : 'Password must be at least 4 characters.');
+      return;
+    }
+    if (password !== confirm) { showSignupError(tr('auth.passwordsNoMatch')); return; }
+    var btn = e.target.querySelector('button[type="submit"]');
+    if (btn) { btn.disabled = true; btn.classList.add('is-busy'); }
+    try {
+      var res = await window.MyDimensionApi.register(name, email, password);
+      pendingVerifyEmail = (res && res.email) ? res.email : email;
+      document.getElementById('signupForm').classList.add('hidden');
+      document.getElementById('verifyPanel').classList.remove('hidden');
+      updateVerifyHint(pendingVerifyEmail);
+      var code = document.getElementById('verifyCode');
+      if (code) { code.value = ''; code.focus(); }
+      // The backend refuses a new code for 60 seconds after sending one.
+      startResendCountdown();
+    } catch (err) {
+      showSignupError(err && err.message ? err.message : 'Could not create the account. Please try again.');
+    } finally {
+      if (btn) { btn.disabled = false; btn.classList.remove('is-busy'); }
+    }
+  }
+
+  // Verification submit: a correct 6-digit code signs the new user in,
+  // exactly like a successful password login (fade out, then checkAuth).
+  async function submitVerify(e) {
+    e.preventDefault();
+    hideVerifyError();
+    var codeEl = document.getElementById('verifyCode');
+    var code = codeEl ? codeEl.value.trim() : '';
+    if (!/^\d{6}$/.test(code)) {
+      showVerifyError(tr('auth.enterCode'));
+      if (codeEl) codeEl.focus();
+      return;
+    }
+    if (!pendingVerifyEmail) { showVerifyError(tr('auth.enterCode')); return; }
+    var btn = e.target.querySelector('button[type="submit"]');
+    if (btn) { btn.disabled = true; btn.classList.add('is-busy'); }
+    try {
+      await window.MyDimensionApi.verifyCode(pendingVerifyEmail, code);
+      var wrap = document.getElementById('loginView');
+      if (wrap) wrap.classList.add('login-exit');
+      await new Promise(function (res) { setTimeout(res, 320); });
+      await checkAuth();
+    } catch (err) {
+      showVerifyError(err && err.message ? err.message : 'That code is incorrect. Please try again.');
+    } finally {
+      if (btn) { btn.disabled = false; btn.classList.remove('is-busy'); }
+    }
+  }
+
+  async function resendCode() {
+    if (!pendingVerifyEmail || resendSecondsLeft > 0) return;
+    hideVerifyError();
+    try {
+      await window.MyDimensionApi.resendCode(pendingVerifyEmail);
+      if (window.MyDimensionApp && window.MyDimensionApp.toast) {
+        window.MyDimensionApp.toast(tr('auth.codeSent'));
+      }
+      startResendCountdown();
+      var code = document.getElementById('verifyCode');
+      if (code) code.focus();
+    } catch (err) {
+      showVerifyError(err && err.message ? err.message : 'Could not resend the code. Please try again.');
     }
   }
 
@@ -144,7 +349,12 @@
 
   function renderProfile(user) {
     if (!user) return;
-    var name = displayName(user.email);
+    // The name from the server is shown as-is for registered users.
+    // For the owner, the stored name is always the English one, so use
+    // the language-aware display name instead — otherwise the greeting
+    // would never follow the app language (English / Bengali).
+    var isOwner = user && (user.is_owner || (user.email && user.email.toLowerCase() === 'technicalmahmudull@gmail.com'));
+    var name = isOwner ? displayName(user.email) : ((user && user.name) ? user.name : displayName(user.email));
     var email = user.email || '';
     document.querySelectorAll('[data-profile-name]').forEach(function (el) { el.textContent = name; });
     document.querySelectorAll('[data-profile-email]').forEach(function (el) { el.textContent = email; });
@@ -202,12 +412,48 @@
   // name in Bengali mode).
   document.addEventListener('mydimension:language', function () {
     if (currentUser) renderProfile(currentUser);
+    var panel = document.getElementById('verifyPanel');
+    if (pendingVerifyEmail && panel && !panel.classList.contains('hidden')) {
+      updateVerifyHint(pendingVerifyEmail);
+    }
+    if (resendSecondsLeft > 0) updateResendButton();
+  });
+
+  // Sign-up / verification controls (login form wiring lives in app.js
+  // and is untouched).
+  var showSignupBtn = document.getElementById('showSignupBtn');
+  if (showSignupBtn) showSignupBtn.addEventListener('click', showSignup);
+  var showLoginBtn = document.getElementById('showLoginBtn');
+  if (showLoginBtn) showLoginBtn.addEventListener('click', showLoginForm);
+  var signupForm = document.getElementById('signupForm');
+  if (signupForm) signupForm.addEventListener('submit', submitSignup);
+  var verifyForm = document.getElementById('verifyForm');
+  if (verifyForm) verifyForm.addEventListener('submit', submitVerify);
+  var resendBtn = document.getElementById('resendCodeBtn');
+  if (resendBtn) resendBtn.addEventListener('click', resendCode);
+  var diffEmailBtn = document.getElementById('useDifferentEmailBtn');
+  if (diffEmailBtn) diffEmailBtn.addEventListener('click', function () {
+    hideVerifyError();
+    stopResendCountdown();
+    pendingVerifyEmail = null;
+    var panel = document.getElementById('verifyPanel');
+    if (panel) panel.classList.add('hidden');
+    var form = document.getElementById('signupForm');
+    if (form) form.classList.remove('hidden');
+    var email = document.getElementById('signupEmail');
+    if (email) email.focus();
+  });
+  // Verification code: digits only, max 6.
+  var codeInput = document.getElementById('verifyCode');
+  if (codeInput) codeInput.addEventListener('input', function () {
+    this.value = this.value.replace(/\D/g, '').slice(0, 6);
   });
 
   window.MyDimensionAuth = {
     checkAuth: checkAuth, login: login, logout: logout,
     showLogin: showLogin, showApp: showApp,
     loginPassword: loginPassword, setPassword: setPassword,
+    showSignup: showSignup, showLoginForm: showLoginForm,
     refreshPasswordHint: refreshPasswordHint,
     getUser: function () { return currentUser; },
     displayName: displayName, refreshServiceStatus: refreshServiceStatus

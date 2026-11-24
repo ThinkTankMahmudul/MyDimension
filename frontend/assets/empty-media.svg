@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="440" height="220" viewBox="0 0 440 220" role="img" aria-label="Empty media vault illustration">
+<svg xmlns="http://www.w3.org/2000/svg" width="440" height="220" viewBox="0 0 440 220" role="img" aria-label="Empty media vault illustration with a ringed planet, a photo and a music note">
   <defs>
     <linearGradient id="emptySky" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0" stop-color="#E4FAF5"/>
@@ -19,24 +19,15 @@
     <ellipse cx="120" cy="70" rx="34" ry="8"/><ellipse cx="250" cy="52" rx="28" ry="7"/>
   </g>
 
-  <!-- mosque -->
+  <!-- ringed planet -->
   <g>
-    <rect x="150" y="140" width="140" height="40" fill="#0F766E"/>
-    <path d="M185 140 C185 115 200 105 220 105 C240 105 255 115 255 140 Z" fill="#245C49"/>
-    <line x1="220" y1="105" x2="220" y2="94" stroke="#245C49" stroke-width="2.5"/>
-    <path transform="translate(220 88)" d="M0 -6 A6 6 0 1 0 0 6 A5 5 0 1 1 0 -6 Z" fill="#14B8A6"/>
-    <rect x="140" y="112" width="8" height="68" fill="#0F766E"/>
-    <path d="M140 112 Q144 100 148 112 Z" fill="#245C49"/>
-    <rect x="292" y="112" width="8" height="68" fill="#0F766E"/>
-    <path d="M292 112 Q296 100 300 112 Z" fill="#245C49"/>
-    <g fill="#A7F3D0">
-      <path d="M168 180 L168 162 A7 8 0 0 1 182 162 L182 180 Z"/>
-      <path d="M213 180 L213 162 A7 8 0 0 1 227 162 L227 180 Z"/>
-      <path d="M258 180 L258 162 A7 8 0 0 1 272 162 L272 180 Z"/>
-    </g>
+    <circle cx="220" cy="118" r="38" fill="#14B8A6"/>
+    <circle cx="206" cy="106" r="7" fill="#0F766E" opacity=".55"/>
+    <circle cx="234" cy="128" r="5" fill="#0F766E" opacity=".45"/>
+    <ellipse cx="220" cy="118" rx="60" ry="13" fill="none" stroke="#AFA0E8" stroke-width="5" transform="rotate(-14 220 118)"/>
   </g>
 
-  <!-- dunes -->
+  <!-- rolling hills -->
   <path d="M0 180 Q110 160 220 175 T440 170 V220 H0 Z" fill="#AFA0E8" opacity=".5"/>
   <path d="M0 196 Q150 180 300 192 T440 190 V220 H0 Z" fill="#EDE9FE"/>
 
@@ -52,7 +43,14 @@
     <path d="M363 126 q16 4 13 18 q-2 -9 -13 -11 Z"/>
   </g>
 
-  <!-- arch frame -->
-  <path d="M40 200 V90 Q40 30 220 30 Q400 30 400 90 V200" fill="none" stroke="#0F766E" stroke-width="6"/>
-  <path d="M54 200 V90 Q54 44 220 44 Q386 44 386 90 V200" fill="none" stroke="#14B8A6" stroke-width="2.5" opacity=".7"/>
+  <!-- open book on the hill -->
+  <g>
+    <path d="M180 196 Q200 188 220 196 V208 Q200 200 180 208 Z" fill="#FFFFFF"/>
+    <path d="M220 196 Q240 188 260 196 V208 Q240 200 220 208 Z" fill="#EDE9FE"/>
+    <line x1="220" y1="196" x2="220" y2="208" stroke="#0F766E" stroke-width="1.5"/>
+  </g>
+
+  <!-- soft rounded frame -->
+  <rect x="10" y="10" width="420" height="200" rx="14" fill="none" stroke="#0F766E" stroke-width="4" opacity=".35"/>
+  <rect x="20" y="20" width="400" height="180" rx="10" fill="none" stroke="#14B8A6" stroke-width="2" opacity=".5"/>
 </svg>

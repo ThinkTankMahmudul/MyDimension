@@ -30,8 +30,10 @@ class DiaryEntry:
                  entry_id: str | None = None, tags: list[str] | None = None,
                  created_at: datetime | None = None,
                  updated_at: datetime | None = None,
-                 summary: str | None = None) -> None:
+                 summary: str | None = None,
+                 user_id: str | None = None) -> None:
         self.id: str = entry_id or str(uuid.uuid4())
+        self.user_id: str | None = user_id  # owner of this entry (multi-user scoping)
         self.__title = ""      # private: set through the property below
         self.__content = ""    # private: set through the property below
         self.title = title     # goes through the validating setter
@@ -77,6 +79,7 @@ class DiaryEntry:
         return {
             "id": self.id, "title": self.title, "content": self.content,
             "mood": self.mood, "tags": self.tags, "summary": self.summary,
+            "user_id": self.user_id,
             "created_at": self.created_at.isoformat(),
             "updated_at": self.updated_at.isoformat(),
         }
@@ -92,6 +95,7 @@ class DiaryEntry:
             created_at=_parse(data.get("created_at")),
             updated_at=_parse(data.get("updated_at")),
             summary=data.get("summary"),
+            user_id=data.get("user_id"),
         )
 
 
@@ -126,10 +130,12 @@ class MediaFile:
                  entry_id: str | None = None, caption: str | None = None,
                  transcript: str | None = None,
                  media_id: str | None = None,
-                 created_at: datetime | None = None) -> None:
+                 created_at: datetime | None = None,
+                 user_id: str | None = None) -> None:
         if media_type not in ("photo", "audio"):
             raise ValueError("media_type must be 'photo' or 'audio'.")
         self.id: str = media_id or str(uuid.uuid4())
+        self.user_id: str | None = user_id  # owner of this file (multi-user scoping)
         self.__drive_file_id = drive_file_id  # private, read-only
         self.file_name = file_name
         self.mime_type = mime_type
@@ -151,6 +157,6 @@ class MediaFile:
             "file_name": self.file_name, "mime_type": self.mime_type,
             "media_type": self.media_type, "file_size": self.file_size,
             "entry_id": self.entry_id, "caption": self.caption,
-            "transcript": self.transcript,
+            "transcript": self.transcript, "user_id": self.user_id,
             "created_at": self.created_at.isoformat(),
         }

@@ -54,6 +54,7 @@ def require_admin(
     """FastAPI dependency: allow only the verified owner (ADMIN_EMAIL).
 
     Raises 401 for a missing/invalid session and 403 for any other email.
+    Unchanged: password setup (``set-password``) still uses this.
     """
     email = verify_session_token(session)
     if email is None:
@@ -63,3 +64,69 @@ def require_admin(
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,
                             detail="This account is not the owner of MyDimension.")
     return email
+
+
+OWNER_NAME = "Mahmudul Hasan Walid"
+
+
+def _ensure_owner_user() -> dict:
+    """Return the owner's ``users`` row, creating it on first use.
+
+    The owner has no sign-up row (they sign in with Google / User ID +
+    Password), so the first authenticated owner request creates one,
+    reusing the owner's password hash when one is set. Legacy rows
+    (``user_id`` NULL, created before multi-user scoping) are backfilled
+    to this owner id here.
+    """
+    from ..services.database_manager import db_manager
+    from ..services.password_auth import hash_password
+
+    owner_email = settings.admin_email
+    user = db_manager.get_user_by_email(owner_email)
+    if user is None:
+        password_hash = db_manager.get_password_hash()
+        if not password_hash:
+            import secrets
+
+            password_hash = hash_password(secrets.token_hex(32))
+        user = db_manager.create_user(OWNER_NAME, owner_email, password_hash)
+        if not user.get("is_verified"):
+            user = db_manager.set_user_verified(owner_email) or user
+    db_manager.backfill_user_id(str(user["id"]))
+    return user
+
+
+def require_user(
+    session: Annotated[str | None, Cookie(alias=SESSION_COOKIE)] = None,
+) -> dict:
+    """FastAPI dependency: allow any verified user (owner or registered).
+
+    Verifies the session token, then loads the user row. The owner gets
+    a row created on first use (see ``_ensure_owner_user``). An
+    unverified user gets 403; an unknown email gets 401.
+
+    Returns ``{"id", "email", "name", "is_owner"}`` for the routes to
+    scope data by ``user_id``.
+    """
+    email = verify_session_token(session)
+    if email is None:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
+                            detail="Please sign in to continue.")
+    from ..services.database_manager import db_manager
+
+    if email == settings.admin_email:
+        user = _ensure_owner_user()
+    else:
+        user = db_manager.get_user_by_email(email)
+    if user is None:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
+                            detail="Please sign in to continue.")
+    if not user.get("is_verified"):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,
+                            detail="Please verify your email first.")
+    return {
+        "id": str(user["id"]),
+        "email": user["email"],
+        "name": user["name"],
+        "is_owner": user["email"] == settings.admin_email,
+    }

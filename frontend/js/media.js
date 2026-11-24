@@ -48,8 +48,10 @@
   function getMediaCached() { return mediaCache; }
 
   function voiceItemHtml(m) {
+    var bars = '<div class="waveform" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>';
     return '<div class="voice-item"><strong>' + esc(m.caption || m.name) + '</strong>' +
       '<div class="small muted">' + esc(fmtDate(m.created_at)) + ' · ' + esc(m.name) + (m.size ? ' · ' + esc(fmtSize(m.size)) : '') + '</div>' +
+      bars +
       '<audio controls preload="none" src="' + window.MyDimensionApi.getMediaUrl(m.id) + '"></audio>' +
       '<div class="entry-actions">' +
       '<button class="btn small secondary" data-transcribe-media="' + esc(m.id) + '">' + t('media.transcribeAI') + '</button>' +

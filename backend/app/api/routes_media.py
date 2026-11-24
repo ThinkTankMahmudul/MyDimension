@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, Response, status
 
-from ..core.security import require_admin
+from ..core.security import require_user
 from ..models.models import MediaFile
 from ..schemas.schemas import MediaResponse
 from ..services.database_manager import db_manager
@@ -27,7 +27,7 @@ async def upload_media(file: UploadFile = File(...),
                        media_type: str = Form("photo"),
                        caption: str | None = Form(default=None),
                        entry_id: str | None = Form(default=None),
-                       _email: str = Depends(require_admin)):
+                       _user: dict = Depends(require_user)):
     if media_type not in ("photo", "audio"):
         raise HTTPException(status_code=400, detail="media_type must be 'photo' or 'audio'.")
     allowed = ALLOWED_IMAGE if media_type == "photo" else ALLOWED_AUDIO
@@ -50,23 +50,23 @@ async def upload_media(file: UploadFile = File(...),
                       mime_type=file.content_type or "application/octet-stream",
                       media_type=media_type, file_size=len(data),
                       entry_id=entry_id, caption=caption)
-    db_manager.create_media(media)
+    db_manager.create_media(media, user_id=_user["id"])
     return MediaResponse(**media.to_dict())
 
 
 @router.get("", response_model=list[MediaResponse])
-def list_media(media_type: str | None = None, _email: str = Depends(require_admin)):
-    return [MediaResponse(**m.to_dict()) for m in db_manager.list_media(media_type)]
+def list_media(media_type: str | None = None, _user: dict = Depends(require_user)):
+    return [MediaResponse(**m.to_dict()) for m in db_manager.list_media(media_type, user_id=_user["id"])]
 
 
 @router.get("/{media_id}/file")
-def download_media_file(media_id: str, _email: str = Depends(require_admin)):
+def download_media_file(media_id: str, _user: dict = Depends(require_user)):
     """Stream the actual file bytes (photo/audio) for <img>/<audio> tags.
 
     NOTE: GET /{media_id} returns JSON metadata only — browsers cannot
     use it as an image/audio src, so this separate /file route exists.
     """
-    media = db_manager.get_media(media_id)
+    media = db_manager.get_media(media_id, user_id=_user["id"])
     if media is None:
         raise HTTPException(status_code=404, detail="Media not found.")
     try:
@@ -79,16 +79,16 @@ def download_media_file(media_id: str, _email: str = Depends(require_admin)):
 
 
 @router.get("/{media_id}", response_model=MediaResponse)
-def get_media(media_id: str, _email: str = Depends(require_admin)):
-    media = db_manager.get_media(media_id)
+def get_media(media_id: str, _user: dict = Depends(require_user)):
+    media = db_manager.get_media(media_id, user_id=_user["id"])
     if media is None:
         raise HTTPException(status_code=404, detail="Media not found.")
     return MediaResponse(**media.to_dict())
 
 
 @router.delete("/{media_id}")
-def delete_media(media_id: str, _email: str = Depends(require_admin)):
-    media = db_manager.delete_media(media_id)
+def delete_media(media_id: str, _user: dict = Depends(require_user)):
+    media = db_manager.delete_media(media_id, user_id=_user["id"])
     if media is None:
         raise HTTPException(status_code=404, detail="Media not found.")
     try:

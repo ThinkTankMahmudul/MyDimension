@@ -44,6 +44,13 @@ class Settings:
         self.session_secret: str = os.getenv("SESSION_SECRET", "dev-only-change-me")
         self.frontend_origin: str = os.getenv("FRONTEND_ORIGIN", "http://localhost:8000")
         self.environment: str = os.getenv("ENVIRONMENT", "development")
+        # Email (Gmail SMTP) for verification codes. SMTP_USER / SMTP_PASSWORD
+        # are empty unless configured; the app must still start without them
+        # and registration then returns a friendly 503 (see email_service).
+        self.smtp_host: str = os.getenv("SMTP_HOST", "smtp.gmail.com")
+        self.smtp_port: int = int(os.getenv("SMTP_PORT", "587") or 587)
+        self.smtp_user: str | None = os.getenv("SMTP_USER") or None
+        self.smtp_password: str | None = os.getenv("SMTP_PASSWORD") or None
 
         if not os.getenv("ADMIN_EMAIL"):
             logger.info("ADMIN_EMAIL not set in the environment; using the confirmed owner email.")

@@ -18,5 +18,17 @@
   "tests/test_password_auth.py::test_password_login_flow",
   "tests/test_password_auth.py::test_password_status_false_before_setup",
   "tests/test_password_auth.py::test_set_password_rejects_short_password",
-  "tests/test_password_auth.py::test_set_password_requires_login"
+  "tests/test_password_auth.py::test_set_password_requires_login",
+  "tests/test_registration.py::test_entries_are_isolated_between_users",
+  "tests/test_registration.py::test_owner_user_id_password_login_still_works",
+  "tests/test_registration.py::test_register_validation_errors",
+  "tests/test_registration.py::test_register_verify_flow",
+  "tests/test_registration.py::test_register_without_smtp_is_503_and_saves_nothing",
+  "tests/test_registration.py::test_reregister_unverified_updates_and_resends",
+  "tests/test_registration.py::test_reregister_verified_email_is_409",
+  "tests/test_registration.py::test_resend_after_cooldown_works_and_hourly_limit",
+  "tests/test_registration.py::test_resend_unknown_or_verified_email_is_400",
+  "tests/test_registration.py::test_resend_within_60_seconds_is_429",
+  "tests/test_registration.py::test_unverified_user_login_is_403_then_verified_login_works",
+  "tests/test_registration.py::test_verify_expired_code_is_400"
 ]

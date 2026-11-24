@@ -11,7 +11,8 @@ or::
 Both work because all imports inside the package are relative.
 
 The app serves only JSON APIs -- no secrets are ever served. Private
-routes are protected by ``require_admin``; ``GET /health`` is public
+routes are protected by ``require_user`` (any verified user) or
+``require_admin`` (owner only, for password setup); ``GET /health`` is public
 so hosting / monitoring can check the service is up.
 
 When the ``frontend/`` folder is present next to ``backend/`` (the

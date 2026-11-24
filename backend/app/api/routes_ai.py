@@ -1,6 +1,7 @@
 """Gemini AI routes: mood suggestion, summary, writing help, transcription.
 
-Only the text/audio the owner explicitly sends here is passed to Gemini.
+Only the text/audio a verified user explicitly sends here is passed to Gemini.
+These routes carry no per-user data, so only the auth guard changes.
 If Gemini is not configured, these return a friendly 503 (via
 ``AINotConfiguredError``) -- never a 500 crash, and the owner's original
 text is never overwritten by AI output.
@@ -9,7 +10,7 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 
-from ..core.security import require_admin
+from ..core.security import require_user
 from ..schemas.schemas import AIRequest, AIResponse
 from ..services.ai_service import AINotConfiguredError, get_ai_service
 
@@ -30,23 +31,23 @@ def _run(task: str, payload: AIRequest) -> AIResponse:
 
 
 @router.post("/mood", response_model=AIResponse)
-def ai_mood(payload: AIRequest, _email: str = Depends(require_admin)):
+def ai_mood(payload: AIRequest, _user: dict = Depends(require_user)):
     return _run("mood", payload)
 
 
 @router.post("/summary", response_model=AIResponse)
-def ai_summary(payload: AIRequest, _email: str = Depends(require_admin)):
+def ai_summary(payload: AIRequest, _user: dict = Depends(require_user)):
     return _run("summary", payload)
 
 
 @router.post("/improve", response_model=AIResponse)
-def ai_improve(payload: AIRequest, _email: str = Depends(require_admin)):
+def ai_improve(payload: AIRequest, _user: dict = Depends(require_user)):
     return _run("improve", payload)
 
 
 @router.post("/transcribe", response_model=AIResponse)
 async def ai_transcribe(file: UploadFile = File(...),
-                        _email: str = Depends(require_admin)):
+                        _user: dict = Depends(require_user)):
     if not (file.content_type or "").startswith("audio/"):
         raise HTTPException(status_code=400, detail="Please upload an audio file.")
     data = await file.read()
