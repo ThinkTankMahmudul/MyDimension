@@ -41,25 +41,23 @@ img{max-width:100%} .hidden{display:none!important}
  * and a gradient Login button that fills + shimmers. */
 .login-wrap{position:relative;overflow:hidden;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:0;background:linear-gradient(160deg,var(--pale-mint),#fff 60%,var(--lav))}
 
-/* ---------- Login logo (owner's MyDimension logo) ----------
- * The owner's logo image sits at the very top of the login page, in a
- * white rounded card with a soft shadow, gently floating. Below it, the
- * owner's Bengali line. No background photo is used any more. */
-.login-logo{flex:none;width:min(360px,86vw);margin:28px auto 0;padding:16px 16px 8px;background:#fff;border-radius:28px;box-shadow:0 24px 50px rgba(15,118,110,.22),0 4px 14px rgba(38,53,47,.08);animation:logoFloat 6s ease-in-out infinite}
-.login-logo-img{display:block;width:100%;height:auto;border-radius:18px}
+/* ---------- Login card: one single white card ----------
+ * Everything lives in one card: the owner's MyDimension logo image at
+ * the top (gently floating), then the owner's Bengali line, then the
+ * User ID + Password form. No separate logo card, no lock icon. */
+.login-logo-img{display:block;width:100%;height:auto;border-radius:18px;animation:logoFloat 6s ease-in-out infinite}
 @keyframes logoFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
 /* Soft shimmer sweeping across the Bengali line under the logo. */
 @keyframes heroShimmer{from{background-position:200% 0}to{background-position:-20% 0}}
-.login-hero-line{margin:18px auto 0;max-width:640px;padding:0 20px;text-align:center;font-size:1.08rem;font-weight:600;background:linear-gradient(100deg,var(--forest) 25%,var(--teal) 50%,var(--forest) 75%);background-size:220% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:heroShimmer 7s linear infinite}
+.login-hero-line{margin:16px auto 4px;max-width:640px;text-align:center;font-size:1.08rem;font-weight:600;background:linear-gradient(100deg,var(--forest) 25%,var(--teal) 50%,var(--forest) 75%);background-size:220% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:heroShimmer 7s linear infinite}
 
 /* The card sits centred below the logo. */
-.login-wrap .login-card{flex:none;width:100%;max-width:440px;margin:20px auto 40px;position:relative;z-index:2}
+.login-wrap .login-card{flex:none;width:100%;max-width:440px;margin:28px auto 40px;position:relative;z-index:2}
 .bg-circle{position:absolute;border-radius:50%;pointer-events:none;box-shadow:0 18px 40px rgba(38,53,47,.10),inset 0 2px 10px rgba(255,255,255,.9)}
 .bg1{width:280px;height:280px;top:-70px;left:-60px;background:radial-gradient(circle at 35% 30%,#E4FAF5,#A7F3D0 70%);animation:floatY 11s ease-in-out infinite alternate}
 .bg2{width:210px;height:210px;bottom:-60px;right:-40px;background:radial-gradient(circle at 35% 30%,#FFFFFF,#EDE9FE 70%);animation:floatY 13s ease-in-out infinite alternate-reverse}
 .bg3{width:130px;height:130px;top:18%;right:12%;background:radial-gradient(circle at 35% 30%,#A7F3D0,#14B8A6 75%);opacity:.55;animation:floatY 9s ease-in-out infinite alternate}
 .login-card{position:relative;z-index:1;background:var(--surface);border:1px solid var(--border);border-radius:28px;box-shadow:0 24px 60px rgba(38,53,47,.14),0 4px 14px rgba(38,53,47,.06);max-width:420px;width:100%;padding:34px 32px 30px;text-align:center;animation:loginCardIn .55s cubic-bezier(.2,.7,.3,1) both}
-.login-lock{width:76px;height:76px;border-radius:50%;background:linear-gradient(135deg,var(--primary),var(--secondary));display:flex;align-items:center;justify-content:center;margin:0 auto 10px;box-shadow:0 10px 24px rgba(15,118,110,.35),inset 0 2px 6px rgba(255,255,255,.35)}
 .login-card h1{margin:0 0 4px;font-size:1.7rem}
 .login-sub{color:var(--muted);margin:0 0 4px}
 .logo-mark{width:64px;height:64px;border-radius:18px;background:linear-gradient(135deg,var(--primary),var(--secondary));display:inline-flex;align-items:center;justify-content:center;box-shadow:0 8px 20px rgba(15,118,110,.35)}
@@ -319,7 +317,6 @@ html[data-theme="dark"] .stat b{color:#BFE8D8}
   .search-box{min-width:0;flex:1}
   .dash-head-actions{width:100%}
   /* Login: hero banner stays on top on mobile too, card overlaps it. */
-  .login-logo{width:min(320px,86vw);margin-top:20px;padding:12px 12px 6px;border-radius:22px}
   .login-hero-line{font-size:.98rem;margin-top:14px}
   .login-wrap .login-card{flex:none;width:calc(100% - 40px);max-width:520px;margin:16px auto 28px;padding:28px 24px 24px}
   .login-footer{padding:0 20px 24px}
@@ -413,7 +410,7 @@ button[data-quick="note"]{animation:softPulse 2.8s ease-in-out infinite}
 @media (prefers-reduced-motion: reduce){
   *,*::before,*::after{animation-duration:.01ms !important;animation-iteration-count:1 !important;animation-delay:0ms !important;transition-duration:.01ms !important}
   .cal-day.today,button[data-quick="note"]{animation:none !important}
-  .login-logo,.login-hero-line{animation:none !important}
+  .login-logo-img,.login-hero-line{animation:none !important}
   .login-hero-line{color:var(--forest);background:none;-webkit-background-clip:initial;background-clip:initial}
 }
 
