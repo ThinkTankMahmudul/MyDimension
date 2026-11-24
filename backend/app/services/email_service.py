@@ -133,7 +133,11 @@ class EmailService:
         self._require_configured()
         host = self._host_override or settings.smtp_host
         port = self._port_override or settings.smtp_port
-        sender = settings.smtp_user or ""
+        # Login uses SMTP_USER; the From header uses SMTP_FROM (a verified
+        # sender). They differ on Brevo, where the login is an
+        # @smtp-brevo.com address but mail must come from the verified Gmail.
+        login_user = settings.smtp_user or ""
+        sender = settings.smtp_from or login_user
 
         message = MIMEMultipart("alternative")
         message["Subject"] = subject
@@ -146,7 +150,7 @@ class EmailService:
             context = ssl.create_default_context()
             with smtplib.SMTP(host, port, timeout=10) as server:
                 server.starttls(context=context)
-                server.login(sender, settings.smtp_password or "")
+                server.login(login_user, settings.smtp_password or "")
                 server.sendmail(sender, [to_email], message.as_string())
         except EmailNotConfiguredError:
             raise

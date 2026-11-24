@@ -51,6 +51,11 @@ class Settings:
         self.smtp_port: int = int(os.getenv("SMTP_PORT", "587") or 587)
         self.smtp_user: str | None = os.getenv("SMTP_USER") or None
         self.smtp_password: str | None = os.getenv("SMTP_PASSWORD") or None
+        # From address for verification mail. Brevo authenticates SMTP with
+        # its own login (e.g. xxx@smtp-brevo.com) but the From header must
+        # be a verified sender (the owner's Gmail). Defaults to SMTP_USER
+        # (Gmail SMTP), so existing setups are unchanged.
+        self.smtp_from: str | None = os.getenv("SMTP_FROM") or self.smtp_user
 
         if not os.getenv("ADMIN_EMAIL"):
             logger.info("ADMIN_EMAIL not set in the environment; using the confirmed owner email.")
