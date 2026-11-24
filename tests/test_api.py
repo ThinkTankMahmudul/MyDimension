@@ -1,0 +1,100 @@
+"""API tests using FastAPI's TestClient and the dev fallback store.
+
+No real database, Google account, or Gemini key is needed: with
+DATABASE_URL unset the app uses the in-memory dev fallback (labelled as
+such in /health), and AI endpoints return a friendly 503 when Gemini
+is not configured instead of crashing with a 500.
+
+Auth in tests: a signed session cookie for the placeholder owner email
+(ADMIN_EMAIL default, the confirmed owner email) is created with the same
+``create_session_token`` helper the app itself uses.
+"""
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "backend"))
+
+from fastapi.testclient import TestClient  # noqa: E402
+
+from app.core.config import settings  # noqa: E402
+from app.core.security import SESSION_COOKIE, create_session_token  # noqa: E402
+from app.main import app  # noqa: E402
+
+client = TestClient(app, raise_server_exceptions=False)
+AUTH_COOKIES = {SESSION_COOKIE: create_session_token(settings.admin_email)}
+
+
+def test_health_ok():
+    resp = client.get("/health")
+    assert resp.status_code == 200
+    assert resp.json()["status"] == "ok"
+    assert "dev-fallback" in resp.json()["storage"]
+
+
+def test_unauthenticated_entries_returns_401():
+    assert client.get("/api/entries").status_code == 401
+    assert client.post("/api/entries", json={"title": "x"}).status_code == 401
+    assert client.get("/api/me").status_code == 401
+
+
+def test_entries_crud_with_dev_fallback():
+    created = client.post("/api/entries",
+                          json={"title": "First entry", "content": "Hello world",
+                                "mood": "happy", "tags": ["test"]},
+                          cookies=AUTH_COOKIES)
+    assert created.status_code == 201, created.text
+    entry_id = created.json()["id"]
+
+    got = client.get(f"/api/entries/{entry_id}", cookies=AUTH_COOKIES)
+    assert got.status_code == 200 and got.json()["title"] == "First entry"
+
+    listed = client.get("/api/entries?search=hello", cookies=AUTH_COOKIES)
+    assert listed.status_code == 200
+    assert any(e["id"] == entry_id for e in listed.json())
+
+    updated = client.put(f"/api/entries/{entry_id}",
+                         json={"title": "Edited entry"}, cookies=AUTH_COOKIES)
+    assert updated.status_code == 200 and updated.json()["title"] == "Edited entry"
+
+    deleted = client.delete(f"/api/entries/{entry_id}", cookies=AUTH_COOKIES)
+    assert deleted.status_code == 200
+    assert client.get(f"/api/entries/{entry_id}", cookies=AUTH_COOKIES).status_code == 404
+
+
+def test_invalid_uuid_returns_404_not_500():
+    resp = client.get("/api/entries/not-a-uuid", cookies=AUTH_COOKIES)
+    assert resp.status_code == 404
+
+
+def test_ai_endpoints_friendly_error_without_gemini_key():
+    # No GEMINI_API_KEY is set in this environment, so these must be a
+    # friendly 503 -- not a 500 crash.
+    for path in ("/api/ai/mood", "/api/ai/summary", "/api/ai/improve"):
+        resp = client.post(path, json={"text": "Today was a good day."},
+                           cookies=AUTH_COOKIES)
+        assert resp.status_code == 503, (path, resp.status_code, resp.text)
+        assert "Gemini" in resp.json()["detail"] or "AI" in resp.json()["detail"]
+
+
+def test_calendar_and_mood_insights_require_auth_and_work():
+    assert client.get("/api/calendar").status_code == 401
+    resp = client.get("/api/calendar", cookies=AUTH_COOKIES)
+    assert resp.status_code == 200 and isinstance(resp.json(), list)
+    resp = client.get("/api/insights/moods", cookies=AUTH_COOKIES)
+    assert resp.status_code == 200
+
+
+def test_media_upload_without_drive_returns_503():
+    resp = client.post("/api/media/upload",
+                       files={"file": ("photo.jpg", b"fake-bytes", "image/jpeg")},
+                       data={"media_type": "photo"}, cookies=AUTH_COOKIES)
+    assert resp.status_code == 503, resp.text
+
+
+def test_media_file_route_requires_auth_and_returns_404_for_unknown_id():
+    # The /file route streams bytes for <img>/<audio>; the plain /{id} route
+    # returns JSON metadata only. Unknown id -> 404, no auth -> 401.
+    assert client.get("/api/media/nope/file").status_code == 401
+    resp = client.get("/api/media/00000000-0000-0000-0000-000000000000/file",
+                      cookies=AUTH_COOKIES)
+    assert resp.status_code == 404, resp.text

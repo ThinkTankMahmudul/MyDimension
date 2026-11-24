@@ -1,0 +1,61 @@
+"""Settings loaded from environment variables only.
+
+No secrets are stored in code. ``ADMIN_EMAIL`` defaults to the owner's
+confirmed Gmail, ``technicalmahmudull@gmail.com`` (confirmed by the
+owner on 25 Nov 2026) -- the single account used for login, Google
+Drive, and Gemini setup, each under a separate permission/consent.
+It can still be overridden with the ``ADMIN_EMAIL`` environment
+variable. No other account is ever allowed.
+
+Missing optional keys only produce a warning; the app must still start
+so the owner can see a friendly "not configured" message instead of a crash.
+"""
+from __future__ import annotations
+
+import logging
+import os
+
+from dotenv import load_dotenv
+
+load_dotenv()
+
+logger = logging.getLogger("mydimension.config")
+
+# One place for the Gemini model name, so it is easy to change later.
+GEMINI_MODEL = "gemini-2.0-flash"
+
+
+class Settings:
+    """Simple settings holder read from the environment."""
+
+    def __init__(self) -> None:
+        self.admin_email: str = os.getenv("ADMIN_EMAIL", "technicalmahmudull@gmail.com")
+        self.database_url: str | None = os.getenv("DATABASE_URL") or None
+        self.gemini_api_key: str | None = os.getenv("GEMINI_API_KEY") or None
+        self.google_client_id: str | None = os.getenv("GOOGLE_CLIENT_ID") or None
+        self.google_client_secret: str | None = os.getenv("GOOGLE_CLIENT_SECRET") or None
+        self.session_secret: str = os.getenv("SESSION_SECRET", "dev-only-change-me")
+        self.frontend_origin: str = os.getenv("FRONTEND_ORIGIN", "http://localhost:8000")
+        self.environment: str = os.getenv("ENVIRONMENT", "development")
+
+        if not os.getenv("ADMIN_EMAIL"):
+            logger.info("ADMIN_EMAIL not set in the environment; using the confirmed owner email.")
+        if not self.database_url:
+            logger.warning(
+                "DATABASE_URL is not set: using the in-memory DEV fallback store. "
+                "This is NOT production persistence."
+            )
+        if not self.gemini_api_key:
+            logger.warning("GEMINI_API_KEY is not set: AI features will report unavailable.")
+        if not self.google_client_id or not self.google_client_secret:
+            logger.warning("Google OAuth is not fully configured: login will report unavailable.")
+        if self.session_secret == "dev-only-change-me" and self.environment == "production":
+            logger.warning("SESSION_SECRET is still the dev default; set a strong secret in production.")
+
+    @property
+    def is_production(self) -> bool:
+        return self.environment.lower() == "production"
+
+
+# Single shared settings object for the whole app.
+settings = Settings()

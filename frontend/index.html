@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#12B89A">
+<meta name="description" content="MyDimension — a private, single-owner AI diary and memory vault.">
+<title>MyDimension — Private AI Diary</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="assets/logo.svg" type="image/svg+xml">
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+<!-- ================= LOGIN (shown until /api/me succeeds) ================= -->
+<div id="loginView" class="login-wrap">
+  <main class="login-card">
+    <div class="logo" aria-hidden="true">M</div>
+    <h1>MyDimension</h1>
+    <p class="muted">A private diary &amp; memory vault — for one owner only.</p>
+    <p class="tagline">“You are nothing but a number of days; whenever a day passes, a part of you is gone.”<cite>— Imam Hasan al-Basri</cite></p>
+    <div id="loginError" class="error-box hidden" role="alert"></div>
+    <button id="loginBtn" class="btn btn-block" type="button">Sign in with Google</button>
+    <p class="login-note">Only the configured owner account can sign in. There is no public registration. The check is enforced by the server, not by this page.</p>
+  </main>
+</div>
+
+<!-- ================= APP SHELL ================= -->
+<div id="appView" class="hidden">
+  <header class="topbar">
+    <button id="menuBtn" class="btn ghost small" type="button" aria-label="Open menu">☰ Menu</button>
+    <strong>MyDimension</strong>
+    <span data-profile-initial aria-hidden="true"></span>
+  </header>
+
+  <div class="app">
+    <nav id="sidebar" class="sidebar" aria-label="Main navigation">
+      <div class="brand"><span class="logo" aria-hidden="true">M</span> MyDimension</div>
+      <a class="nav-link" data-route-link href="#/dashboard"><span class="ico">⌂</span> Dashboard</a>
+      <a class="nav-link" data-route-link href="#/journal"><span class="ico">✎</span> My Journal</a>
+      <a class="nav-link" data-route-link href="#/calendar"><span class="ico">▦</span> Calendar</a>
+      <a class="nav-link" data-route-link href="#/insights"><span class="ico">▮</span> Mood Insights</a>
+      <a class="nav-link" data-route-link href="#/voice"><span class="ico">♪</span> Voice Memories</a>
+      <a class="nav-link" data-route-link href="#/photo"><span class="ico">▣</span> Photo Memories</a>
+      <a class="nav-link" data-route-link href="#/ai"><span class="ico">✦</span> AI Assistant</a>
+      <a class="nav-link" data-route-link href="#/settings"><span class="ico">⚙</span> Settings</a>
+      <div class="sidebar-foot">
+        <p>Private &amp; owner-only.<br>Signed in as <span data-profile-email></span></p>
+        <button id="logoutBtn" class="btn ghost small" type="button">Sign out</button>
+      </div>
+    </nav>
+
+    <main class="main">
+      <div id="globalError" class="error-box hidden" role="alert"></div>
+
+      <!-- ======== DASHBOARD ======== -->
+      <section id="page-dashboard" class="page" aria-label="Dashboard">
+        <div class="layout-dashboard">
+          <div>
+            <div class="page-head">
+              <div><h2><span id="greetingLine">Hello,</span> <span id="greetingName">there</span></h2>
+              <p class="muted" id="todayDateLine"></p></div>
+              <button class="btn" type="button" data-quick="note">+ New Entry</button>
+            </div>
+            <div class="card">
+              <label class="field" for="dashboardSearch"><span class="small muted">Search entries</span></label>
+              <input id="dashboardSearch" type="search" placeholder="Search by title or text…" autocomplete="off">
+            </div>
+            <div class="grid-3">
+              <div class="stat"><span class="muted small">Total entries</span><b id="entryCount">0</b></div>
+              <div class="stat"><span class="muted small">This month</span><b id="monthCount">0</b></div>
+              <div class="stat"><span class="muted small">Moods used</span><b id="moodCount">0</b></div>
+            </div>
+            <div class="card"><h3>Today’s reflection</h3><p id="todayPrompt"></p>
+              <button class="btn secondary" type="button" data-quick="note">Write about it</button></div>
+            <div class="card"><h3>Quick actions</h3><div class="quick-actions">
+              <button class="qa" type="button" data-quick="note"><b>✎ Write Note</b><span class="muted small">Start a new diary entry</span></button>
+              <button class="qa" type="button" data-quick="voice"><b>♪ Record Voice</b><span class="muted small">Capture a voice memory</span></button>
+              <button class="qa" type="button" data-quick="photo"><b>▣ Add Photo</b><span class="muted small">Save a photo memory</span></button>
+            </div></div>
+            <div class="card"><h3>AI reflection</h3>
+              <p class="muted small">An AI reflection is made only when you ask for it, from an entry you choose. Nothing is sent automatically.</p>
+              <a class="btn secondary" href="#/ai">Open AI Assistant</a></div>
+            <div class="card"><h3>Recent entries</h3><div id="recentEntries"></div>
+              <a href="#/journal">See all entries →</a></div>
+          </div>
+          <aside class="right-panel" aria-label="Profile and calendar">
+            <div class="card"><h3>Profile</h3>
+              <div class="profile-row"><span class="avatar" data-profile-initial>?</span>
+              <div><strong data-profile-name>Owner</strong><br><span class="muted small" data-profile-email></span></div></div></div>
+            <div class="card"><h3 id="miniCalLabel">This month</h3><div id="miniCalendar" class="mini-cal"></div>
+              <p class="small muted">Dots mark days with entries. Tap a day to open the Calendar.</p></div>
+            <div class="card"><h3>Recent activity</h3><div id="recentActivity"></div></div>
+            <div class="card"><h3>Mood overview</h3><p class="small muted">See <a href="#/insights">Mood Insights</a> for counts by mood.</p></div>
+          </aside>
+        </div>
+      </section>
+
+      <!-- ======== MY JOURNAL ======== -->
+      <section id="page-journal" class="page" aria-label="My Journal">
+        <div class="page-head"><h2>My Journal</h2></div>
+        <div class="card" id="entryFormCard">
+          <h3 id="entryFormTitle">New entry</h3>
+          <form id="entryForm">
+            <div class="field"><label for="entryTitle">Title</label><input id="entryTitle" type="text" maxlength="200" placeholder="Give today a title…"></div>
+            <div class="form-row">
+              <div class="field"><label for="entryDate">Date</label><input id="entryDate" type="date" required></div>
+              <div class="field"><label for="entryMood">Mood</label><select id="entryMood"><option value="">— No mood —</option></select></div>
+            </div>
+            <div class="field"><label for="entryTags">Tags (comma-separated)</label><input id="entryTags" type="text" placeholder="family, travel, work"></div>
+            <div class="field"><label for="entryBody">What happened today?</label><textarea id="entryBody" placeholder="Write freely. This stays private."></textarea></div>
+            <button class="btn" type="submit">Save entry</button>
+            <button id="cancelEditBtn" class="btn ghost hidden" type="button">Cancel edit</button>
+          </form>
+        </div>
+        <div class="card"><h3>All entries</h3>
+          <div class="toolbar">
+            <input id="journalSearch" type="search" placeholder="Search title or text…" aria-label="Search entries">
+            <select id="journalMoodFilter" aria-label="Filter by mood"><option value="">All moods</option></select>
+            <input id="journalDateFilter" type="date" aria-label="Filter by date">
+            <button id="clearJournalFilters" class="btn ghost small" type="button">Clear filters</button>
+          </div>
+          <div id="journalList"></div>
+        </div>
+      </section>
+
+      <!-- ======== CALENDAR ======== -->
+      <section id="page-calendar" class="page" aria-label="Calendar">
+        <div class="page-head"><h2>Calendar</h2>
+          <div><button id="prevMonthBtn" class="btn ghost small" type="button">← Prev</button>
+          <button id="todayMonthBtn" class="btn ghost small" type="button">Today</button>
+          <button id="nextMonthBtn" class="btn ghost small" type="button">Next →</button></div></div>
+        <div class="card"><h3 id="calLabel">This month</h3><div id="bigCalendar"></div>
+          <p class="small muted">Dots mark days with entries. Today is highlighted in teal.</p></div>
+        <div class="card"><h3>Entries on <span id="selectedDayLabel">—</span></h3>
+          <div id="dayEntries"></div>
+          <button id="newEntryForDayBtn" class="btn hidden" type="button">+ New entry for this day</button></div>
+      </section>
+
+      <!-- ======== MOOD INSIGHTS ======== -->
+      <section id="page-insights" class="page" aria-label="Mood Insights">
+        <div class="page-head"><h2>Mood Insights</h2></div>
+        <div class="card"><h3>Entries by mood</h3><p class="muted small" id="insightsTotal"></p><div id="moodChart"></div></div>
+        <div class="card"><h3>A note on mood</h3><p class="small">Moods here are your own labels, plus AI suggestions you chose to keep. They are reflections, not facts or medical diagnoses. If you are struggling, please reach out to someone you trust or a local support service.</p></div>
+      </section>
+
+      <!-- ======== VOICE MEMORIES ======== -->
+      <section id="page-voice" class="page" aria-label="Voice Memories">
+        <div class="page-head"><h2>Voice Memories</h2></div>
+        <div class="card"><h3>Record a voice memory</h3>
+          <p id="recStatus">Ready to record.</p>
+          <p><strong id="recTimer">00:00</strong></p>
+          <p><button id="startRecBtn" class="btn" type="button">● Start recording</button>
+          <button id="stopRecBtn" class="btn secondary" type="button" disabled>■ Stop</button></p>
+          <audio id="recPreview" class="hidden" controls style="width:100%"></audio>
+          <div class="field"><label for="recCaption">Caption (optional)</label><input id="recCaption" type="text" placeholder="e.g. Birthday message from Mum"></div>
+          <p><button id="saveRecBtn" class="btn hidden" type="button">Save recording</button>
+          <button id="discardRecBtn" class="btn ghost hidden" type="button">Discard</button></p>
+          <p class="small muted">Your browser will ask for microphone permission. Recordings are stored in your private Google Drive, never made public.</p></div>
+        <div class="card"><h3>Or upload an audio file</h3>
+          <input id="voiceUpload" type="file" accept="audio/*"></div>
+        <div class="card"><h3>Your voice memories</h3><div id="voiceList"></div></div>
+      </section>
+
+      <!-- ======== PHOTO MEMORIES ======== -->
+      <section id="page-photo" class="page" aria-label="Photo Memories">
+        <div class="page-head"><h2>Photo Memories</h2></div>
+        <div class="card"><h3>Add a photo</h3>
+          <form id="photoForm">
+            <div class="field"><label for="photoUpload">Photo</label><input id="photoUpload" type="file" accept="image/*" required></div>
+            <img id="photoPreview" class="hidden" alt="Photo preview" style="max-height:220px;border-radius:12px;margin-bottom:12px">
+            <div class="field"><label for="photoCaption">Caption</label><input id="photoCaption" type="text" maxlength="200" placeholder="What is this moment?"></div>
+            <button class="btn" type="submit">Upload photo</button>
+          </form>
+          <p class="small muted">Photos are stored in your private Google Drive (MyDimension Memories) and are not made public.</p></div>
+        <div class="card"><h3>Gallery</h3><div id="photoGallery" class="gallery"></div></div>
+      </section>
+
+      <!-- ======== AI ASSISTANT ======== -->
+      <section id="page-ai" class="page" aria-label="AI Assistant">
+        <div class="page-head"><h2>AI Assistant</h2></div>
+        <div class="card"><h3>Choose what to work on</h3>
+          <div class="field"><label for="aiEntrySelect">Diary entry (optional)</label><select id="aiEntrySelect"><option value="">— No entry selected —</option></select></div>
+          <div class="field"><label for="aiFreeText">Or paste text here</label><textarea id="aiFreeText" placeholder="Paste the text you want help with…"></textarea></div>
+          <p>
+            <button class="btn secondary" type="button" data-ai-action="mood">Detect mood</button>
+            <button class="btn secondary" type="button" data-ai-action="summary">Summarise</button>
+            <button class="btn secondary" type="button" data-ai-action="improve">Improve writing</button>
+          </p>
+          <p class="small muted">Only the entry or text you choose is sent to Gemini, and only when you press a button above. Your original entry is never overwritten automatically.</p></div>
+        <div class="card"><h3>Transcribe audio</h3>
+          <div class="field"><label for="aiAudioFile">Audio file</label><input id="aiAudioFile" type="file" accept="audio/*"></div>
+          <button class="btn secondary" type="button" data-ai-action="transcribe">Transcribe</button>
+          <p class="small muted">Review the transcript before saving it — you can save it as a journal draft from the result below.</p></div>
+        <div class="card"><h3>Result</h3><div id="aiResult" class="ai-result hidden"><p class="muted">Your AI result will appear here.</p></div></div>
+      </section>
+
+      <!-- ======== SETTINGS ======== -->
+      <section id="page-settings" class="page" aria-label="Settings">
+        <div class="page-head"><h2>Settings</h2></div>
+        <div class="card"><h3>Profile</h3>
+          <div class="profile-row"><span class="avatar" data-profile-initial>?</span>
+          <div><strong data-profile-name>Owner</strong><br><span class="muted" data-profile-email></span></div></div>
+          <p class="small muted">Shown only after you sign in. This app has one owner and no public registration.</p></div>
+        <div class="card"><h3>Connected services</h3>
+          <p>Google Drive: <span id="driveStatus"><span class="status-dot"></span>Unknown</span></p>
+          <p>Gemini AI: <span id="geminiStatus"><span class="status-dot"></span>Unknown</span> <span class="muted small">(status only — no API key is ever shown here)</span></p>
+          <p class="small muted">If Drive is not connected, photo and voice uploads will fail. Reconnect from the Google sign-in flow; if the problem persists, sign out and sign in again.</p></div>
+        <div class="card"><h3>Privacy</h3>
+          <p class="small">Your diary is private by default. Entries and media are visible only to the signed-in owner. AI features send only the entry or audio you explicitly choose to Google’s Gemini service when you press an AI button. The tagline appears here as a reminder:</p>
+          <p class="tagline">“You are nothing but a number of days; whenever a day passes, a part of you is gone.”<cite>— Imam Hasan al-Basri</cite></p></div>
+        <div class="card"><h3>Your data</h3>
+          <p><button id="exportBtn" class="btn secondary" type="button">Export my entries (JSON)</button></p>
+          <p><button id="clearDataBtn" class="btn danger" type="button">Delete all diary entries…</button></p>
+          <p class="small muted">Export downloads a JSON file of your entries. “Delete all” removes entries only; delete photos and voice memories from their own pages.</p></div>
+        <div class="card"><h3>About MyDimension</h3>
+          <p class="small">A private, single-owner AI diary &amp; memory vault. Frontend: HTML, CSS and vanilla JavaScript (PWA). Backend: Python FastAPI. Storage: PostgreSQL + the owner’s private Google Drive.</p>
+          <p><button id="logoutBtn2" class="btn ghost" type="button">Sign out</button></p></div>
+      </section>
+    </main>
+  </div>
+
+  <nav class="bottom-nav" aria-label="Main navigation (mobile)">
+    <a data-route-link href="#/dashboard"><span class="ico">⌂</span>Home</a>
+    <a data-route-link href="#/journal"><span class="ico">✎</span>Journal</a>
+    <a data-route-link href="#/calendar"><span class="ico">▦</span>Calendar</a>
+    <a data-route-link href="#/voice"><span class="ico">♪</span>Voice</a>
+    <a data-route-link href="#/photo"><span class="ico">▣</span>Photos</a>
+    <a data-route-link href="#/ai"><span class="ico">✦</span>AI</a>
+  </nav>
+</div>
+
+<script src="js/api.js" defer></script>
+<script src="js/auth.js" defer></script>
+<script src="js/journal.js" defer></script>
+<script src="js/media.js" defer></script>
+<script src="js/ai.js" defer></script>
+<script src="js/app.js" defer></script>
+</body>
+</html>

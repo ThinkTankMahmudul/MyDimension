@@ -1,0 +1,31 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.env
+.env.local
+
+# Credentials and secrets — NEVER commit these
+credentials.json
+token.json
+*.pem
+*.key
+
+# Local data (production uses managed PostgreSQL, never a local DB file)
+*.db
+*.sqlite
+*.sqlite3
+data/
+
+# Node / frontend build artefacts (none expected — vanilla JS)
+node_modules/
+dist/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.log
