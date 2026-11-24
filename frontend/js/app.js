@@ -216,8 +216,10 @@
     var startDow = (first.getDay() + 6) % 7; // Monday-first
     var daysInMonth = new Date(year, month + 1, 0).getDate();
     var today = window.MyDimensionJournal.todayLocal();
+    var dowFmt = new Intl.DateTimeFormat(loc() || 'en-US', { weekday: 'short' });
+    var dowBase = new Date(2026, 0, 5); // a Monday — calendars are Monday-first
     var html = '<div class="cal-grid">' +
-      ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'].map(function (d) { return '<div class="dow">' + d + '</div>'; }).join('');
+      [0, 1, 2, 3, 4, 5, 6].map(function (i) { var d = new Date(dowBase); d.setDate(dowBase.getDate() + i); return '<div class="dow">' + dowFmt.format(d) + '</div>'; }).join('');
     for (var i = 0; i < startDow; i++) html += '<div class="cal-day blank"></div>';
     for (var d = 1; d <= daysInMonth; d++) {
       var iso = year + '-' + String(month + 1).padStart(2, '0') + '-' + String(d).padStart(2, '0');
