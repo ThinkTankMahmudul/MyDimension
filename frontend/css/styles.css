@@ -62,8 +62,6 @@ img{max-width:100%} .hidden{display:none!important}
 .bg3{width:130px;height:130px;top:18%;right:12%;background:radial-gradient(circle at 35% 30%,#A7F3D0,#14B8A6 75%);opacity:.55;animation:floatY 9s ease-in-out infinite alternate}
 .login-card{position:relative;z-index:1;background:var(--surface);border:1px solid var(--border);border-radius:28px;box-shadow:0 24px 60px rgba(38,53,47,.14),0 4px 14px rgba(38,53,47,.06);max-width:420px;width:100%;padding:34px 32px 30px;text-align:center;animation:loginCardIn .55s cubic-bezier(.2,.7,.3,1) both}
 .login-lock{width:76px;height:76px;border-radius:50%;background:linear-gradient(135deg,var(--primary),var(--secondary));display:flex;align-items:center;justify-content:center;margin:0 auto 10px;box-shadow:0 10px 24px rgba(15,118,110,.35),inset 0 2px 6px rgba(255,255,255,.35)}
-.login-motif{margin:2px auto 6px}
-.login-motif svg{display:block;margin:0 auto}
 .login-card h1{margin:0 0 4px;font-size:1.7rem}
 .login-sub{color:var(--muted);margin:0 0 4px}
 .logo-mark{width:64px;height:64px;border-radius:18px;background:linear-gradient(135deg,var(--primary),var(--secondary));display:inline-flex;align-items:center;justify-content:center;box-shadow:0 8px 20px rgba(15,118,110,.35)}
