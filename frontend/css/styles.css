@@ -50,6 +50,7 @@ img{max-width:100%} .hidden{display:none!important}
 /* Soft shimmer sweeping across the Bengali line under the logo. */
 @keyframes heroShimmer{from{background-position:200% 0}to{background-position:-20% 0}}
 .login-hero-line{margin:16px auto 4px;max-width:640px;text-align:center;font-size:1.08rem;font-weight:600;background:linear-gradient(100deg,var(--forest) 25%,var(--teal) 50%,var(--forest) 75%);background-size:220% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:heroShimmer 7s linear infinite}
+.login-hero-name{display:block;margin-top:6px;font-size:.95rem;font-weight:600}
 
 /* The card sits centred below the logo. */
 .login-wrap .login-card{flex:none;width:100%;max-width:440px;margin:28px auto 40px;position:relative;z-index:2}
