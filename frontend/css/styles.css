@@ -39,23 +39,27 @@ img{max-width:100%} .hidden{display:none!important}
  * no new colours. Floating soft circles (mint / lavender), a white
  * rounded card, a lock icon in a teal-gradient circle, pill inputs,
  * and a gradient Login button that fills + shimmers. */
-.login-wrap{position:relative;overflow:hidden;min-height:100vh;display:flex;align-items:stretch;padding:0;background:linear-gradient(160deg,var(--pale-mint),#fff 60%,var(--lav))}
+.login-wrap{position:relative;overflow:hidden;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:0;background:linear-gradient(160deg,var(--pale-mint),#fff 60%,var(--lav))}
 
 /* ---------- Login hero image (user photo, palette-matched by overlay) ----------
  * Left half on desktop: the astronaut-under-the-stars photo, full height,
  * with a teal/mint gradient overlay (palette only) so its deep blue and
  * orange tones sit with #0F766E / #14B8A6 / #A7F3D0. White brand text on
  * the dark part of the photo. On mobile it becomes a short top banner. */
-.login-hero{position:relative;flex:1 1 52%;min-height:100vh;overflow:hidden;background:var(--forest)}
-.login-hero-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 50%;animation:heroZoom 1.2s ease both}
+.login-hero{position:relative;flex:none;width:100%;height:320px;min-height:0;overflow:hidden;background:var(--forest);border-radius:0 0 32px 32px;box-shadow:0 28px 50px -18px rgba(36,92,73,.5),0 10px 24px rgba(38,53,47,.14);z-index:0}
+.login-hero-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 50%;animation:heroZoom 1.2s ease both,heroDrift 28s ease-in-out 1.4s infinite alternate}
 @keyframes heroZoom{from{opacity:0;transform:scale(1.05)}to{opacity:1;transform:scale(1)}}
+/* Slow, gentle Ken Burns drift on the hero photo — calm, never jarring. */
+@keyframes heroDrift{from{transform:scale(1.03) translate(0,0)}to{transform:scale(1.12) translate(-1.5%,-6px)}}
+/* Soft shimmer sweeping across the Bengali line on the banner. */
+@keyframes heroShimmer{from{background-position:200% 0}to{background-position:-20% 0}}
 .login-hero-overlay{position:absolute;inset:0;background:linear-gradient(180deg,rgba(15,118,110,.04) 0%,rgba(15,118,110,.10) 45%,rgba(20,184,166,.22) 70%,rgba(36,92,73,.55) 100%),linear-gradient(120deg,rgba(20,184,166,.14),rgba(15,118,110,.06) 55%,rgba(167,243,208,.10));mix-blend-mode:normal;opacity:.95}
-.login-hero-text{position:absolute;left:0;right:0;bottom:0;padding:44px 40px 36px;color:#fff;text-shadow:0 2px 14px rgba(0,0,0,.55)}
-.login-hero-brand{display:block;font-family:Poppins,sans-serif;font-weight:800;font-size:1.9rem;letter-spacing:.01em}
-.login-hero-line{margin:6px 0 0;font-size:1rem;color:rgba(255,255,255,.92)}
+.login-hero-text{position:absolute;left:0;right:0;bottom:0;padding:40px 24px 30px;color:#fff;text-align:center;text-shadow:0 2px 14px rgba(0,0,0,.55)}
+.login-hero-brand{display:block;font-family:Poppins,sans-serif;font-weight:800;font-size:2.1rem;letter-spacing:.01em}
+.login-hero-line{margin:8px auto 0;max-width:640px;font-size:1.05rem;text-shadow:none;background:linear-gradient(100deg,#fff 25%,#A7F3D0 50%,#fff 75%);background-size:220% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:heroShimmer 7s linear infinite}
 
 /* On desktop the card sits centred in the right half, beside the photo. */
-.login-wrap .login-card{flex:0 1 440px;margin:auto 56px}
+.login-wrap .login-card{flex:none;width:100%;max-width:440px;margin:-56px auto 40px;position:relative;z-index:2}
 .bg-circle{position:absolute;border-radius:50%;pointer-events:none;box-shadow:0 18px 40px rgba(38,53,47,.10),inset 0 2px 10px rgba(255,255,255,.9)}
 .bg1{width:280px;height:280px;top:-70px;left:-60px;background:radial-gradient(circle at 35% 30%,#E4FAF5,#A7F3D0 70%);animation:floatY 11s ease-in-out infinite alternate}
 .bg2{width:210px;height:210px;bottom:-60px;right:-40px;background:radial-gradient(circle at 35% 30%,#FFFFFF,#EDE9FE 70%);animation:floatY 13s ease-in-out infinite alternate-reverse}
@@ -70,6 +74,9 @@ img{max-width:100%} .hidden{display:none!important}
 .tagline{font-style:italic;color:var(--muted);margin:12px 0 4px}
 .tagline cite{display:block;font-style:normal;font-size:.85rem;margin-top:4px}
 .login-note{font-size:.9rem;color:var(--muted)}
+.login-footer{position:relative;z-index:1;width:100%;max-width:600px;margin:0 auto;padding:0 20px 28px;text-align:center}
+.login-footer .tagline{margin:0 0 8px}
+.login-credit{margin:0;font-size:.85rem;font-weight:600;letter-spacing:.02em;color:var(--muted)}
 .login-divider{display:flex;align-items:center;gap:12px;color:var(--muted);font-size:.85rem;margin:18px 0}
 .login-divider::before,.login-divider::after{content:"";flex:1;height:1px;background:var(--border)}
 #passwordLoginForm{margin-top:16px;text-align:left}
@@ -104,9 +111,6 @@ img{max-width:100%} .hidden{display:none!important}
 .login-btn:hover::after{animation:shimmerSweep .7s ease}
 .login-btn.is-busy{background-position:100% 0}
 .login-btn.is-busy::after{animation:shimmerSweep 1.1s ease infinite}
-.login-google{margin:18px 0 6px}
-.google-link{border:0;background:none;padding:0;color:var(--forest);font-weight:600;font-size:.9rem}
-.google-link:hover{text-decoration:underline}
 #forgotHint{margin:0 0 12px}
 
 /* ---------- Buttons / forms ---------- */
@@ -320,12 +324,13 @@ html[data-theme="dark"] .stat b{color:#BFE8D8}
   .bottom-nav .ico{display:block;font-size:1.15rem}
   .search-box{min-width:0;flex:1}
   .dash-head-actions{width:100%}
-  /* Login: photo becomes a short top banner, card overlaps it slightly. */
-  .login-wrap{flex-direction:column}
-  .login-hero{flex:none;width:100%;min-height:230px}
-  .login-hero-text{padding:20px 24px 18px}
+  /* Login: hero banner stays on top on mobile too, card overlaps it. */
+  .login-hero{height:220px;min-height:0;border-radius:0 0 24px 24px}
+  .login-hero-text{padding:18px 20px 16px}
   .login-hero-brand{font-size:1.5rem}
-  .login-wrap .login-card{flex:none;width:auto;max-width:520px;margin:-44px 20px 32px;padding:28px 24px 24px}
+  .login-hero-line{font-size:.95rem}
+  .login-wrap .login-card{flex:none;width:calc(100% - 40px);max-width:520px;margin:-44px auto 28px;padding:28px 24px 24px}
+  .login-footer{padding:0 20px 24px}
 }
 
 /* ---------- Islamic / Arabian old-age decorative accents ----------
@@ -416,4 +421,12 @@ button[data-quick="note"]{animation:softPulse 2.8s ease-in-out infinite}
 @media (prefers-reduced-motion: reduce){
   *,*::before,*::after{animation-duration:.01ms !important;animation-iteration-count:1 !important;animation-delay:0ms !important;transition-duration:.01ms !important}
   .cal-day.today,button[data-quick="note"]{animation:none !important}
+  .login-hero-img,.login-hero-line{animation:none !important}
+  .login-hero-line{color:#fff;background:none;-webkit-background-clip:initial;background-clip:initial}
 }
+
+/* ---------- Language toggle (topbar, sidebar, Settings) ---------- */
+.lang-toggle{display:inline-flex;border:1px solid var(--border);border-radius:999px;overflow:hidden;background:var(--surface);flex:none}
+.lang-toggle button{border:0;background:none;padding:6px 12px;font:inherit;font-size:.85rem;font-weight:600;color:var(--muted);cursor:pointer}
+.lang-toggle button.active{background:var(--primary);color:#fff}
+.sidebar-foot .lang-toggle{margin-bottom:10px}

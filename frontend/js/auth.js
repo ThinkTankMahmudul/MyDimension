@@ -43,15 +43,16 @@
     refreshPasswordHint();
   }
 
-  // If no password is set up yet, tell the owner to use Google first
-  // and set a password in Settings. (Boolean only — no secret leaks.)
+  // If no password is set up yet, say so. (Boolean only — no secret
+  // leaks. Login is User ID + password only for now; no Google link
+  // is shown on the login page.)
   async function refreshPasswordHint() {
     var hint = document.getElementById('passwordHint');
     if (!hint) return;
     try {
       var st = await window.MyDimensionApi.getPasswordStatus();
       if (st && st.password_set === false) {
-        hint.textContent = 'No password set yet — sign in with Google below, then set a password in Settings.';
+        hint.textContent = window.MyDimensionI18n ? window.MyDimensionI18n.t('auth.noPassword') : 'No password is set yet. Sign-in is not available until a password is set.';
         hint.classList.remove('hidden');
       } else {
         hint.classList.add('hidden');

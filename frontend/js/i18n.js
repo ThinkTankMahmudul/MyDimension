@@ -1,0 +1,449 @@
+/* MyDimension — js/i18n.js
+ * Bengali / English UI language. Loads FIRST (before api.js) so every
+ * module can use window.MyDimensionI18n.t() at render time.
+ * Language is stored in localStorage under 'md-lang'; default 'en'.
+ * The owner's name (মাহমুদুল হাসান ওয়ালিদ) and his own Bengali line on
+ * the login page always stay in Bengali, in either language.
+ * Login page strings (hero line, tagline, "Developed By" line) are NOT
+ * translated — they are the owner's own words, kept exactly as-is.
+ */
+(function () {
+  'use strict';
+
+  var KEY = 'md-lang';
+  var STRINGS = {
+    en: {
+      'nav.dashboard': 'Dashboard', 'nav.journal': 'My Journal', 'nav.ai': 'AI Assistant',
+      'nav.media': 'Media Vault', 'nav.calendar': 'Calendar', 'nav.insights': 'Insights',
+      'nav.settings': 'Settings',
+      'app.menu': 'Menu', 'app.signOut': 'Sign out', 'app.admin': 'Admin',
+      'app.openMenu': 'Open menu',
+      'bottom.home': 'Home', 'bottom.journal': 'Journal', 'bottom.media': 'Media',
+      'bottom.calendar': 'Calendar', 'bottom.ai': 'AI',
+      'lang.label': 'Language',
+      'bell.today': "Today's Activity", 'bell.aria': "Today's activity",
+      'dash.hello': 'Hello,', 'dash.subtitle': 'Capture your thoughts, memories and life journey…',
+      'dash.searchPh': 'Search your diaries…', 'dash.searchAria': 'Search your diaries',
+      'dash.myJournals': 'My Journals', 'dash.newEntry': 'New Entry ＋',
+      'dash.recentEntries': 'Recent Entries', 'dash.seeAll': 'See all →',
+      'dash.moodOverview': 'Mood Overview', 'dash.todaysActivity': "Today's Activity",
+      'dash.statAll': 'All Journals', 'dash.statMonth': 'This month', 'dash.statMedia': 'Photos & voice',
+      'dash.noJournals': 'No journals yet.', 'dash.writeFirst': 'Write your first memory',
+      'dash.noMood': 'No mood data yet.',
+      'dash.noMoodHint': 'Add a mood when you write an entry, and your overview will appear here.',
+      'dash.positive': 'positive',
+      'dash.legendPositive': 'Positive', 'dash.legendNeutral': 'Neutral', 'dash.legendChallenging': 'Challenging',
+      'dash.allJournals': 'All Journals', 'dash.moodTagged': 'mood-tagged',
+      'dash.nothingToday': 'Nothing yet today. Write your first entry of the day.',
+      'dash.newEntryActivity': 'New Diary Entry', 'dash.createdAt': 'Created at',
+      'cal.chooseDay': 'Choose a day to see its entries, or write one for that day.',
+      'journal.title': 'My Journal', 'journal.newEntry': '＋ New Entry',
+      'journal.formTitle': 'New Journal Entry', 'journal.editEntry': 'Edit entry',
+      'journal.draftNote': 'Draft restored — saved on this device only.',
+      'journal.write': '✎ Write', 'journal.voice': '♪ Voice', 'journal.photo': '▣ Photo', 'journal.file': '▤ File',
+      'journal.titleLabel': 'Title (optional)', 'journal.titlePlaceholder': 'Give today a title…',
+      'journal.writeLabel': 'Write your thoughts…',
+      'journal.writePlaceholder': 'Write freely. This stays private.',
+      'journal.voiceNote': 'Record a voice note, transcribe it with Gemini, and use the transcript as your entry text.',
+      'journal.recordVoice': '● Record voice note', 'journal.stop': '■ Stop',
+      'journal.transcribeAI': 'Transcribe with AI',
+      'journal.micHint': 'Your browser will ask for microphone permission. You can also upload an audio file from the Media Vault.',
+      'journal.photoHint': 'Attach a photo to this entry. It uploads to your private Google Drive when you save the entry.',
+      'journal.fileHint': 'Attach a file to this entry. Photos and audio are supported (max 25 MB); other file types are not supported by the backend.',
+      'journal.moodLabel': 'Mood', 'journal.tagsLabel': 'Tags (comma-separated)',
+      'journal.tagsPlaceholder': 'family, travel, work',
+      'journal.datedNote': 'Entries are dated by the day they are saved. AI never changes your text — it only suggests.',
+      'journal.saveDraft': 'Save as Draft', 'journal.discardDraft': 'Discard draft',
+      'journal.saveEntry': 'Save Entry', 'journal.cancelEdit': 'Cancel edit',
+      'journal.allEntries': 'All entries', 'journal.searchPlaceholder': 'Search title or text…',
+      'journal.allMoods': 'All moods', 'journal.clearFilters': 'Clear filters',
+      'journal.untitled': 'Untitled entry', 'journal.noEntries': 'No entries yet.',
+      'journal.view': 'View', 'journal.edit': 'Edit', 'journal.delete': 'Delete',
+      'journal.aiReflection': 'AI reflection',
+      'journal.needTitle': 'Please write a title or some text first.',
+      'journal.noRecord': 'This browser cannot record audio here. Please upload an audio file from the Media Vault instead.',
+      'entry.title': 'Journal Detail', 'entry.back': '← Back to My Journal',
+      'entry.attachedMedia': 'Attached media',
+      'entry.noEntry': 'No entry selected.',
+      'entry.notFound': 'That entry could not be found. It may already have been deleted.',
+      'entry.aiSummary': 'AI summary',
+      'entry.noMedia': 'No photos or voice notes attached to this entry.',
+      'entry.mediaFailed': 'Media could not be loaded.',
+      'ai.title': 'AI Assistant',
+      'ai.subtitle': 'Your personal writing and reflection partner. Nothing is sent to Gemini until you press a button.',
+      'ai.summarize': 'Summarize My Diary', 'ai.summarizeDesc': 'Get key insights from your entries',
+      'ai.mood': 'Analyze My Mood', 'ai.moodDesc': 'Understand your emotional patterns',
+      'ai.improve': 'Improve My Writing', 'ai.improveDesc': 'Make your thoughts clearer',
+      'ai.reflect': 'Daily Reflection', 'ai.reflectDesc': 'Ask anything about your day',
+      'ai.choose': 'Choose what to work on', 'ai.entryLabel': 'Diary entry',
+      'ai.recentOption': '— Most recent entry —',
+      'ai.pasteLabel': 'Or paste text here', 'ai.pastePlaceholder': 'Paste the text you want help with…',
+      'ai.onlyChosen': 'Only the entry or text you choose is sent to Gemini, and only when you press an AI button above. Your original entry is never overwritten automatically.',
+      'ai.transcribeTitle': 'Transcribe audio', 'ai.audioLabel': 'Audio file',
+      'ai.transcribeBtn': 'Transcribe',
+      'ai.reviewNote': 'Review the transcript before saving it — you can save it as a journal draft from the result below.',
+      'ai.askTitle': 'Ask me anything about your diary…',
+      'ai.chatPlaceholder': 'Ask me anything about your diary…',
+      'ai.answersNote': 'Answers are AI reflections on the entry you chose above — suggestions only, never facts or diagnoses.',
+      'ai.resultTitle': 'Result', 'ai.resultEmpty': 'Your AI result will appear here.',
+      'ai.off': 'AI features are turned off in Settings. Turn them back on to use the assistant.',
+      'ai.chooseFirst': 'Choose an entry above, or paste some text, then try again.',
+      'ai.loadingMood': 'Detecting mood', 'ai.loadingSummary': 'Summarising',
+      'ai.loadingImprove': 'Improving writing', 'ai.loadingReflect': 'Reflecting on your day',
+      'ai.loadingTranscribe': 'Transcribing audio',
+      'ai.suggestedMood': 'Suggested mood:',
+      'ai.suggestionNote': 'This is an AI suggestion, not a fact or a diagnosis. You can keep your own mood, or change it when editing the entry.',
+      'ai.noSuggestion': 'No suggestion returned',
+      'ai.summaryTitle': 'Summary', 'ai.noSummary': 'No summary returned.',
+      'ai.originalUnchanged': 'Your original entry was not changed.',
+      'ai.improvedTitle': 'Improved version (suggestion only)', 'ai.noImproved': 'No suggestion returned.',
+      'ai.originalNotOverwritten': 'Your original text was not overwritten. Use the button below only if you want this as a draft.',
+      'ai.useAsDraft': 'Use as a draft in My Journal',
+      'ai.reflectionTitle': 'Daily Reflection', 'ai.noReflection': 'No reflection returned.',
+      'ai.reflectionNote': 'An AI reflection, not advice or a diagnosis. Your original entry was not changed.',
+      'ai.chooseAudio': 'Choose an audio file first, then press Transcribe.',
+      'ai.transcriptTitle': 'Transcript (review before saving)', 'ai.noTranscript': 'No transcript returned.',
+      'ai.saveTranscript': 'Save transcript as a journal draft',
+      'ai.needEntry': 'I need a diary entry to reflect on — write one first, or paste text in the box above.',
+      'ai.couldNot': 'Could not complete that AI request.',
+      'ai.checkSettings': 'If Gemini is not configured yet, check Settings. You can try again later — your original text is unchanged.',
+      'ai.noAnswer': 'No answer returned.',
+      'ai.answerFailed': 'Sorry — I could not answer that:',
+      'ai.draftReady': 'Draft ready in My Journal — review it, then press Save.',
+      'ai.transcriptDraft': 'Transcript is a draft in My Journal — review it, then press Save.',
+      'ai.voiceMemory': 'Voice memory — ', 'ai.draftSuffix': ' (AI draft)', 'ai.draftTitle': 'AI draft',
+      'media.title': 'Media Vault', 'media.upload': '＋ Upload',
+      'media.all': 'All', 'media.photos': 'Photos', 'media.audio': 'Audio', 'media.files': 'Files',
+      'media.noMedia': 'No media yet.', 'media.noFiles': 'No files yet.',
+      'media.noPhotos': 'No photos yet.', 'media.noAudio': 'No audios yet.',
+      'media.uploadHint': 'Use the Upload button above — photos and audio go to your private Google Drive.',
+      'media.transcribeAI': 'Transcribe with AI', 'media.delete': 'Delete',
+      'media.download': 'Download', 'media.transcript': 'Transcript:',
+      'media.transcribing': 'Transcribing…', 'media.noTranscript': 'No transcript returned.',
+      'media.transcriptFailed': 'Transcription failed:', 'media.loadFailed': 'Could not load that recording. Please try again.',
+      'cal.title': 'Calendar', 'cal.prev': '← Prev', 'cal.today': 'Today', 'cal.next': 'Next →',
+      'cal.prevMonth': 'Previous month', 'cal.nextMonth': 'Next month',
+      'cal.dotsNote': 'Dots mark days with entries. Today is highlighted in teal.',
+      'cal.entriesOn': 'Entries on', 'cal.newEntryDay': '+ New entry for this day',
+      'ins.title': 'My Insights', 'ins.trendTitle': 'Mood Trend — last 30 days',
+      'ins.trendNote': 'Entries written per day. Mood counts come from the moods you chose.',
+      'ins.statsTitle': 'Diary Stats', 'ins.byMood': 'Entries by mood',
+      'ins.overall': 'Overall Mood', 'ins.noteTitle': 'A note on mood',
+      'ins.noteText': 'Moods here are your own labels, plus AI suggestions you chose to keep. They are reflections, not facts or medical diagnoses. If you are struggling, please reach out to someone you trust or a local support service.',
+      'ins.moodTaggedOne': 'mood-tagged entry', 'ins.moodTaggedMany': 'mood-tagged entries',
+      'ins.noMood': 'No mood data yet.',
+      'ins.noMoodHint': 'Add a mood when you write an entry, and your insights will appear here.',
+      'ins.countsNote': 'Counts of entries by mood. AI mood suggestions are suggestions only — they are not facts or diagnoses.',
+      'ins.totalEntries': 'Total Entries', 'ins.withVoice': 'With Voice',
+      'ins.withPhotos': 'With Photos', 'ins.thisMonth': 'This Month', 'ins.moodTagged': 'Mood-tagged',
+      'set.title': 'Settings', 'set.profile': 'Profile',
+      'set.adminOnly': 'Admin — the only account that can sign in.',
+      'set.passwordTitle': 'Set / Change Password',
+      'set.passwordHint': 'Sign in with your User ID and password instead of Google. Your password is stored only as a secure hash — never in plain text, and never shown here.',
+      'set.newPassword': 'New password', 'set.newPasswordPh': 'At least 4 characters',
+      'set.confirmPassword': 'Confirm new password', 'set.confirmPasswordPh': 'Type the password again',
+      'set.savePassword': 'Save Password',
+      'set.language': 'Language',
+      'set.languageHint': 'Choose the language for the app. Your name always stays in Bengali.',
+      'set.appearance': 'Appearance', 'set.themeHint': 'Saved on this device only.',
+      'set.aiPrefs': 'AI preferences',
+      'set.aiAllow': 'Allow AI features (summaries, mood suggestions, transcription)',
+      'set.aiHint': 'AI is only used when you press an AI button, and only on the entry or audio you choose. Turning this off hides the AI buttons.',
+      'set.services': 'Connected services',
+      'set.drive': 'Google Drive:', 'set.gemini': 'Gemini AI:',
+      'set.geminiNote': '(status only — no API key is ever shown here)',
+      'set.database': 'Database:',
+      'set.driveHint': 'If Drive is not connected, photo and voice uploads will fail. Reconnect from the Google sign-in flow; if the problem persists, sign out and sign in again.',
+      'set.privacy': 'Privacy',
+      'set.privacyText': 'Your diary is private by default. Entries and media are visible only to the signed-in owner. AI features send only the entry or audio you explicitly choose to Google’s Gemini service when you press an AI button. The tagline appears here as a reminder:',
+      'set.yourData': 'Your data', 'set.export': 'Export my entries (JSON)',
+      'set.deleteAll': 'Delete all diary entries…',
+      'set.deleteHint': 'Export downloads a JSON file of your entries. “Delete all” removes entries only; delete photos and voice memories from the Media Vault.',
+      'set.about': 'About MyDimension',
+      'set.aboutText': 'A private, single-owner AI diary & memory vault. Frontend: HTML, CSS and vanilla JavaScript (PWA). Backend: Python FastAPI. Storage: PostgreSQL + the owner’s private Google Drive.',
+      'toast.saved': 'Entry saved.', 'toast.draftSaved': 'Draft saved on this device.',
+      'toast.draftDiscarded': 'Draft discarded.', 'toast.uploaded': 'Uploaded.',
+      'toast.fileDeleted': 'File deleted.', 'toast.entryDeleted': 'Entry deleted.',
+      'toast.allDeleted': 'All entries deleted.', 'toast.exported': 'Export downloaded.',
+      'toast.aiOn': 'AI features turned on.', 'toast.aiOff': 'AI features turned off.',
+      'toast.todayActivity': "Today's activity is on the dashboard.",
+      'toast.recordFirst': 'Record a voice note first.', 'toast.transcribing': 'Transcribing…',
+      'toast.transcriptAdded': 'Transcript added below — review it before saving.',
+      'toast.noTranscript': 'No transcript returned.',
+      'toast.transcriptFailed': 'Transcription failed:',
+      'toast.entryDated': 'Note: entries are dated by the day they are saved, so this entry will be dated today.',
+      'toast.attachmentFailed': 'Entry saved, but the attachment failed:',
+      'confirm.deleteAllTitle': 'Delete all diary data?',
+      'confirm.deleteAllText': 'This permanently deletes all of your diary entries. Photos and voice memories are deleted separately from the Media Vault. This cannot be undone.',
+      'confirm.deleteAllYes': 'Delete all entries',
+      'confirm.deleteEntryTitle': 'Delete this entry?',
+      'confirm.deleteEntryText': '“{title}” will be permanently deleted. This cannot be undone.',
+      'confirm.deleteFileTitle': 'Delete this file?',
+      'confirm.deleteFileText': '“{name}” will be permanently deleted from your Drive storage. This cannot be undone.',
+      'confirm.typeDelete': 'Type DELETE to confirm',
+      'confirm.cancel': 'Cancel', 'confirm.delete': 'Delete',
+      'theme.dark': 'Switch to dark theme', 'theme.light': 'Switch to light theme',
+      'rel.justNow': 'just now', 'rel.minute': '{n} minute ago', 'rel.minutes': '{n} minutes ago',
+      'rel.hour': '{n} hour ago', 'rel.hours': '{n} hours ago',
+      'mood.happy': 'Happy', 'mood.calm': 'Calm', 'mood.grateful': 'Grateful',
+      'mood.excited': 'Excited', 'mood.tired': 'Tired', 'mood.sad': 'Sad',
+      'mood.anxious': 'Anxious', 'mood.angry': 'Angry', 'mood.stressed': 'Stressed',
+      'mood.thoughtful': 'Thoughtful',
+      'mood.positive': 'Positive', 'mood.neutral': 'Neutral', 'mood.challenging': 'Challenging',
+      'auth.noPassword': 'No password is set yet. Sign-in is not available until a password is set.'
+    },
+    bn: {
+      'nav.dashboard': 'ড্যাশবোর্ড', 'nav.journal': 'আমার জার্নাল', 'nav.ai': 'এআই সহকারী',
+      'nav.media': 'মিডিয়া ভল্ট', 'nav.calendar': 'ক্যালেন্ডার', 'nav.insights': 'ইনসাইটস',
+      'nav.settings': 'সেটিংস',
+      'app.menu': 'মেনু', 'app.signOut': 'সাইন আউট', 'app.admin': 'অ্যাডমিন',
+      'app.openMenu': 'মেনু খোলো',
+      'bottom.home': 'হোম', 'bottom.journal': 'জার্নাল', 'bottom.media': 'মিডিয়া',
+      'bottom.calendar': 'ক্যালেন্ডার', 'bottom.ai': 'এআই',
+      'lang.label': 'ভাষা',
+      'bell.today': 'আজকের কার্যকলাপ', 'bell.aria': 'আজকের কার্যকলাপ',
+      'dash.hello': 'হ্যালো,', 'dash.subtitle': 'তোমার ভাবনা, স্মৃতি আর জীবনের পথচলা ধরে রাখো…',
+      'dash.searchPh': 'তোমার ডায়েরিগুলো খুঁজো…', 'dash.searchAria': 'তোমার ডায়েরিগুলো খুঁজো',
+      'dash.myJournals': 'আমার জার্নালগুলো', 'dash.newEntry': 'নতুন এন্ট্রি ＋',
+      'dash.recentEntries': 'সাম্প্রতিক এন্ট্রি', 'dash.seeAll': 'সব দেখো →',
+      'dash.moodOverview': 'মেজাজের সারসংক্ষেপ', 'dash.todaysActivity': 'আজকের কার্যকলাপ',
+      'dash.statAll': 'সব জার্নাল', 'dash.statMonth': 'এই মাসে', 'dash.statMedia': 'ছবি ও ভয়েস',
+      'dash.noJournals': 'এখনো কোনো জার্নাল নেই।', 'dash.writeFirst': 'প্রথম স্মৃতিটা লেখো',
+      'dash.noMood': 'এখনো কোনো মেজাজের তথ্য নেই।',
+      'dash.noMoodHint': 'এন্ট্রি লেখার সময় মেজাজ যোগ করো, তাহলে এখানে সারসংক্ষেপ দেখা যাবে।',
+      'dash.positive': 'ইতিবাচক',
+      'dash.legendPositive': 'ইতিবাচক', 'dash.legendNeutral': 'নিরপেক্ষ', 'dash.legendChallenging': 'কঠিন',
+      'dash.allJournals': 'সব জার্নাল', 'dash.moodTagged': 'মেজাজ দেওয়া',
+      'dash.nothingToday': 'আজ এখনো কিছু নেই। দিনের প্রথম এন্ট্রিটা লেখো।',
+      'dash.newEntryActivity': 'নতুন ডায়েরি এন্ট্রি', 'dash.createdAt': 'লেখা হয়েছে',
+      'cal.chooseDay': 'কোনো দিন বেছে নাও, সেই দিনের এন্ট্রি দেখো বা নতুন লেখো।',
+      'journal.title': 'আমার জার্নাল', 'journal.newEntry': '＋ নতুন এন্ট্রি',
+      'journal.formTitle': 'নতুন জার্নাল এন্ট্রি', 'journal.editEntry': 'এন্ট্রি সম্পাদনা',
+      'journal.draftNote': 'খসড়া ফিরিয়ে আনা হয়েছে — শুধু এই ডিভাইসে সংরক্ষিত।',
+      'journal.write': '✎ লেখো', 'journal.voice': '♪ ভয়েস', 'journal.photo': '▣ ছবি', 'journal.file': '▤ ফাইল',
+      'journal.titleLabel': 'শিরোনাম (ঐচ্ছিক)', 'journal.titlePlaceholder': 'আজকের দিনটার একটা শিরোনাম দাও…',
+      'journal.writeLabel': 'তোমার ভাবনাগুলো লেখো…',
+      'journal.writePlaceholder': 'মনের মতো করে লেখো। এটা একান্ত ব্যক্তিগত থাকবে।',
+      'journal.voiceNote': 'ভয়েস নোট রেকর্ড করো, Gemini দিয়ে লিখিত রূপে নাও, আর সেটাই এন্ট্রির লেখা হিসেবে ব্যবহার করো।',
+      'journal.recordVoice': '● ভয়েস নোট রেকর্ড করো', 'journal.stop': '■ থামাও',
+      'journal.transcribeAI': 'এআই দিয়ে লিখিত রূপে নাও',
+      'journal.micHint': 'ব্রাউজার মাইক্রোফোনের অনুমতি চাইবে। মিডিয়া ভল্ট থেকে অডিও ফাইলও আপলোড করতে পারো।',
+      'journal.photoHint': 'এই এন্ট্রিতে ছবি যোগ করো। এন্ট্রি সংরক্ষণ করলে ছবিটা তোমার ব্যক্তিগত Google Drive-এ যাবে।',
+      'journal.fileHint': 'এই এন্ট্রিতে ফাইল যোগ করো। ছবি আর অডিও সমর্থিত (সর্বোচ্চ ২৫ MB); অন্য ধরনের ফাইল সমর্থিত নয়।',
+      'journal.moodLabel': 'মেজাজ', 'journal.tagsLabel': 'ট্যাগ (কমা দিয়ে আলাদা করো)',
+      'journal.tagsPlaceholder': 'পরিবার, ভ্রমণ, কাজ',
+      'journal.datedNote': 'এন্ট্রি সংরক্ষণের দিন দিয়েই তারিখ হয়। এআই তোমার লেখা বদলায় না — শুধু পরামর্শ দেয়।',
+      'journal.saveDraft': 'খসড়া হিসেবে রাখো', 'journal.discardDraft': 'খসড়া মুছে ফেলো',
+      'journal.saveEntry': 'এন্ট্রি সংরক্ষণ করো', 'journal.cancelEdit': 'সম্পাদনা বাতিল করো',
+      'journal.allEntries': 'সব এন্ট্রি', 'journal.searchPlaceholder': 'শিরোনাম বা লেখা খুঁজো…',
+      'journal.allMoods': 'সব মেজাজ', 'journal.clearFilters': 'ফিল্টার মুছে ফেলো',
+      'journal.untitled': 'শিরোনামহীন এন্ট্রি', 'journal.noEntries': 'এখনো কোনো এন্ট্রি নেই।',
+      'journal.view': 'দেখো', 'journal.edit': 'সম্পাদনা', 'journal.delete': 'মুছে ফেলো',
+      'journal.aiReflection': 'এআই প্রতিফলন',
+      'journal.needTitle': 'আগে একটা শিরোনাম বা কিছু লেখা লেখো।',
+      'journal.noRecord': 'এই ব্রাউজার এখানে অডিও রেকর্ড করতে পারে না। মিডিয়া ভল্ট থেকে অডিও ফাইল আপলোড করো।',
+      'entry.title': 'জার্নালের বিস্তারিত', 'entry.back': '← আমার জার্নালে ফিরে যাও',
+      'entry.attachedMedia': 'সংযুক্ত মিডিয়া',
+      'entry.noEntry': 'কোনো এন্ট্রি বাছাই করা হয়নি।',
+      'entry.notFound': 'এই এন্ট্রিটা পাওয়া যায়নি। হয়তো এটা আগেই মুছে ফেলা হয়েছে।',
+      'entry.aiSummary': 'এআই সারাংশ',
+      'entry.noMedia': 'এই এন্ট্রিতে কোনো ছবি বা ভয়েস নোট নেই।',
+      'entry.mediaFailed': 'মিডিয়া লোড করা যায়নি।',
+      'ai.title': 'এআই সহকারী',
+      'ai.subtitle': 'তোমার ব্যক্তিগত লেখা আর প্রতিফলনের সঙ্গী। বোতাম না চাপলে Gemini-কে কিছুই পাঠানো হয় না।',
+      'ai.summarize': 'আমার ডায়েরির সারাংশ', 'ai.summarizeDesc': 'তোমার এন্ট্রিগুলো থেকে মূল বিষয়গুলো জেনে নাও',
+      'ai.mood': 'আমার মেজাজ বিশ্লেষণ করো', 'ai.moodDesc': 'তোমার অনুভূতির ধরন বুঝে নাও',
+      'ai.improve': 'আমার লেখা ভালো করো', 'ai.improveDesc': 'তোমার ভাবনাগুলো আরও স্পষ্ট করো',
+      'ai.reflect': 'দৈনিক প্রতিফলন', 'ai.reflectDesc': 'তোমার দিন নিয়ে যেকোনো কিছু জিজ্ঞেস করো',
+      'ai.choose': 'কী নিয়ে কাজ করবে বেছে নাও', 'ai.entryLabel': 'ডায়েরি এন্ট্রি',
+      'ai.recentOption': '— সবচেয়ে সাম্প্রতিক এন্ট্রি —',
+      'ai.pasteLabel': 'অথবা এখানে লেখা বসাও', 'ai.pastePlaceholder': 'যে লেখাটায় সাহায্য চাও, সেটা এখানে বসাও…',
+      'ai.onlyChosen': 'তুমি যে এন্ট্রি বা লেখাটা বেছে নেবে, শুধু সেটাই Gemini-কে পাঠানো হয় — আর শুধু ওপরের এআই বোতাম চাপলেই। তোমার আসল এন্ট্রি কখনো নিজে থেকে বদলে ফেলা হয় না।',
+      'ai.transcribeTitle': 'অডিও লিখিত রূপে নাও', 'ai.audioLabel': 'অডিও ফাইল',
+      'ai.transcribeBtn': 'লিখিত রূপে নাও',
+      'ai.reviewNote': 'সংরক্ষণের আগে লেখাটা দেখে নাও — নিচের ফলাফল থেকে খসড়া হিসেবে সংরক্ষণ করতে পারো।',
+      'ai.askTitle': 'তোমার ডায়েরি নিয়ে যেকোনো কিছু জিজ্ঞেস করো…',
+      'ai.chatPlaceholder': 'তোমার ডায়েরি নিয়ে যেকোনো কিছু জিজ্ঞেস করো…',
+      'ai.answersNote': 'উত্তরগুলো ওপরে বেছে নেওয়া এন্ট্রির ওপর এআই প্রতিফলন — শুধু পরামর্শ, কখনো তথ্য বা রোগ নির্ণয় নয়।',
+      'ai.resultTitle': 'ফলাফল', 'ai.resultEmpty': 'তোমার এআই ফলাফল এখানে দেখা যাবে।',
+      'ai.off': 'সেটিংসে এআই সুবিধা বন্ধ আছে। সহকারী ব্যবহার করতে আবার চালু করো।',
+      'ai.chooseFirst': 'ওপরে একটা এন্ট্রি বেছে নাও, অথবা কিছু লেখা বসাও, তারপর আবার চেষ্টা করো।',
+      'ai.loadingMood': 'মেজাজ বোঝা হচ্ছে', 'ai.loadingSummary': 'সারাংশ করা হচ্ছে',
+      'ai.loadingImprove': 'লেখা ভালো করা হচ্ছে', 'ai.loadingReflect': 'তোমার দিন নিয়ে ভাবা হচ্ছে',
+      'ai.loadingTranscribe': 'অডিও লিখিত রূপে নেওয়া হচ্ছে',
+      'ai.suggestedMood': 'প্রস্তাবিত মেজাজ:',
+      'ai.suggestionNote': 'এটা এআইয়ের পরামর্শ, তথ্য বা রোগ নির্ণয় নয়। নিজের মেজাজটাই রাখতে পারো, বা এন্ট্রি সম্পাদনার সময় বদলে নিতে পারো।',
+      'ai.noSuggestion': 'কোনো পরামর্শ আসেনি',
+      'ai.summaryTitle': 'সারাংশ', 'ai.noSummary': 'কোনো সারাংশ আসেনি।',
+      'ai.originalUnchanged': 'তোমার আসল এন্ট্রি বদলানো হয়নি।',
+      'ai.improvedTitle': 'উন্নত সংস্করণ (শুধু পরামর্শ)', 'ai.noImproved': 'কোনো পরামর্শ আসেনি।',
+      'ai.originalNotOverwritten': 'তোমার আসল লেখা মুছে ফেলা হয়নি। খসড়া হিসেবে নিতে চাইলে নিচের বোতামটা ব্যবহার করো।',
+      'ai.useAsDraft': 'আমার জার্নালে খসড়া হিসেবে নাও',
+      'ai.reflectionTitle': 'দৈনিক প্রতিফলন', 'ai.noReflection': 'কোনো প্রতিফলন আসেনি।',
+      'ai.reflectionNote': 'এটা এআই প্রতিফলন, উপদেশ বা রোগ নির্ণয় নয়। তোমার আসল এন্ট্রি বদলানো হয়নি।',
+      'ai.chooseAudio': 'আগে একটা অডিও ফাইল বেছে নাও, তারপর লিখিত রূপে নাও চাপো।',
+      'ai.transcriptTitle': 'লিখিত রূপ (সংরক্ষণের আগে দেখে নাও)', 'ai.noTranscript': 'কোনো লিখিত রূপ আসেনি।',
+      'ai.saveTranscript': 'লিখিত রূপটা জার্নালের খসড়া হিসেবে রাখো',
+      'ai.needEntry': 'প্রতিফলনের জন্য একটা ডায়েরি এন্ট্রি দরকার — আগে একটা লেখো, অথবা ওপরের বাক্সে লেখা বসাও।',
+      'ai.couldNot': 'এই এআই অনুরোধটা শেষ করা যায়নি।',
+      'ai.checkSettings': 'Gemini এখনো ঠিক করা না থাকলে সেটিংস দেখো। পরে আবার চেষ্টা করতে পারো — তোমার আসল লেখা অপরিবর্তিত আছে।',
+      'ai.noAnswer': 'কোনো উত্তর আসেনি।',
+      'ai.answerFailed': 'দুঃখিত — এর উত্তর দিতে পারলাম না:',
+      'ai.draftReady': 'আমার জার্নালে খসড়া তৈরি — দেখে নাও, তারপর সংরক্ষণ করো।',
+      'ai.transcriptDraft': 'লিখিত রূপটা আমার জার্নালে খসড়া হিসেবে আছে — দেখে নাও, তারপর সংরক্ষণ করো।',
+      'ai.voiceMemory': 'ভয়েস স্মৃতি — ', 'ai.draftSuffix': ' (এআই খসড়া)', 'ai.draftTitle': 'এআই খসড়া',
+      'media.title': 'মিডিয়া ভল্ট', 'media.upload': '＋ আপলোড',
+      'media.all': 'সব', 'media.photos': 'ছবি', 'media.audio': 'অডিও', 'media.files': 'ফাইল',
+      'media.noMedia': 'এখনো কোনো মিডিয়া নেই।', 'media.noFiles': 'এখনো কোনো ফাইল নেই।',
+      'media.noPhotos': 'এখনো কোনো ছবি নেই।', 'media.noAudio': 'এখনো কোনো অডিও নেই।',
+      'media.uploadHint': 'ওপরের আপলোড বোতামটা ব্যবহার করো — ছবি আর অডিও তোমার ব্যক্তিগত Google Drive-এ যাবে।',
+      'media.transcribeAI': 'এআই দিয়ে লিখিত রূপে নাও', 'media.delete': 'মুছে ফেলো',
+      'media.download': 'ডাউনলোড', 'media.transcript': 'লিখিত রূপ:',
+      'media.transcribing': 'লিখিত রূপে নেওয়া হচ্ছে…', 'media.noTranscript': 'কোনো লিখিত রূপ আসেনি।',
+      'media.transcriptFailed': 'লিখিত রূপে নেওয়া যায়নি:', 'media.loadFailed': 'রেকর্ডিংটা লোড করা যায়নি। আবার চেষ্টা করো।',
+      'cal.title': 'ক্যালেন্ডার', 'cal.prev': '← আগের', 'cal.today': 'আজ', 'cal.next': 'পরের →',
+      'cal.prevMonth': 'আগের মাস', 'cal.nextMonth': 'পরের মাস',
+      'cal.dotsNote': 'বিন্দু দিয়ে এন্ট্রি আছে এমন দিন চিহ্নিত। আজকের দিনটা সবুজ রঙে দেখা যাবে।',
+      'cal.entriesOn': 'এই দিনের এন্ট্রি', 'cal.newEntryDay': '+ এই দিনের জন্য নতুন এন্ট্রি',
+      'ins.title': 'আমার ইনসাইটস', 'ins.trendTitle': 'মেজাজের ধারা — গত ৩০ দিন',
+      'ins.trendNote': 'প্রতিদিন কতগুলো এন্ট্রি লেখা হয়েছে। মেজাজের সংখ্যা তোমার বেছে নেওয়া মেজাজ থেকে এসেছে।',
+      'ins.statsTitle': 'ডায়েরির পরিসংখ্যান', 'ins.byMood': 'মেজাজ অনুযায়ী এন্ট্রি',
+      'ins.overall': 'সামগ্রিক মেজাজ', 'ins.noteTitle': 'মেজাজ নিয়ে একটা কথা',
+      'ins.noteText': 'এখানকার মেজাজ তোমার নিজের দেওয়া নাম, আর এআইয়ের যেসব পরামর্শ তুমি রাখতে চেয়েছ সেগুলো। এগুলো প্রতিফলন, তথ্য বা চিকিৎসা-সংক্রান্ত নির্ণয় নয়। কষ্টে থাকলে বিশ্বস্ত কারো কাছে যাও, বা স্থানীয় কোনো সহায়তা সেবার সঙ্গে যোগাযোগ করো।',
+      'ins.moodTaggedOne': 'মেজাজ দেওয়া এন্ট্রি', 'ins.moodTaggedMany': 'মেজাজ দেওয়া এন্ট্রি',
+      'ins.noMood': 'এখনো কোনো মেজাজের তথ্য নেই।',
+      'ins.noMoodHint': 'এন্ট্রি লেখার সময় মেজাজ যোগ করো, তাহলে তোমার ইনসাইটস এখানে দেখা যাবে।',
+      'ins.countsNote': 'মেজাজ অনুযায়ী এন্ট্রির সংখ্যা। এআইয়ের মেজাজের পরামর্শ শুধু পরামর্শই — তথ্য বা নির্ণয় নয়।',
+      'ins.totalEntries': 'মোট এন্ট্রি', 'ins.withVoice': 'ভয়েসসহ',
+      'ins.withPhotos': 'ছবিসহ', 'ins.thisMonth': 'এই মাসে', 'ins.moodTagged': 'মেজাজ দেওয়া',
+      'set.title': 'সেটিংস', 'set.profile': 'প্রোফাইল',
+      'set.adminOnly': 'অ্যাডমিন — একমাত্র অ্যাকাউন্ট যা দিয়ে সাইন ইন করা যায়।',
+      'set.passwordTitle': 'পাসওয়ার্ড তৈরি / বদলাও',
+      'set.passwordHint': 'User ID আর পাসওয়ার্ড দিয়ে সাইন ইন করো। তোমার পাসওয়ার্ড শুধু নিরাপদ হ্যাশ হিসেবে রাখা হয় — কখনো সাধারণ লেখা হিসেবে নয়, আর এখানে কখনো দেখানো হয় না।',
+      'set.newPassword': 'নতুন পাসওয়ার্ড', 'set.newPasswordPh': 'কমপক্ষে ৪ অক্ষর',
+      'set.confirmPassword': 'নতুন পাসওয়ার্ড আবার লেখো', 'set.confirmPasswordPh': 'পাসওয়ার্ডটা আবার লেখো',
+      'set.savePassword': 'পাসওয়ার্ড সংরক্ষণ করো',
+      'set.language': 'ভাষা',
+      'set.languageHint': 'অ্যাপের ভাষা বেছে নাও। তোমার নাম সবসময় বাংলাতেই থাকবে।',
+      'set.appearance': 'চেহারা', 'set.themeHint': 'শুধু এই ডিভাইসে সংরক্ষিত।',
+      'set.aiPrefs': 'এআই পছন্দ',
+      'set.aiAllow': 'এআই সুবিধা চালু রাখো (সারাংশ, মেজাজের পরামর্শ, লিখিত রূপ)',
+      'set.aiHint': 'এআই শুধু তখনই ব্যবহার হয়, যখন তুমি এআই বোতাম চাপো — আর শুধু তুমি যে এন্ট্রি বা অডিও বেছে নাও, সেটার ওপর। বন্ধ করলে এআই বোতামগুলো লুকিয়ে যাবে।',
+      'set.services': 'সংযুক্ত সেবা',
+      'set.drive': 'Google Drive:', 'set.gemini': 'Gemini AI:',
+      'set.geminiNote': '(শুধু অবস্থা — এখানে কখনো API কী দেখানো হয় না)',
+      'set.database': 'ডাটাবেস:',
+      'set.driveHint': 'Drive সংযুক্ত না থাকলে ছবি আর ভয়েস আপলোড হবে না। Google সাইন-ইন থেকে আবার সংযোগ করো; সমস্যা থাকলে সাইন আউট করে আবার সাইন ইন করো।',
+      'set.privacy': 'গোপনীয়তা',
+      'set.privacyText': 'তোমার ডায়েরি নিজে থেকেই ব্যক্তিগত। এন্ট্রি আর মিডিয়া শুধু সাইন ইন করা মালিকই দেখতে পায়। এআই সুবিধা শুধু তুমি যে এন্ট্রি বা অডিও স্পষ্টভাবে বেছে নাও, সেটাই Google-এর Gemini সেবায় পাঠায় — এআই বোতাম চাপলেই। ট্যাগলাইনটা এখানে মনে করিয়ে দেওয়ার জন্য আছে:',
+      'set.yourData': 'তোমার তথ্য', 'set.export': 'আমার এন্ট্রিগুলো এক্সপোর্ট করো (JSON)',
+      'set.deleteAll': 'সব ডায়েরি এন্ট্রি মুছে ফেলো…',
+      'set.deleteHint': 'এক্সপোর্ট করলে তোমার এন্ট্রিগুলোর JSON ফাইল ডাউনলোড হবে। “সব মুছে ফেলো” শুধু এন্ট্রি মোছে; ছবি আর ভয়েস স্মৃতি মিডিয়া ভল্ট থেকে মোছো।',
+      'set.about': 'MyDimension সম্পর্কে',
+      'set.aboutText': 'একটি ব্যক্তিগত, একক মালিকের এআই ডায়েরি ও স্মৃতি ভল্ট। ফ্রন্টএন্ড: HTML, CSS আর ভ্যানিলা JavaScript (PWA)। ব্যাকএন্ড: Python FastAPI। সংরক্ষণ: PostgreSQL + মালিকের ব্যক্তিগত Google Drive।',
+      'toast.saved': 'এন্ট্রি সংরক্ষিত হয়েছে।', 'toast.draftSaved': 'খসড়া এই ডিভাইসে সংরক্ষিত হয়েছে।',
+      'toast.draftDiscarded': 'খসড়া মুছে ফেলা হয়েছে।', 'toast.uploaded': 'আপলোড হয়েছে।',
+      'toast.fileDeleted': 'ফাইল মুছে ফেলা হয়েছে।', 'toast.entryDeleted': 'এন্ট্রি মুছে ফেলা হয়েছে।',
+      'toast.allDeleted': 'সব এন্ট্রি মুছে ফেলা হয়েছে।', 'toast.exported': 'এক্সপোর্ট ডাউনলোড হয়েছে।',
+      'toast.aiOn': 'এআই সুবিধা চালু হয়েছে।', 'toast.aiOff': 'এআই সুবিধা বন্ধ হয়েছে।',
+      'toast.todayActivity': 'আজকের কার্যকলাপ ড্যাশবোর্ডে আছে।',
+      'toast.recordFirst': 'আগে একটা ভয়েস নোট রেকর্ড করো।', 'toast.transcribing': 'লিখিত রূপে নেওয়া হচ্ছে…',
+      'toast.transcriptAdded': 'লিখিত রূপ নিচে যোগ হয়েছে — সংরক্ষণের আগে দেখে নাও।',
+      'toast.noTranscript': 'কোনো লিখিত রূপ আসেনি।',
+      'toast.transcriptFailed': 'লিখিত রূপে নেওয়া যায়নি:',
+      'toast.entryDated': 'নোট: এন্ট্রি সংরক্ষণের দিন দিয়েই তারিখ হয়, তাই এই এন্ট্রিটা আজকের তারিখেই থাকবে।',
+      'toast.attachmentFailed': 'এন্ট্রি সংরক্ষিত হয়েছে, কিন্তু সংযুক্তি যোগ করা যায়নি:',
+      'confirm.deleteAllTitle': 'সব ডায়েরি তথ্য মুছে ফেলবে?',
+      'confirm.deleteAllText': 'এতে তোমার সব ডায়েরি এন্ট্রি স্থায়ীভাবে মুছে যাবে। ছবি আর ভয়েস স্মৃতি মিডিয়া ভল্ট থেকে আলাদাভাবে মুছতে হয়। এটা আর ফেরানো যাবে না।',
+      'confirm.deleteAllYes': 'সব এন্ট্রি মুছে ফেলো',
+      'confirm.deleteEntryTitle': 'এই এন্ট্রিটা মুছে ফেলবে?',
+      'confirm.deleteEntryText': '“{title}” স্থায়ীভাবে মুছে যাবে। এটা আর ফেরানো যাবে না।',
+      'confirm.deleteFileTitle': 'এই ফাইলটা মুছে ফেলবে?',
+      'confirm.deleteFileText': '“{name}” তোমার Drive সংরক্ষণ থেকে স্থায়ীভাবে মুছে যাবে। এটা আর ফেরানো যাবে না।',
+      'confirm.typeDelete': 'নিশ্চিত করতে DELETE লেখো',
+      'confirm.cancel': 'বাতিল করো', 'confirm.delete': 'মুছে ফেলো',
+      'theme.dark': 'ডার্ক থিমে যাও', 'theme.light': 'লাইট থিমে যাও',
+      'rel.justNow': 'এইমাত্র', 'rel.minute': '{n} মিনিট আগে', 'rel.minutes': '{n} মিনিট আগে',
+      'rel.hour': '{n} ঘণ্টা আগে', 'rel.hours': '{n} ঘণ্টা আগে',
+      'mood.happy': 'খুশি', 'mood.calm': 'শান্ত', 'mood.grateful': 'কৃতজ্ঞ',
+      'mood.excited': 'উত্তেজিত', 'mood.tired': 'ক্লান্ত', 'mood.sad': 'দুঃখিত',
+      'mood.anxious': 'উদ্বিগ্ন', 'mood.angry': 'রাগান্বিত', 'mood.stressed': 'চাপে আছি',
+      'mood.thoughtful': 'চিন্তাশীল',
+      'mood.positive': 'ইতিবাচক', 'mood.neutral': 'নিরপেক্ষ', 'mood.challenging': 'কঠিন',
+      'auth.noPassword': 'এখনো কোনো পাসওয়ার্ড তৈরি করা হয়নি। পাসওয়ার্ড তৈরি না হওয়া পর্যন্ত সাইন ইন করা যাবে না।'
+    }
+  };
+
+  var current = 'en';
+  try {
+    var saved = localStorage.getItem(KEY);
+    if (saved === 'bn' || saved === 'en') current = saved;
+  } catch (e) { /* private mode; English default */ }
+
+  function t(key, vars) {
+    var s = (STRINGS[current] && STRINGS[current][key]) || STRINGS.en[key] || key;
+    if (vars) {
+      Object.keys(vars).forEach(function (k) { s = s.split('{' + k + '}').join(vars[k]); });
+    }
+    return s;
+  }
+  function getLanguage() { return current; }
+  function locale() { return current === 'bn' ? 'bn-BD' : 'en-US'; }
+  function moodLabel(mood) {
+    if (!mood) return '';
+    return t('mood.' + String(mood).toLowerCase());
+  }
+
+  function applyLanguage() {
+    document.documentElement.setAttribute('lang', current);
+    document.querySelectorAll('[data-i18n]').forEach(function (el) {
+      el.textContent = t(el.getAttribute('data-i18n'));
+    });
+    document.querySelectorAll('[data-i18n-placeholder]').forEach(function (el) {
+      el.setAttribute('placeholder', t(el.getAttribute('data-i18n-placeholder')));
+    });
+    document.querySelectorAll('[data-i18n-aria-label]').forEach(function (el) {
+      el.setAttribute('aria-label', t(el.getAttribute('data-i18n-aria-label')));
+    });
+    document.querySelectorAll('[data-i18n-attr]').forEach(function (el) {
+      var spec = el.getAttribute('data-i18n-attr').split(':');
+      if (spec.length === 2) el.setAttribute(spec[0], t(spec[1]));
+    });
+    document.querySelectorAll('[data-lang]').forEach(function (btn) {
+      var on = btn.getAttribute('data-lang') === current;
+      btn.classList.toggle('active', on);
+      btn.setAttribute('aria-pressed', String(on));
+    });
+  }
+
+  function setLanguage(lang) {
+    if (lang !== 'bn' && lang !== 'en') return;
+    if (lang === current) { applyLanguage(); return; }
+    current = lang;
+    try { localStorage.setItem(KEY, lang); } catch (e) { /* ignore */ }
+    applyLanguage();
+    document.dispatchEvent(new CustomEvent('mydimension:language', { detail: { lang: lang } }));
+    // Re-render the current screen so dynamic strings switch too.
+    var appView = document.getElementById('appView');
+    if (appView && !appView.classList.contains('hidden') &&
+        window.MyDimensionApp && window.MyDimensionApp.showRoute) {
+      try { window.MyDimensionApp.showRoute(); } catch (e) { /* ignore */ }
+    }
+  }
+
+  // Apply the saved language to the static HTML as soon as this script runs
+  // (deferred scripts run after parsing, so the DOM is ready here).
+  applyLanguage();
+
+  // Language toggle buttons (topbar, sidebar, Settings) — delegated, so
+  // every toggle stays in sync through applyLanguage().
+  document.addEventListener('click', function (e) {
+    var btn = e.target.closest ? e.target.closest('[data-lang]') : null;
+    if (btn) setLanguage(btn.getAttribute('data-lang'));
+  });
+
+  window.MyDimensionI18n = {
+    t: t, setLanguage: setLanguage, getLanguage: getLanguage,
+    applyLanguage: applyLanguage, locale: locale, moodLabel: moodLabel
+  };
+})();

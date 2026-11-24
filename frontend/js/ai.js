@@ -12,6 +12,9 @@
 (function () {
   'use strict';
 
+  // i18n: t() reads the live language.
+  function t(key, vars) { return window.MyDimensionI18n ? window.MyDimensionI18n.t(key, vars) : key; }
+
   function esc(s) { return window.MyDimensionJournal.esc(s); }
 
   function aiEnabled() {
@@ -29,7 +32,7 @@
     box.innerHTML = '<p>' + esc(label) + '…</p>';
   }
   function showError(err) {
-    showResult('<p><strong>Could not complete that AI request.</strong></p><p>' + esc(err.message || err) + '</p><p class="small muted">If Gemini is not configured yet, check Settings. You can try again later — your original text is unchanged.</p>');
+    showResult('<p><strong>' + t('ai.couldNot') + '</strong></p><p>' + esc(err.message || err) + '</p><p class="small muted">' + t('ai.checkSettings') + '</p>');
   }
   function setBusy(busy) {
     document.querySelectorAll('#page-ai button[data-ai-action], #aiChatSend').forEach(function (b) { b.disabled = busy; });
@@ -49,7 +52,7 @@
 
   async function run(action) {
     if (!aiEnabled()) {
-      showResult('<p>AI features are turned off in Settings. Turn them back on to use the assistant.</p>');
+      showResult('<p>' + t('ai.off') + '</p>');
       return;
     }
     var entry = selectedEntry();
@@ -57,55 +60,55 @@
     var text = entry ? entry.body : freeText;
     var title = entry ? entry.title : '';
     if (action !== 'transcribe' && !text) {
-      showResult('<p>Choose an entry above, or paste some text, then try again.</p>');
+      showResult('<p>' + t('ai.chooseFirst') + '</p>');
       return;
     }
     setBusy(true);
     try {
       if (action === 'mood') {
-        showLoading('Detecting mood');
+        showLoading(t('ai.loadingMood'));
         var mood = await window.MyDimensionApi.aiMood({ entry_id: entry ? entry.id : undefined, text: text });
-        var label = resultText(mood) || 'No suggestion returned';
-        showResult('<p><strong>Suggested mood: ' + esc(label) + '</strong></p>' +
-          '<p class="small muted">This is an AI suggestion, not a fact or a diagnosis. You can keep your own mood, or change it when editing the entry.</p>' +
+        var label = resultText(mood) || t('ai.noSuggestion');
+        showResult('<p><strong>' + t('ai.suggestedMood') + ' ' + esc(label) + '</strong></p>' +
+          '<p class="small muted">' + t('ai.suggestionNote') + '</p>' +
           (mood.note ? '<p class="small muted">' + esc(mood.note) + '</p>' : ''));
       } else if (action === 'summary') {
-        showLoading('Summarising');
+        showLoading(t('ai.loadingSummary'));
         var sum = await window.MyDimensionApi.aiSummary({ entry_id: entry ? entry.id : undefined, text: text });
-        showResult('<p><strong>Summary' + (title ? ' — ' + esc(title) : '') + '</strong></p><p>' + esc(resultText(sum) || 'No summary returned.') + '</p><p class="small muted">Your original entry was not changed.</p>');
+        showResult('<p><strong>' + t('ai.summaryTitle') + (title ? ' — ' + esc(title) : '') + '</strong></p><p>' + esc(resultText(sum) || t('ai.noSummary')) + '</p><p class="small muted">' + t('ai.originalUnchanged') + '</p>');
       } else if (action === 'improve') {
-        showLoading('Improving writing');
+        showLoading(t('ai.loadingImprove'));
         var imp = await window.MyDimensionApi.aiImprove({ entry_id: entry ? entry.id : undefined, text: text });
         var improved = resultText(imp);
-        showResult('<p><strong>Improved version (suggestion only)</strong></p><p>' + esc(improved || 'No suggestion returned.') + '</p>' +
-          '<p class="small muted">Your original text was not overwritten. Use the button below only if you want this as a draft.</p>' +
-          (improved ? '<button class="btn secondary" id="useImprovedBtn">Use as a draft in My Journal</button>' : ''));
+        showResult('<p><strong>' + t('ai.improvedTitle') + '</strong></p><p>' + esc(improved || t('ai.noImproved')) + '</p>' +
+          '<p class="small muted">' + t('ai.originalNotOverwritten') + '</p>' +
+          (improved ? '<button class="btn secondary" id="useImprovedBtn">' + t('ai.useAsDraft') + '</button>' : ''));
         var btn = document.getElementById('useImprovedBtn');
         if (btn) btn.addEventListener('click', function () {
-          window.MyDimensionJournal.startNew({ title: title ? title + ' (AI draft)' : 'AI draft', body: improved });
-          window.MyDimensionApp.toast('Draft ready in My Journal — review it, then press Save.');
+          window.MyDimensionJournal.startNew({ title: title ? title + t('ai.draftSuffix') : t('ai.draftTitle'), body: improved });
+          window.MyDimensionApp.toast(t('ai.draftReady'));
         });
       } else if (action === 'reflect') {
-        showLoading('Reflecting on your day');
+        showLoading(t('ai.loadingReflect'));
         var entryText = entry ? ('Diary entry "' + entry.title + '" (' + entry.date + '):\n' + entry.body) : text;
         var ref = await window.MyDimensionApi.aiSummary({
           entry_id: entry ? entry.id : undefined,
           text: 'Give a short, kind daily reflection on this diary entry — one insight and one gentle question for tomorrow:\n\n' + entryText
         });
-        showResult('<p><strong>Daily Reflection' + (entry ? ' — ' + esc(entry.title) : '') + '</strong></p><p>' + esc(resultText(ref) || 'No reflection returned.') + '</p><p class="small muted">An AI reflection, not advice or a diagnosis. Your original entry was not changed.</p>');
+        showResult('<p><strong>' + t('ai.reflectionTitle') + (entry ? ' — ' + esc(entry.title) : '') + '</strong></p><p>' + esc(resultText(ref) || t('ai.noReflection')) + '</p><p class="small muted">' + t('ai.reflectionNote') + '</p>');
       } else if (action === 'transcribe') {
         var file = document.getElementById('aiAudioFile').files[0];
-        if (!file) { showResult('<p>Choose an audio file first, then press Transcribe.</p>'); setBusy(false); return; }
-        showLoading('Transcribing audio');
+        if (!file) { showResult('<p>' + t('ai.chooseAudio') + '</p>'); setBusy(false); return; }
+        showLoading(t('ai.loadingTranscribe'));
         var fd = new FormData(); fd.append('file', file);
         var tr = await window.MyDimensionApi.aiTranscribe(fd);
         var transcript = resultText(tr);
-        showResult('<p><strong>Transcript (review before saving)</strong></p><p>' + esc(transcript || 'No transcript returned.') + '</p>' +
-          (transcript ? '<button class="btn secondary" id="saveTranscriptBtn">Save transcript as a journal draft</button>' : ''));
+        showResult('<p><strong>' + t('ai.transcriptTitle') + '</strong></p><p>' + esc(transcript || t('ai.noTranscript')) + '</p>' +
+          (transcript ? '<button class="btn secondary" id="saveTranscriptBtn">' + t('ai.saveTranscript') + '</button>' : ''));
         var saveBtn = document.getElementById('saveTranscriptBtn');
         if (saveBtn) saveBtn.addEventListener('click', function () {
-          window.MyDimensionJournal.startNew({ title: 'Voice memory — ' + window.MyDimensionJournal.todayLocal(), body: transcript });
-          window.MyDimensionApp.toast('Transcript is a draft in My Journal — review it, then press Save.');
+          window.MyDimensionJournal.startNew({ title: t('ai.voiceMemory') + window.MyDimensionJournal.todayLocal(), body: transcript });
+          window.MyDimensionApp.toast(t('ai.transcriptDraft'));
         });
       }
     } catch (err) { showError(err); }
@@ -115,23 +118,23 @@
   // Chat: reflect on the chosen entry, answering the owner's question.
   async function askChat(question) {
     if (!aiEnabled()) {
-      appendChat('ai', 'AI features are turned off in Settings. Turn them back on to ask a question.');
+      appendChat('ai', t('ai.off'));
       return;
     }
     var q = (question || '').trim();
     if (!q) return;
     appendChat('user', q);
     var entry = selectedEntry();
-    if (!entry) { appendChat('ai', 'I need a diary entry to reflect on — write one first, or paste text in the box above.'); return; }
+    if (!entry) { appendChat('ai', t('ai.needEntry')); return; }
     setBusy(true);
     try {
       var res = await window.MyDimensionApi.aiSummary({
         entry_id: entry.id,
         text: 'The owner asks about this diary entry: "' + q + '"\n\nDiary entry "' + entry.title + '" (' + entry.date + '):\n' + entry.body + '\n\nAnswer briefly, as a reflection on the entry.'
       });
-      appendChat('ai', resultText(res) || 'No answer returned.');
+      appendChat('ai', resultText(res) || t('ai.noAnswer'));
     } catch (err) {
-      appendChat('ai', 'Sorry — I could not answer that: ' + (err.message || err));
+      appendChat('ai', t('ai.answerFailed') + ' ' + (err.message || err));
     }
     setBusy(false);
   }
@@ -151,7 +154,7 @@
     if (!sel) return;
     var current = sel.value;
     var entries = window.MyDimensionJournal.sortedEntries();
-    sel.innerHTML = '<option value="">— Most recent entry —</option>' +
+    sel.innerHTML = '<option value="">' + t('ai.recentOption') + '</option>' +
       entries.map(function (e) { return '<option value="' + esc(e.id) + '">' + esc((e.date ? e.date + ' — ' : '') + e.title) + '</option>'; }).join('');
     if (current) sel.value = current;
   }

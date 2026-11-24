@@ -9,6 +9,10 @@
 (function () {
   'use strict';
 
+  // i18n: t() reads the live language; loc() is the date locale for it.
+  function t(key, vars) { return window.MyDimensionI18n ? window.MyDimensionI18n.t(key, vars) : key; }
+  function loc() { return window.MyDimensionI18n ? window.MyDimensionI18n.locale() : undefined; }
+
   var ROUTES = ['dashboard', 'journal', 'entry', 'ai', 'media', 'calendar', 'insights', 'settings'];
   var calCursor = new Date(); calCursor.setDate(1);
   var miniCursor = new Date(); miniCursor.setDate(1);
@@ -32,9 +36,9 @@
       back.innerHTML = '<div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">' +
         '<h3 id="modalTitle">' + window.MyDimensionJournal.esc(opts.title) + '</h3>' +
         '<p>' + window.MyDimensionJournal.esc(opts.text) + '</p>' +
-        (opts.strong ? '<div class="field"><label for="modalConfirmText">Type DELETE to confirm</label><input id="modalConfirmText" autocomplete="off" placeholder="DELETE"></div>' : '') +
-        '<div class="modal-actions"><button class="btn ghost" data-modal-no>Cancel</button>' +
-        '<button class="btn danger" data-modal-yes>' + window.MyDimensionJournal.esc(opts.yes || 'Delete') + '</button></div></div>';
+        (opts.strong ? '<div class="field"><label for="modalConfirmText">' + t('confirm.typeDelete') + '</label><input id="modalConfirmText" autocomplete="off" placeholder="DELETE"></div>' : '') +
+        '<div class="modal-actions"><button class="btn ghost" data-modal-no>' + t('confirm.cancel') + '</button>' +
+        '<button class="btn danger" data-modal-yes>' + window.MyDimensionJournal.esc(opts.yes || t('confirm.delete')) + '</button></div></div>';
       document.body.appendChild(back);
       var yesBtn = back.querySelector('[data-modal-yes]');
       if (opts.strong) {
@@ -89,7 +93,7 @@
   function donutHtml(groups, size) {
     size = size || 180;
     if (!groups.total) {
-      return '<div class="empty"><p>No mood data yet.</p><p class="small">Add a mood when you write an entry, and your overview will appear here.</p></div>';
+      return '<div class="empty"><p>' + t('dash.noMood') + '</p><p class="small">' + t('dash.noMoodHint') + '</p></div>';
     }
     var r = (size / 2) - 14, c = 2 * Math.PI * r, cx = size / 2, cy = size / 2;
     var segs = [
@@ -109,7 +113,7 @@
     return '<svg width="' + size + '" height="' + size + '" viewBox="0 0 ' + size + ' ' + size + '" role="img" aria-label="Mood overview">' +
       '<circle cx="' + cx + '" cy="' + cy + '" r="' + r + '" fill="none" stroke="#EDE9FE" stroke-width="18"/>' + circles +
       '<text x="50%" y="47%" text-anchor="middle" font-size="30" font-weight="700" fill="#0F766E" font-family="Poppins, sans-serif">' + groups.pctPositive + '%</text>' +
-      '<text x="50%" y="60%" text-anchor="middle" font-size="11" fill="#87918D">positive</text></svg>';
+      '<text x="50%" y="60%" text-anchor="middle" font-size="11" fill="#87918D">' + t('dash.positive') + '</text></svg>';
   }
   // Draw the donut segments: set each segment to its final dash length on
   // the next frame so the CSS transition on stroke-dasharray animates it.
@@ -130,13 +134,13 @@
   function legendHtml(groups) {
     if (!groups.total) return '';
     var rows = [
-      ['Positive', groups.positive, groups.pctPositive, '#14B8A6'],
-      ['Neutral', groups.neutral, groups.pctNeutral, '#AFA0E8'],
-      ['Challenging', groups.challenging, groups.pctChallenging, '#245C49']
+      [t('dash.legendPositive'), groups.positive, groups.pctPositive, '#14B8A6'],
+      [t('dash.legendNeutral'), groups.neutral, groups.pctNeutral, '#AFA0E8'],
+      [t('dash.legendChallenging'), groups.challenging, groups.pctChallenging, '#245C49']
     ];
     return rows.map(function (r) {
       return '<div class="legend-row"><span><span class="dot" style="background:' + r[3] + '"></span>' + r[0] + '</span><strong>' + r[2] + '% · ' + r[1] + '</strong></div>';
-    }).join('') + '<div class="legend-row"><span>All Journals</span><strong>' + groups.total + ' mood-tagged</strong></div>';
+    }).join('') + '<div class="legend-row"><span>' + t('dash.allJournals') + '</span><strong>' + groups.total + ' ' + t('dash.moodTagged') + '</strong></div>';
   }
 
   /* ---------- dashboard ---------- */
@@ -156,14 +160,14 @@
     // My Journals: 3 most recent entries as cover cards (CSS gradients, no external images).
     var cards = document.getElementById('journalCards');
     if (!sorted.length) {
-      cards.innerHTML = '<div class="empty" style="grid-column:1/-1"><p>No journals yet.</p><button class="btn" data-goto-new-entry>Write your first memory</button></div>';
+      cards.innerHTML = '<div class="empty" style="grid-column:1/-1"><p>' + t('dash.noJournals') + '</p><button class="btn" data-goto-new-entry>' + t('dash.writeFirst') + '</button></div>';
     } else {
       cards.innerHTML = sorted.slice(0, 3).map(function (e, i) {
         return '<button type="button" class="journal-cover ' + window.MyDimensionJournal.coverClass(e, i) + '" data-open-entry="' + window.MyDimensionJournal.esc(e.id) + '">' +
           '<span class="cover-badge" aria-hidden="true">' + (window.MyDimensionJournal.MOOD_EMOJI[e.mood] || '✎') + '</span>' +
           '<span class="cover-art" aria-hidden="true"><img class="cover-img" src="' + window.MyDimensionJournal.coverArt(i) + '" alt="' + window.MyDimensionJournal.esc(window.MyDimensionJournal.coverArtAlt(i)) + '" loading="lazy"></span>' +
           '<span class="cover-body"><span class="cover-title">' + window.MyDimensionJournal.esc(e.title) + '</span>' +
-          '<span class="cover-meta">Created at ' + window.MyDimensionJournal.esc(window.MyDimensionJournal.fmtDate(e.date)) + '</span></span></button>';
+          '<span class="cover-meta">' + t('dash.createdAt') + ' ' + window.MyDimensionJournal.esc(window.MyDimensionJournal.fmtDate(e.date)) + '</span></span></button>';
       }).join('');
     }
 
@@ -189,16 +193,16 @@
       badge.classList.toggle('hidden', !todays.length);
     }
     if (!todays.length) {
-      box.innerHTML = '<p class="small muted">Nothing yet today. Write your first entry of the day.</p>';
+      box.innerHTML = '<p class="small muted">' + t('dash.nothingToday') + '</p>';
     } else {
       box.innerHTML = todays.map(function (e) {
         return '<div class="activity-item"><span class="activity-ico" aria-hidden="true">✎</span>' +
           '<div><p><strong>' + window.MyDimensionJournal.esc(e.title) + '</strong></p>' +
-          '<p class="small muted">New Diary Entry · ' + window.MyDimensionJournal.esc(window.MyDimensionJournal.relTime(e.created_at)) + '</p></div></div>';
+          '<p class="small muted">' + t('dash.newEntryActivity') + ' · ' + window.MyDimensionJournal.esc(window.MyDimensionJournal.relTime(e.created_at)) + '</p></div></div>';
       }).join('');
     }
     var panel = document.getElementById('bellPanel');
-    if (panel) panel.innerHTML = '<h4>Today\'s Activity</h4>' + box.innerHTML;
+    if (panel) panel.innerHTML = '<h4>' + t('bell.today') + '</h4>' + box.innerHTML;
   }
 
   /* ---------- calendar (Monday-first, as on the design board) ---------- */
@@ -229,7 +233,7 @@
   function renderMiniCalendar(entries) {
     var box = document.getElementById('miniCalendar');
     if (!box) return;
-    document.getElementById('miniCalLabel').textContent = miniCursor.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
+    document.getElementById('miniCalLabel').textContent = miniCursor.toLocaleDateString(loc(), { month: 'long', year: 'numeric' });
     renderCalendarInto(box, miniCursor.getFullYear(), miniCursor.getMonth(), entryDaysMap(entries), function (iso) {
       selectedDay = iso; window.location.hash = '#/calendar';
     });
@@ -237,7 +241,7 @@
   async function loadCalendarPage() {
     hideError();
     var year = calCursor.getFullYear(), month = calCursor.getMonth();
-    document.getElementById('calLabel').textContent = calCursor.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
+    document.getElementById('calLabel').textContent = calCursor.toLocaleDateString(loc(), { month: 'long', year: 'numeric' });
     var entries = await window.MyDimensionJournal.loadEntries({});
     var daysMap = entryDaysMap(entries);
     try {
@@ -255,7 +259,7 @@
     };
     renderCalendarInto(document.getElementById('bigCalendar'), year, month, daysMap, pickDay);
     if (selectedDay) showDayEntries(selectedDay);
-    else document.getElementById('dayEntries').innerHTML = '<p class="muted">Choose a day to see its entries, or write one for that day.</p>';
+    else document.getElementById('dayEntries').innerHTML = '<p class="muted">' + t('cal.chooseDay') + '</p>';
   }
   function showDayEntries(iso) {
     var box = document.getElementById('dayEntries');
@@ -267,7 +271,7 @@
     btn.onclick = function () {
       window.MyDimensionJournal.startNew();
       if (iso !== window.MyDimensionJournal.todayLocal()) {
-        toast('Note: entries are dated by the day they are saved, so this entry will be dated today.');
+        toast(t('toast.entryDated'));
       }
     };
   }
@@ -277,8 +281,10 @@
     hideError();
     var sel = document.getElementById('journalMoodFilter');
     if (sel.options.length <= 1) {
-      window.MyDimensionJournal.MOODS.forEach(function (m) { var o = document.createElement('option'); o.value = m; o.textContent = m; sel.appendChild(o); });
+      window.MyDimensionJournal.MOODS.forEach(function (m) { var o = document.createElement('option'); o.value = m; o.textContent = window.MyDimensionI18n ? window.MyDimensionI18n.moodLabel(m) : m; sel.appendChild(o); });
     }
+    // First option ("All moods") re-translates on every language switch.
+    if (sel.options.length) sel.options[0].textContent = t('journal.allMoods');
     window.MyDimensionJournal.renderMoodPicker();
     window.MyDimensionJournal.restoreDraftIfAny();
     await window.MyDimensionJournal.refreshJournalList();
@@ -286,26 +292,26 @@
   async function loadEntryDetail(id) {
     hideError();
     var box = document.getElementById('entryDetail');
-    if (!id) { box.innerHTML = '<p class="muted">No entry selected.</p>'; return; }
+    if (!id) { box.innerHTML = '<p class="muted">' + t('entry.noEntry') + '</p>'; return; }
     var entry = window.MyDimensionJournal.findCached(id);
     if (!entry) {
       try { entry = (await window.MyDimensionJournal.loadEntries({})).find(function (e) { return String(e.id) === String(id); }); }
       catch (e) { /* fall through */ }
     }
-    if (!entry) { box.innerHTML = '<div class="empty"><p>That entry could not be found. It may already have been deleted.</p><a class="btn" href="#/journal">Back to My Journal</a></div>'; return; }
+    if (!entry) { box.innerHTML = '<div class="empty"><p>' + t('entry.notFound') + '</p><a class="btn" href="#/journal">' + t('entry.back') + '</a></div>'; return; }
     var J = window.MyDimensionJournal;
     box.innerHTML =
       '<div class="entry-row"><span class="entry-thumb ' + J.coverClass(entry, 0) + '" aria-hidden="true">' + (J.MOOD_EMOJI[entry.mood] || '✎') + '</span>' +
       '<div class="entry-body"><h3>' + J.esc(entry.title) + '</h3>' +
       '<p class="muted small">' + J.esc(J.fmtDate(entry.date)) + (entry.created_at ? ' · ' + J.esc(J.fmtTime(entry.created_at)) : '') +
-      (entry.mood ? ' · <span class="mood-pill">' + J.esc(J.MOOD_EMOJI[entry.mood] || '') + ' ' + J.esc(entry.mood) + '</span>' : '') +
+      (entry.mood ? ' · <span class="mood-pill">' + J.esc(J.MOOD_EMOJI[entry.mood] || '') + ' ' + J.esc(window.MyDimensionI18n ? window.MyDimensionI18n.moodLabel(entry.mood) : entry.mood) + '</span>' : '') +
       entry.tags.map(function (t) { return ' <span class="tag-pill">' + J.esc(t) + '</span>'; }).join('') + '</p></div></div>' +
       '<div class="detail-content">' + J.esc(entry.body) + '</div>' +
-      (entry.summary ? '<h4>AI summary</h4><p class="muted">' + J.esc(entry.summary) + '</p>' : '') +
+      (entry.summary ? '<h4>' + t('entry.aiSummary') + '</h4><p class="muted">' + J.esc(entry.summary) + '</p>' : '') +
       '<div class="entry-actions">' +
-      '<button class="btn secondary" data-edit-entry="' + J.esc(entry.id) + '">Edit</button>' +
-      '<button class="btn ghost" data-delete-entry="' + J.esc(entry.id) + '" data-entry-title="' + J.esc(entry.title) + '">Delete</button>' +
-      '<button class="btn ghost" data-ai-entry="' + J.esc(entry.id) + '">AI reflection</button></div>';
+      '<button class="btn secondary" data-edit-entry="' + J.esc(entry.id) + '">' + t('journal.edit') + '</button>' +
+      '<button class="btn ghost" data-delete-entry="' + J.esc(entry.id) + '" data-entry-title="' + J.esc(entry.title) + '">' + t('journal.delete') + '</button>' +
+      '<button class="btn ghost" data-ai-entry="' + J.esc(entry.id) + '">' + t('journal.aiReflection') + '</button></div>';
     // Media linked to this entry (media rows carry entry_id).
     var mediaBox = document.getElementById('entryDetailMedia');
     try {
@@ -315,8 +321,8 @@
         return m.kind === 'audio'
           ? '<div class="voice-item"><strong>' + J.esc(m.caption || m.name) + '</strong><audio class="detail-audio" controls preload="none" src="' + window.MyDimensionApi.getMediaUrl(m.id) + '"></audio></div>'
           : '<figure class="thumb"><img loading="lazy" alt="' + J.esc(m.caption || m.name) + '" src="' + window.MyDimensionApi.getMediaUrl(m.id) + '"><figcaption>' + J.esc(m.caption || m.name) + '</figcaption></figure>';
-      }).join('') : '<p class="small muted">No photos or voice notes attached to this entry.</p>';
-    } catch (e) { mediaBox.innerHTML = '<p class="small muted">Media could not be loaded.</p>'; }
+      }).join('') : '<p class="small muted">' + t('entry.noMedia') + '</p>';
+    } catch (e) { mediaBox.innerHTML = '<p class="small muted">' + t('entry.mediaFailed') + '</p>'; }
   }
 
   /* ---------- insights ---------- */
@@ -332,9 +338,9 @@
       entries.forEach(function (e) { if (e.mood) counts[e.mood] = (counts[e.mood] || 0) + 1; });
     }
     var total = Object.values(counts).reduce(function (a, b) { return a + b; }, 0);
-    document.getElementById('insightsTotal').textContent = total + (total === 1 ? ' mood-tagged entry' : ' mood-tagged entries');
+    document.getElementById('insightsTotal').textContent = total + ' ' + t(total === 1 ? 'ins.moodTaggedOne' : 'ins.moodTaggedMany');
     var box = document.getElementById('moodChart');
-    if (!total) { box.innerHTML = '<div class="empty"><p>No mood data yet.</p><p class="small">Add a mood when you write an entry, and your insights will appear here.</p></div>'; }
+    if (!total) { box.innerHTML = '<div class="empty"><p>' + t('ins.noMood') + '</p><p class="small">' + t('ins.noMoodHint') + '</p></div>'; }
     else {
       var max = Math.max.apply(null, Object.values(counts));
       box.innerHTML = Object.keys(counts).sort(function (a, b) { return counts[b] - counts[a]; }).map(function (mood, i) {
@@ -342,7 +348,7 @@
         return '<div class="bar-row"><span>' + window.MyDimensionJournal.esc(mood) + '</span>' +
           '<div class="bar-track"><div class="bar-fill' + (i % 2 ? ' lav' : '') + '" style="width:' + pct + '%"></div></div>' +
           '<strong>' + counts[mood] + '</strong></div>';
-      }).join('') + '<p class="small muted">Counts of entries by mood. AI mood suggestions are suggestions only — they are not facts or diagnoses.</p>';
+      }).join('') + '<p class="small muted">' + t('ins.countsNote') + '</p>';
     }
     // Overall mood donut + stats (real data).
     var groups = moodGroups(entries);
@@ -355,11 +361,11 @@
     var audio = media.filter(function (m) { return m.kind === 'audio'; }).length;
     var thisMonth = entries.filter(function (e) { return e.date && e.date.slice(0, 7) === window.MyDimensionJournal.todayLocal().slice(0, 7); }).length;
     document.getElementById('diaryStats').innerHTML =
-      '<div class="legend-row"><span>Total Entries</span><strong>' + entries.length + '</strong></div>' +
-      '<div class="legend-row"><span>With Voice</span><strong>' + audio + '</strong></div>' +
-      '<div class="legend-row"><span>With Photos</span><strong>' + photos + '</strong></div>' +
-      '<div class="legend-row"><span>This Month</span><strong>' + thisMonth + '</strong></div>' +
-      '<div class="legend-row"><span>Mood-tagged</span><strong>' + total + '</strong></div>';
+      '<div class="legend-row"><span>' + t('ins.totalEntries') + '</span><strong>' + entries.length + '</strong></div>' +
+      '<div class="legend-row"><span>' + t('ins.withVoice') + '</span><strong>' + audio + '</strong></div>' +
+      '<div class="legend-row"><span>' + t('ins.withPhotos') + '</span><strong>' + photos + '</strong></div>' +
+      '<div class="legend-row"><span>' + t('ins.thisMonth') + '</span><strong>' + thisMonth + '</strong></div>' +
+      '<div class="legend-row"><span>' + t('ins.moodTagged') + '</span><strong>' + total + '</strong></div>';
     renderTrend(entries);
   }
   function renderTrend(entries) {
@@ -413,7 +419,7 @@
     var dark = saved === 'dark';
     document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
     var btn = document.getElementById('themeToggle');
-    if (btn) { btn.textContent = dark ? 'Switch to light theme' : 'Switch to dark theme'; btn.setAttribute('aria-pressed', String(dark)); }
+    if (btn) { btn.textContent = dark ? t('theme.light') : t('theme.dark'); btn.setAttribute('aria-pressed', String(dark)); }
   }
   function toggleTheme() {
     var dark = document.documentElement.getAttribute('data-theme') !== 'dark';
@@ -428,7 +434,7 @@
       var a = document.createElement('a'); a.href = URL.createObjectURL(blob);
       a.download = 'mydimension-export-' + window.MyDimensionJournal.todayLocal() + '.json'; a.click();
       setTimeout(function () { URL.revokeObjectURL(a.href); }, 5000);
-      toast('Export downloaded.');
+      toast(t('toast.exported'));
     } catch (err) { showError(err.message || err); }
   }
 
@@ -448,7 +454,7 @@
   }
   async function startEntryRecording() {
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || !window.MediaRecorder) {
-      throw new Error('This browser cannot record audio here. Please upload an audio file from the Media Vault instead.');
+      throw new Error(t('journal.noRecord'));
     }
     var stream = await navigator.mediaDevices.getUserMedia({ audio: true });
     entryRec.chunks = [];
@@ -474,26 +480,29 @@
     if (entryRec.recorder && entryRec.recorder.state !== 'inactive') entryRec.recorder.stop();
   }
   async function transcribeEntryRecording() {
-    if (!entryRec.blob) { toast('Record a voice note first.'); return; }
+    if (!entryRec.blob) { toast(t('toast.recordFirst')); return; }
     var status = document.getElementById('entryTranscribeStatus');
-    status.textContent = 'Transcribing…';
+    status.textContent = t('toast.transcribing');
     try {
       var fd = new FormData();
       fd.append('file', new File([entryRec.blob], 'voice-note.webm', { type: entryRec.blob.type || 'audio/webm' }));
       var tr = await window.MyDimensionApi.aiTranscribe(fd);
       var text = tr.result || tr.text || '';
-      status.textContent = text ? 'Transcript added below — review it before saving.' : 'No transcript returned.';
+      status.textContent = text ? t('toast.transcriptAdded') : t('toast.noTranscript');
       if (text) {
         var cur = document.getElementById('entryBody').innerText.trim();
         document.getElementById('entryBody').innerText = cur ? cur + '\n\n' + text : text;
         setEntryTab('write');
       }
-    } catch (err) { status.textContent = 'Transcription failed: ' + err.message; }
+    } catch (err) { status.textContent = t('toast.transcriptFailed') + ' ' + err.message; }
   }
 
   /* ---------- events ---------- */
   function bindEvents() {
-    document.getElementById('loginBtn').addEventListener('click', window.MyDimensionAuth.login);
+    // Google sign-in is hidden from the login page for now (User ID +
+    // password only); the button may not exist — bind it only if present.
+    var googleBtn = document.getElementById('loginBtn');
+    if (googleBtn) googleBtn.addEventListener('click', window.MyDimensionAuth.login);
     // User ID + Password sign-in form.
     document.getElementById('passwordLoginForm').addEventListener('submit', async function (e) {
       e.preventDefault();
@@ -516,13 +525,13 @@
       this.classList.toggle('on', show);
       input.focus();
     });
-    // Forgot password: there is no reset email — the owner signs in
-    // with Google and changes the password in Settings.
+    // Forgot password: there is no reset on this page yet — login is
+    // User ID + password only.
     document.getElementById('forgotPasswordBtn').addEventListener('click', function () {
       var hint = document.getElementById('forgotHint');
-      hint.textContent = 'Forgot your password? Sign in with Google below, then change it in Settings.';
+      hint.textContent = 'Forgot your password? There is no password reset on this page yet.';
       hint.classList.remove('hidden');
-      document.getElementById('loginBtn').focus();
+      document.getElementById('loginUsername').focus();
     });
     // Set / change password from Settings.
     document.getElementById('savePasswordBtn').addEventListener('click', async function () {
@@ -546,7 +555,7 @@
     try { aiPref.checked = localStorage.getItem('mydimension-ai-off') !== '1'; } catch (e) { /* default on */ }
     aiPref.addEventListener('change', function () {
       try { localStorage.setItem('mydimension-ai-off', aiPref.checked ? '0' : '1'); } catch (e) { /* ignore */ }
-      toast(aiPref.checked ? 'AI features turned on.' : 'AI features turned off.');
+      toast(aiPref.checked ? t('toast.aiOn') : t('toast.aiOff'));
     });
 
     // Bell: today's activity panel.
@@ -557,7 +566,7 @@
       btn.setAttribute('aria-expanded', String(!open));
     }
     document.getElementById('bellBtn').addEventListener('click', function (e) { e.stopPropagation(); toggleBell(); });
-    document.getElementById('bellBtnMobile').addEventListener('click', function () { window.location.hash = '#/dashboard'; toast("Today's activity is on the dashboard."); });
+    document.getElementById('bellBtnMobile').addEventListener('click', function () { window.location.hash = '#/dashboard'; toast(t('toast.todayActivity')); });
     document.addEventListener('click', function (e) {
       var panel = document.getElementById('bellPanel');
       if (panel && !panel.classList.contains('hidden') && !e.target.closest('.bell-wrap')) panel.classList.add('hidden');
@@ -584,15 +593,15 @@
     // Entry form: submit, draft, cancel, tabs, rich text, voice, photo/file.
     document.getElementById('entryForm').addEventListener('submit', async function (e) {
       e.preventDefault();
-      try { await window.MyDimensionJournal.saveCurrent(); toast('Entry saved.'); loadDashboard().catch(function () {}); }
+      try { await window.MyDimensionJournal.saveCurrent(); toast(t('toast.saved')); loadDashboard().catch(function () {}); }
       catch (err) { showError(err.message || err); }
     });
     document.getElementById('saveDraftBtn').addEventListener('click', function () {
-      try { window.MyDimensionJournal.saveDraft(); toast('Draft saved on this device.'); }
+      try { window.MyDimensionJournal.saveDraft(); toast(t('toast.draftSaved')); }
       catch (err) { showError(err.message || err); }
     });
     document.getElementById('discardDraftBtn').addEventListener('click', function () {
-      window.MyDimensionJournal.clearDraft(); window.MyDimensionJournal.resetForm(); toast('Draft discarded.');
+      window.MyDimensionJournal.clearDraft(); window.MyDimensionJournal.resetForm(); toast(t('toast.draftDiscarded'));
     });
     document.getElementById('cancelEditBtn').addEventListener('click', function () { window.MyDimensionJournal.resetForm(); });
     document.querySelectorAll('[data-entry-tab]').forEach(function (b) {
@@ -647,7 +656,7 @@
     document.getElementById('mediaUploadInput').addEventListener('change', async function (e) {
       var f = e.target.files[0]; if (!f) return;
       var kind = f.type.indexOf('audio/') === 0 ? 'audio' : 'photo';
-      try { await window.MyDimensionMedia.uploadFile(f, kind, ''); toast('Uploaded.'); await loadMediaPage(); }
+      try { await window.MyDimensionMedia.uploadFile(f, kind, ''); toast(t('toast.uploaded')); await loadMediaPage(); }
       catch (err) { showError(err.message); }
       e.target.value = '';
     });
@@ -666,12 +675,12 @@
     document.getElementById('aiChatInput').addEventListener('keydown', function (e) { if (e.key === 'Enter') sendChat(); });
 
     document.getElementById('clearDataBtn').addEventListener('click', async function () {
-      var ok = await confirmDialog({ title: 'Delete all diary data?', text: 'This permanently deletes all of your diary entries. Photos and voice memories are deleted separately from the Media Vault. This cannot be undone.', yes: 'Delete all entries', strong: true });
+      var ok = await confirmDialog({ title: t('confirm.deleteAllTitle'), text: t('confirm.deleteAllText'), yes: t('confirm.deleteAllYes'), strong: true });
       if (!ok) return;
       try {
         var entries = await window.MyDimensionJournal.loadEntries({});
         for (var i = 0; i < entries.length; i++) { await window.MyDimensionApi.deleteEntry(entries[i].id); }
-        toast('All entries deleted.'); loadDashboard();
+        toast(t('toast.allDeleted')); loadDashboard();
       } catch (err) { showError(err.message || err); }
     });
 
@@ -688,9 +697,9 @@
       }
       if (t.hasAttribute('data-delete-entry')) {
         var title = t.getAttribute('data-entry-title') || 'this entry';
-        var ok = await confirmDialog({ title: 'Delete this entry?', text: '“' + title + '” will be permanently deleted. This cannot be undone.', yes: 'Delete entry' });
+        var ok = await confirmDialog({ title: t('confirm.deleteEntryTitle'), text: t('confirm.deleteEntryText', { title: title }), yes: t('confirm.delete') });
         if (!ok) return;
-        try { await window.MyDimensionApi.deleteEntry(t.getAttribute('data-delete-entry')); toast('Entry deleted.'); await window.MyDimensionJournal.refreshJournalList(); loadDashboard().catch(function () {}); }
+        try { await window.MyDimensionApi.deleteEntry(t.getAttribute('data-delete-entry')); toast(t('toast.entryDeleted')); await window.MyDimensionJournal.refreshJournalList(); loadDashboard().catch(function () {}); }
         catch (err) { showError(err.message); }
         return;
       }
@@ -704,26 +713,26 @@
       }
       if (t.hasAttribute('data-delete-media')) {
         var name = t.getAttribute('data-media-name') || 'this file';
-        var okM = await confirmDialog({ title: 'Delete this file?', text: '“' + name + '” will be permanently deleted from your Drive storage. This cannot be undone.', yes: 'Delete file' });
+        var okM = await confirmDialog({ title: t('confirm.deleteFileTitle'), text: t('confirm.deleteFileText', { name: name }), yes: t('confirm.delete') });
         if (!okM) return;
-        try { await window.MyDimensionApi.deleteMedia(t.getAttribute('data-delete-media')); toast('File deleted.'); loadMediaPage(); }
+        try { await window.MyDimensionApi.deleteMedia(t.getAttribute('data-delete-media')); toast(t('toast.fileDeleted')); loadMediaPage(); }
         catch (err) { showError(err.message); }
         return;
       }
       if (t.hasAttribute('data-transcribe-media')) {
         var id = t.getAttribute('data-transcribe-media');
         var out = document.querySelector('[data-transcript-for="' + id + '"]');
-        if (out) out.textContent = 'Transcribing…';
+        if (out) out.textContent = t('media.transcribing');
         try {
           // Transcription needs the audio file; fetch it back through the API and re-send it.
           var res = await fetch(window.MyDimensionApi.getMediaUrl(id), { credentials: 'include' });
-          if (!res.ok) throw new Error('Could not load that recording. Please try again.');
+          if (!res.ok) throw new Error(t('media.loadFailed'));
           var blob = await res.blob();
           var fd = new FormData(); fd.append('file', blob, 'voice-memory.webm');
           var tr = await window.MyDimensionApi.aiTranscribe(fd);
           var text = tr.result || tr.text || '';
-          if (out) out.innerHTML = text ? '<strong>Transcript:</strong> ' + window.MyDimensionJournal.esc(text) : 'No transcript returned.';
-        } catch (err) { if (out) out.textContent = 'Transcription failed: ' + err.message; }
+          if (out) out.innerHTML = text ? '<strong>' + t('media.transcript') + '</strong> ' + window.MyDimensionJournal.esc(text) : t('media.noTranscript');
+        } catch (err) { if (out) out.textContent = t('media.transcriptFailed') + ' ' + err.message; }
       }
     });
 

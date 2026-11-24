@@ -11,6 +11,9 @@
 (function () {
   'use strict';
 
+  // i18n: t() reads the live language.
+  function t(key, vars) { return window.MyDimensionI18n ? window.MyDimensionI18n.t(key, vars) : key; }
+
   var mediaCache = [];
 
   function esc(s) { return window.MyDimensionJournal.esc(s); }
@@ -49,16 +52,16 @@
       '<div class="small muted">' + esc(fmtDate(m.created_at)) + ' · ' + esc(m.name) + (m.size ? ' · ' + esc(fmtSize(m.size)) : '') + '</div>' +
       '<audio controls preload="none" src="' + window.MyDimensionApi.getMediaUrl(m.id) + '"></audio>' +
       '<div class="entry-actions">' +
-      '<button class="btn small secondary" data-transcribe-media="' + esc(m.id) + '">Transcribe with AI</button>' +
-      '<button class="btn small ghost" data-delete-media="' + esc(m.id) + '" data-media-name="' + esc(m.name) + '">Delete</button>' +
+      '<button class="btn small secondary" data-transcribe-media="' + esc(m.id) + '">' + t('media.transcribeAI') + '</button>' +
+      '<button class="btn small ghost" data-delete-media="' + esc(m.id) + '" data-media-name="' + esc(m.name) + '">' + t('media.delete') + '</button>' +
       '</div><div class="small" data-transcript-for="' + esc(m.id) + '">' +
-      (m.transcript ? '<strong>Transcript:</strong> ' + esc(m.transcript) : '') + '</div></div>';
+      (m.transcript ? '<strong>' + t('media.transcript') + '</strong> ' + esc(m.transcript) : '') + '</div></div>';
   }
 
   function photoItemHtml(m) {
     return '<figure class="thumb"><img loading="lazy" alt="' + esc(m.caption || m.name) + '" src="' + window.MyDimensionApi.getMediaUrl(m.id) + '">' +
       '<figcaption><strong>' + esc(m.caption || m.name) + '</strong><br><span class="muted small">' + esc(fmtDate(m.created_at)) + (m.size ? ' · ' + esc(fmtSize(m.size)) : '') + '</span>' +
-      '<br><button class="btn small ghost" data-delete-media="' + esc(m.id) + '" data-media-name="' + esc(m.name) + '">Delete</button></figcaption></figure>';
+      '<br><button class="btn small ghost" data-delete-media="' + esc(m.id) + '" data-media-name="' + esc(m.name) + '">' + t('media.delete') + '</button></figcaption></figure>';
   }
 
   function fileItemHtml(m) {
@@ -70,8 +73,8 @@
       '<div class="file-meta"><strong>' + esc(m.caption || m.name) + '</strong><br>' +
       '<span class="muted small">' + esc(fmtDate(m.created_at)) + (m.size ? ' · ' + esc(fmtSize(m.size)) : '') + ' · ' + esc(m.kind || '') + '</span>' +
       inner +
-      '<div class="entry-actions"><a class="btn small secondary" href="' + window.MyDimensionApi.getMediaUrl(m.id) + '" download>Download</a>' +
-      '<button class="btn small ghost" data-delete-media="' + esc(m.id) + '" data-media-name="' + esc(m.name) + '">Delete</button></div>' +
+      '<div class="entry-actions"><a class="btn small secondary" href="' + window.MyDimensionApi.getMediaUrl(m.id) + '" download>' + t('media.download') + '</a>' +
+      '<button class="btn small ghost" data-delete-media="' + esc(m.id) + '" data-media-name="' + esc(m.name) + '">' + t('media.delete') + '</button></div>' +
       '</div></div>';
   }
 
@@ -83,8 +86,8 @@
     else if (tab === 'audio') items = items.filter(function (m) { return m.kind === 'audio'; });
     if (!box) return items;
     if (!items.length) {
-      var label = tab === 'all' ? 'No media yet.' : tab === 'files' ? 'No files yet.' : 'No ' + tab + 's yet.';
-      box.innerHTML = '<div class="empty"><img class="empty-illus" src="assets/empty-media.svg" alt="" width="240" height="120"><p>' + label + '</p><p class="small">Use the Upload button above — photos and audio go to your private Google Drive.</p></div>';
+      var label = tab === 'all' ? t('media.noMedia') : tab === 'files' ? t('media.noFiles') : tab === 'photo' ? t('media.noPhotos') : t('media.noAudio');
+      box.innerHTML = '<div class="empty"><img class="empty-illus" src="assets/empty-media.svg" alt="" width="240" height="120"><p>' + label + '</p><p class="small">' + t('media.uploadHint') + '</p></div>';
       return items;
     }
     if (tab === 'files') { box.classList.remove('gallery'); box.innerHTML = items.map(fileItemHtml).join(''); }

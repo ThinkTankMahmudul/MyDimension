@@ -11,6 +11,10 @@
 (function () {
   'use strict';
 
+  // i18n: t() reads the live language; loc() is the date locale for it.
+  function t(key, vars) { return window.MyDimensionI18n ? window.MyDimensionI18n.t(key, vars) : key; }
+  function loc() { return window.MyDimensionI18n ? window.MyDimensionI18n.locale() : undefined; }
+
   var MOODS = ['Happy', 'Calm', 'Grateful', 'Excited', 'Tired', 'Sad', 'Anxious', 'Angry', 'Stressed', 'Thoughtful'];
   var MOOD_EMOJI = { Happy: '😊', Calm: '😌', Grateful: '🙏', Excited: '🤩', Tired: '😴', Sad: '😢', Anxious: '😟', Angry: '😠', Stressed: '😫', Thoughtful: '🤔' };
   // Moods the dashboard donut counts as "positive".
@@ -26,22 +30,22 @@
   function fmtDate(iso) {
     if (!iso) return '';
     var d = new Date(iso.length === 10 ? iso + 'T12:00:00' : iso);
-    return isNaN(d) ? iso : d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+    return isNaN(d) ? iso : d.toLocaleDateString(loc(), { year: 'numeric', month: 'short', day: 'numeric' });
   }
   function fmtTime(iso) {
     if (!iso) return '';
     var d = new Date(iso);
-    return isNaN(d) ? '' : d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+    return isNaN(d) ? '' : d.toLocaleTimeString(loc(), { hour: 'numeric', minute: '2-digit' });
   }
   function relTime(iso) {
     if (!iso) return '';
     var then = new Date(iso).getTime();
     if (isNaN(then)) return '';
     var mins = Math.max(0, Math.round((Date.now() - then) / 60000));
-    if (mins < 1) return 'just now';
-    if (mins < 60) return mins + (mins === 1 ? ' minute ago' : ' minutes ago');
+    if (mins < 1) return t('rel.justNow');
+    if (mins < 60) return t(mins === 1 ? 'rel.minute' : 'rel.minutes', { n: mins });
     var hrs = Math.round(mins / 60);
-    if (hrs < 24) return hrs + (hrs === 1 ? ' hour ago' : ' hours ago');
+    if (hrs < 24) return t(hrs === 1 ? 'rel.hour' : 'rel.hours', { n: hrs });
     return fmtDate(iso);
   }
   function esc(s) {
@@ -58,7 +62,7 @@
     var arr = Array.isArray(list) ? list : (list && Array.isArray(list.entries) ? list.entries : []);
     return arr.map(function (e) {
       return {
-        id: e.id, title: e.title || 'Untitled entry',
+        id: e.id, title: e.title || t('journal.untitled'),
         body: e.content || e.body || '', content: e.content || e.body || '',
         date: (e.created_at || '').slice(0, 10),
         mood: e.mood || '', tags: Array.isArray(e.tags) ? e.tags : (e.tags ? String(e.tags).split(',').map(function (t) { return t.trim(); }).filter(Boolean) : []),
@@ -98,22 +102,22 @@
       '<span class="entry-thumb ' + coverClass(e, i) + '" aria-hidden="true">' + (MOOD_EMOJI[e.mood] || '✎') + '</span>' +
       '<div class="entry-body"><h4><a href="#/entry/' + esc(e.id) + '">' + esc(e.title) + '</a></h4>' +
       '<div class="entry-meta">' + esc(fmtDate(e.date)) + (e.created_at ? ' · ' + esc(fmtTime(e.created_at)) : '') +
-      (e.mood ? ' · <span class="mood-pill">' + esc(MOOD_EMOJI[e.mood] || '') + ' ' + esc(e.mood) + '</span>' : '') +
+      (e.mood ? ' · <span class="mood-pill">' + esc(MOOD_EMOJI[e.mood] || '') + ' ' + esc(window.MyDimensionI18n ? window.MyDimensionI18n.moodLabel(e.mood) : e.mood) + '</span>' : '') +
       e.tags.map(function (t) { return ' <span class="tag-pill">' + esc(t) + '</span>'; }).join('') + '</div>' +
       '<p>' + esc(excerpt) + '</p>' +
       '<div class="entry-actions">' +
-      '<a class="btn small secondary" href="#/entry/' + esc(e.id) + '">View</a>' +
-      '<button class="btn small secondary" data-edit-entry="' + esc(e.id) + '">Edit</button>' +
-      '<button class="btn small ghost" data-delete-entry="' + esc(e.id) + '" data-entry-title="' + esc(e.title) + '">Delete</button>' +
-      '<button class="btn small ghost" data-ai-entry="' + esc(e.id) + '">AI reflection</button>' +
+      '<a class="btn small secondary" href="#/entry/' + esc(e.id) + '">' + t('journal.view') + '</a>' +
+      '<button class="btn small secondary" data-edit-entry="' + esc(e.id) + '">' + t('journal.edit') + '</button>' +
+      '<button class="btn small ghost" data-delete-entry="' + esc(e.id) + '" data-entry-title="' + esc(e.title) + '">' + t('journal.delete') + '</button>' +
+      '<button class="btn small ghost" data-ai-entry="' + esc(e.id) + '">' + t('journal.aiReflection') + '</button>' +
       '</div></div></div></article>';
   }
 
   function renderList(container, list) {
     if (!container) return;
     if (!list.length) {
-      container.innerHTML = '<div class="empty"><p>No entries yet.</p>' +
-        '<button class="btn" data-goto-new-entry>Write your first memory</button></div>';
+      container.innerHTML = '<div class="empty"><p>' + t('journal.noEntries') + '</p>' +
+        '<button class="btn" data-goto-new-entry>' + t('dash.writeFirst') + '</button></div>';
       return;
     }
     container.innerHTML = list.map(function (e, i) { return entryCard(e, i); }).join('');
@@ -123,7 +127,7 @@
   function readForm() {
     var bodyEl = document.getElementById('entryBody');
     return {
-      title: document.getElementById('entryTitle').value.trim() || 'Untitled entry',
+      title: document.getElementById('entryTitle').value.trim() || t('journal.untitled'),
       content: bodyEl.innerText.trim(),
       mood: document.getElementById('entryMood').value || null,
       tags: document.getElementById('entryTags').value.split(',').map(function (t) { return t.trim(); }).filter(Boolean)
@@ -133,12 +137,12 @@
   function setBody(text) { document.getElementById('entryBody').innerText = text || ''; }
 
   function fillForm(e) {
-    document.getElementById('entryTitle').value = e.title === 'Untitled entry' ? '' : (e.title || '');
+    document.getElementById('entryTitle').value = e.title === t('journal.untitled') ? '' : (e.title || '');
     setBody(e.body || '');
     document.getElementById('entryMood').value = e.mood || '';
     renderMoodPicker();
     document.getElementById('entryTags').value = (e.tags || []).join(', ');
-    document.getElementById('entryFormTitle').textContent = 'Edit entry';
+    document.getElementById('entryFormTitle').textContent = t('journal.editEntry');
     document.getElementById('cancelEditBtn').classList.remove('hidden');
     editingId = e.id;
     var card = document.getElementById('entryFormCard');
@@ -153,7 +157,7 @@
     document.getElementById('entryMood').value = '';
     document.getElementById('entryTags').value = '';
     renderMoodPicker();
-    document.getElementById('entryFormTitle').textContent = 'New Journal Entry';
+    document.getElementById('entryFormTitle').textContent = t('journal.formTitle');
     document.getElementById('cancelEditBtn').classList.add('hidden');
     if (preset && preset.title) document.getElementById('entryTitle').value = preset.title;
     if (preset && preset.body) setBody(preset.body);
@@ -168,8 +172,9 @@
     if (!box) return;
     var current = document.getElementById('entryMood').value;
     box.innerHTML = MOODS.map(function (m) {
-      return '<button type="button" class="mood-opt' + (m === current ? ' selected' : '') + '" data-mood="' + esc(m) + '" role="radio" aria-checked="' + (m === current) + '" title="' + esc(m) + '">' +
-        esc(MOOD_EMOJI[m] || '•') + '<small>' + esc(m) + '</small></button>';
+      var label = window.MyDimensionI18n ? window.MyDimensionI18n.moodLabel(m) : m;
+      return '<button type="button" class="mood-opt' + (m === current ? ' selected' : '') + '" data-mood="' + esc(m) + '" role="radio" aria-checked="' + (m === current) + '" title="' + esc(label) + '">' +
+        esc(MOOD_EMOJI[m] || '•') + '<small>' + esc(label) + '</small></button>';
     }).join('');
     box.querySelectorAll('[data-mood]').forEach(function (btn) {
       btn.addEventListener('click', function () {
@@ -183,7 +188,7 @@
   /* ---------- drafts (this browser only — the backend has no draft state) ---------- */
   function saveDraft() {
     var data = readForm();
-    if (!data.title && !data.content) throw new Error('Please write a title or some text first.');
+    if (!data.title && !data.content) throw new Error(t('journal.needTitle'));
     data.savedAt = new Date().toISOString();
     try { localStorage.setItem(DRAFT_KEY, JSON.stringify(data)); } catch (e) { /* storage unavailable */ }
     var note = document.getElementById('draftNote');
@@ -209,7 +214,7 @@
     var d = loadDraft();
     if (!d || editingId) return false;
     if (!d.title && !d.content) return false;
-    document.getElementById('entryTitle').value = d.title === 'Untitled entry' ? '' : (d.title || '');
+    document.getElementById('entryTitle').value = d.title === t('journal.untitled') ? '' : (d.title || '');
     setBody(d.content || '');
     document.getElementById('entryMood').value = d.mood || '';
     document.getElementById('entryTags').value = (d.tags || []).join(', ');
@@ -223,7 +228,7 @@
 
   async function saveCurrent() {
     var data = readForm();
-    if (!data.title && !data.content.trim()) throw new Error('Please write a title or some text first.');
+    if (!data.title && !data.content.trim()) throw new Error(t('journal.needTitle'));
     var saved;
     if (editingId) saved = await window.MyDimensionApi.updateEntry(editingId, data);
     else saved = await window.MyDimensionApi.createEntry(data);
@@ -243,7 +248,7 @@
     if (!file) return;
     var kind = file.type.indexOf('audio/') === 0 ? 'audio' : 'photo';
     try { await window.MyDimensionMedia.uploadFile(file, kind, '', entryId); }
-    catch (err) { window.MyDimensionApp.toast('Entry saved, but the attachment failed: ' + err.message); }
+    catch (err) { window.MyDimensionApp.toast(t('toast.attachmentFailed') + ' ' + err.message); }
   }
 
   async function refreshJournalList() {

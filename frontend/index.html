@@ -32,9 +32,7 @@
     <div class="login-lock" aria-hidden="true">
       <svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
     </div>
-    <h1>Assalamualaikum</h1>
     <p class="login-sub">Sign in to your private diary</p>
-    <p class="tagline">“You are nothing but a number of days; whenever a day passes, a part of you is gone.”<cite>— Imam Hasan al-Basri</cite></p>
     <div id="loginError" class="error-box hidden" role="alert"></div>
     <form id="passwordLoginForm">
       <div class="field login-field"><label for="loginUsername">User ID</label>
@@ -56,17 +54,21 @@
       <button class="btn btn-block login-btn" type="submit"><span>Login</span></button>
     </form>
     <p id="passwordHint" class="small muted hidden"></p>
-    <p class="login-google"><button type="button" id="loginBtn" class="google-link">First time here? Set your password with Google</button></p>
     <p class="login-note">Only the configured owner account can sign in. There is no public registration. The check is enforced by the server, not by this page.</p>
   </main>
+  <footer class="login-footer">
+    <p class="tagline">“You are nothing but a number of days; whenever a day passes, a part of you is gone.”<cite>— Imam Hasan al-Basri</cite></p>
+    <p class="login-credit">Developed By Mahmudul Hasan Walid</p>
+  </footer>
 </div>
 
 <!-- ================= APP SHELL ================= -->
 <div id="appView" class="hidden">
   <header class="topbar">
-    <button id="menuBtn" class="btn ghost small" type="button" aria-label="Open menu">☰ Menu</button>
+    <button id="menuBtn" class="btn ghost small" type="button" data-i18n-aria-label="app.openMenu" aria-label="Open menu">☰ <span data-i18n="app.menu">Menu</span></button>
     <strong class="topbar-brand">MyDimension</strong>
-    <button id="bellBtnMobile" class="icon-btn" type="button" aria-label="Today's activity">🔔</button>
+    <div class="lang-toggle" role="group" aria-label="Language"><button type="button" data-lang="en" aria-pressed="true">English</button><button type="button" data-lang="bn" aria-pressed="false">বাংলা</button></div>
+    <button id="bellBtnMobile" class="icon-btn" type="button" data-i18n-aria-label="bell.aria" aria-label="Today's activity">🔔</button>
   </header>
 
   <div class="app">
@@ -77,20 +79,21 @@
         </span>
         MyDimension
       </div>
-      <a class="nav-link" data-route-link href="#/dashboard"><span class="ico">⌂</span> Dashboard</a>
-      <a class="nav-link" data-route-link href="#/journal"><span class="ico">✎</span> My Journal</a>
-      <a class="nav-link" data-route-link href="#/ai"><span class="ico">✦</span> AI Assistant</a>
-      <a class="nav-link" data-route-link href="#/media"><span class="ico">▣</span> Media Vault</a>
-      <a class="nav-link" data-route-link href="#/calendar"><span class="ico">▦</span> Calendar</a>
-      <a class="nav-link" data-route-link href="#/insights"><span class="ico">◐</span> Insights</a>
-      <a class="nav-link" data-route-link href="#/settings"><span class="ico">⚙</span> Settings</a>
+      <a class="nav-link" data-route-link href="#/dashboard"><span class="ico">⌂</span> <span data-i18n="nav.dashboard">Dashboard</span></a>
+      <a class="nav-link" data-route-link href="#/journal"><span class="ico">✎</span> <span data-i18n="nav.journal">My Journal</span></a>
+      <a class="nav-link" data-route-link href="#/ai"><span class="ico">✦</span> <span data-i18n="nav.ai">AI Assistant</span></a>
+      <a class="nav-link" data-route-link href="#/media"><span class="ico">▣</span> <span data-i18n="nav.media">Media Vault</span></a>
+      <a class="nav-link" data-route-link href="#/calendar"><span class="ico">▦</span> <span data-i18n="nav.calendar">Calendar</span></a>
+      <a class="nav-link" data-route-link href="#/insights"><span class="ico">◐</span> <span data-i18n="nav.insights">Insights</span></a>
+      <a class="nav-link" data-route-link href="#/settings"><span class="ico">⚙</span> <span data-i18n="nav.settings">Settings</span></a>
       <div class="sidebar-foot">
         <div class="profile-row">
           <span class="avatar" data-profile-initial>?</span>
-          <div class="profile-meta"><strong data-profile-name>Owner</strong><br><span class="muted small">Admin</span></div>
+          <div class="profile-meta"><strong data-profile-name>Owner</strong><br><span class="muted small" data-i18n="app.admin">Admin</span></div>
         </div>
         <p class="small muted" data-profile-email></p>
-        <button id="logoutBtn" class="btn ghost small" type="button">Sign out</button>
+        <div class="lang-toggle" role="group" aria-label="Language"><button type="button" data-lang="en" aria-pressed="true">English</button><button type="button" data-lang="bn" aria-pressed="false">বাংলা</button></div>
+        <button id="logoutBtn" class="btn ghost small" type="button" data-i18n="app.signOut">Sign out</button>
       </div>
     </nav>
 
@@ -101,16 +104,16 @@
       <section id="page-dashboard" class="page" aria-label="Dashboard">
         <div class="dash-head">
           <div>
-            <h2>Hello, <span id="greetingName">মাহমুদুল হাসান ওয়ালিদ</span> 👋</h2>
-            <p class="muted">Capture your thoughts, memories and life journey…</p>
+            <h2><span data-i18n="dash.hello">Hello,</span> <span id="greetingName">মাহমুদুল হাসান ওয়ালিদ</span> 👋</h2>
+            <p class="muted" data-i18n="dash.subtitle">Capture your thoughts, memories and life journey…</p>
           </div>
           <div class="dash-head-actions">
             <div class="search-box">
               <span aria-hidden="true">🔍</span>
-              <input id="dashboardSearch" type="search" placeholder="Search your diaries…" autocomplete="off" aria-label="Search your diaries">
+              <input id="dashboardSearch" type="search" data-i18n-placeholder="dash.searchPh" placeholder="Search your diaries…" autocomplete="off" data-i18n-aria-label="dash.searchAria" aria-label="Search your diaries">
             </div>
             <div class="bell-wrap">
-              <button id="bellBtn" class="icon-btn" type="button" aria-label="Today's activity" aria-expanded="false">🔔<span id="bellBadge" class="bell-badge hidden">0</span></button>
+              <button id="bellBtn" class="icon-btn" type="button" data-i18n-aria-label="bell.aria" aria-label="Today's activity" aria-expanded="false">🔔<span id="bellBadge" class="bell-badge hidden">0</span></button>
               <div id="bellPanel" class="bell-panel hidden" role="dialog" aria-label="Today's activity"></div>
             </div>
           </div>
@@ -119,18 +122,18 @@
         <div class="layout-dashboard">
           <div class="dash-main">
             <div class="section-head">
-              <h3>My Journals</h3>
-              <button class="btn" type="button" data-quick="note">New Entry ＋</button>
+              <h3 data-i18n="dash.myJournals">My Journals</h3>
+              <button class="btn" type="button" data-quick="note" data-i18n="dash.newEntry">New Entry ＋</button>
             </div>
             <div id="journalCards" class="journal-cards"></div>
 
             <div class="dash-grid">
               <div class="card">
-                <div class="section-head"><h3>Recent Entries</h3><a href="#/journal">See all →</a></div>
+                <div class="section-head"><h3 data-i18n="dash.recentEntries">Recent Entries</h3><a href="#/journal" data-i18n="dash.seeAll">See all →</a></div>
                 <div id="recentEntries"></div>
               </div>
               <div class="card">
-                <h3>Mood Overview</h3>
+                <h3 data-i18n="dash.moodOverview">Mood Overview</h3>
                 <div id="moodDonut" class="donut-wrap"></div>
                 <div id="moodLegend" class="legend"></div>
               </div>
@@ -149,13 +152,13 @@
               <div id="miniCalendar" class="mini-cal"></div>
             </div>
             <div class="card">
-              <h3>Today's Activity</h3>
+              <h3 data-i18n="dash.todaysActivity">Today's Activity</h3>
               <div id="todayActivity"></div>
             </div>
             <div class="card stat-card">
-              <div class="stat"><span class="muted small">All Journals</span><b id="statTotal">0</b></div>
-              <div class="stat"><span class="muted small">This month</span><b id="statMonth">0</b></div>
-              <div class="stat"><span class="muted small">Photos &amp; voice</span><b id="statMedia">0</b></div>
+              <div class="stat"><span class="muted small" data-i18n="dash.statAll">All Journals</span><b id="statTotal">0</b></div>
+              <div class="stat"><span class="muted small" data-i18n="dash.statMonth">This month</span><b id="statMonth">0</b></div>
+              <div class="stat"><span class="muted small" data-i18n="dash.statMedia">Photos &amp; voice</span><b id="statMedia">0</b></div>
             </div>
           </aside>
         </div>
@@ -163,27 +166,27 @@
 
       <!-- ======== MY JOURNAL (list + editor) ======== -->
       <section id="page-journal" class="page" aria-label="My Journal">
-        <div class="page-head"><h2>My Journal</h2>
-          <button class="btn" type="button" data-quick="note">＋ New Entry</button></div>
+        <div class="page-head"><h2 data-i18n="journal.title">My Journal</h2>
+          <button class="btn" type="button" data-quick="note" data-i18n="journal.newEntry">＋ New Entry</button></div>
 
         <div class="card" id="entryFormCard">
-          <div class="section-head"><h3 id="entryFormTitle">New Journal Entry</h3>
-            <span id="draftNote" class="small muted hidden">Draft restored — saved on this device only.</span></div>
+          <div class="section-head"><h3 id="entryFormTitle" data-i18n="journal.formTitle">New Journal Entry</h3>
+            <span id="draftNote" class="small muted hidden" data-i18n="journal.draftNote">Draft restored — saved on this device only.</span></div>
 
           <div class="tabs" role="tablist" aria-label="Entry type">
-            <button class="tab active" type="button" data-entry-tab="write" role="tab" aria-selected="true">✎ Write</button>
-            <button class="tab" type="button" data-entry-tab="voice" role="tab" aria-selected="false">♪ Voice</button>
-            <button class="tab" type="button" data-entry-tab="photo" role="tab" aria-selected="false">▣ Photo</button>
-            <button class="tab" type="button" data-entry-tab="file" role="tab" aria-selected="false">▤ File</button>
+            <button class="tab active" type="button" data-entry-tab="write" role="tab" aria-selected="true"><span data-i18n="journal.write">✎ Write</span></button>
+            <button class="tab" type="button" data-entry-tab="voice" role="tab" aria-selected="false"><span data-i18n="journal.voice">♪ Voice</span></button>
+            <button class="tab" type="button" data-entry-tab="photo" role="tab" aria-selected="false"><span data-i18n="journal.photo">▣ Photo</span></button>
+            <button class="tab" type="button" data-entry-tab="file" role="tab" aria-selected="false"><span data-i18n="journal.file">▤ File</span></button>
           </div>
 
           <form id="entryForm">
-            <div class="field"><label for="entryTitle">Title (optional)</label>
-              <input id="entryTitle" type="text" maxlength="200" placeholder="Give today a title…"></div>
+            <div class="field"><label for="entryTitle" data-i18n="journal.titleLabel">Title (optional)</label>
+              <input id="entryTitle" type="text" maxlength="200" data-i18n-placeholder="journal.titlePlaceholder" placeholder="Give today a title…"></div>
 
             <div id="tab-write" class="tab-panel">
               <div class="field">
-                <label>Write your thoughts…</label>
+                <label data-i18n="journal.writeLabel">Write your thoughts…</label>
                 <div class="rte-toolbar" role="toolbar" aria-label="Formatting">
                   <button type="button" data-rte="bold" title="Bold"><b>B</b></button>
                   <button type="button" data-rte="italic" title="Italic"><i>I</i></button>
@@ -191,55 +194,55 @@
                   <button type="button" data-rte="insertUnorderedList" title="Bullet list">• List</button>
                   <button type="button" data-rte="removeFormat" title="Clear formatting">✕ Clear</button>
                 </div>
-                <div id="entryBody" class="rte" contenteditable="true" role="textbox" aria-multiline="true" data-placeholder="Write freely. This stays private."></div>
+                <div id="entryBody" class="rte" contenteditable="true" role="textbox" aria-multiline="true" data-i18n-attr="data-placeholder:journal.writePlaceholder" data-placeholder="Write freely. This stays private."></div>
               </div>
             </div>
 
             <div id="tab-voice" class="tab-panel hidden">
-              <p class="small">Record a voice note, transcribe it with Gemini, and use the transcript as your entry text.</p>
-              <p><button id="entryRecBtn" class="btn secondary" type="button">● Record voice note</button>
-              <button id="entryRecStopBtn" class="btn ghost" type="button" disabled>■ Stop</button>
+              <p class="small" data-i18n="journal.voiceNote">Record a voice note, transcribe it with Gemini, and use the transcript as your entry text.</p>
+              <p><button id="entryRecBtn" class="btn secondary" type="button" data-i18n="journal.recordVoice">● Record voice note</button>
+              <button id="entryRecStopBtn" class="btn ghost" type="button" disabled data-i18n="journal.stop">■ Stop</button>
               <span id="entryRecTimer" class="muted small">00:00</span></p>
               <audio id="entryRecPreview" class="hidden" controls style="width:100%"></audio>
-              <p><button id="entryTranscribeBtn" class="btn secondary hidden" type="button">Transcribe with AI</button>
+              <p><button id="entryTranscribeBtn" class="btn secondary hidden" type="button" data-i18n="journal.transcribeAI">Transcribe with AI</button>
               <span id="entryTranscribeStatus" class="small muted"></span></p>
-              <p class="small muted">Your browser will ask for microphone permission. You can also upload an audio file from the Media Vault.</p>
+              <p class="small muted" data-i18n="journal.micHint">Your browser will ask for microphone permission. You can also upload an audio file from the Media Vault.</p>
             </div>
 
             <div id="tab-photo" class="tab-panel hidden">
-              <p class="small">Attach a photo to this entry. It uploads to your private Google Drive when you save the entry.</p>
+              <p class="small" data-i18n="journal.photoHint">Attach a photo to this entry. It uploads to your private Google Drive when you save the entry.</p>
               <input id="entryPhoto" type="file" accept="image/*">
               <img id="entryPhotoPreview" class="hidden" alt="Photo preview" style="max-height:220px;border-radius:12px;margin-top:12px">
             </div>
 
             <div id="tab-file" class="tab-panel hidden">
-              <p class="small">Attach a file to this entry. Photos and audio are supported (max 25 MB); other file types are not supported by the backend.</p>
+              <p class="small" data-i18n="journal.fileHint">Attach a file to this entry. Photos and audio are supported (max 25 MB); other file types are not supported by the backend.</p>
               <input id="entryFile" type="file" accept="image/*,audio/*">
               <p id="entryFileName" class="small muted"></p>
             </div>
 
-            <div class="field"><label>Mood</label>
+            <div class="field"><label data-i18n="journal.moodLabel">Mood</label>
               <div id="moodPicker" class="mood-picker" role="radiogroup" aria-label="Mood"></div>
               <input id="entryMood" type="hidden" value="">
             </div>
-            <div class="field"><label for="entryTags">Tags (comma-separated)</label>
-              <input id="entryTags" type="text" placeholder="family, travel, work"></div>
-            <p class="small muted">Entries are dated by the day they are saved. AI never changes your text — it only suggests.</p>
+            <div class="field"><label for="entryTags" data-i18n="journal.tagsLabel">Tags (comma-separated)</label>
+              <input id="entryTags" type="text" data-i18n-placeholder="journal.tagsPlaceholder" placeholder="family, travel, work"></div>
+            <p class="small muted" data-i18n="journal.datedNote">Entries are dated by the day they are saved. AI never changes your text — it only suggests.</p>
             <div class="form-actions">
-              <button id="saveDraftBtn" class="btn ghost" type="button">Save as Draft</button>
-              <button id="discardDraftBtn" class="btn ghost hidden" type="button">Discard draft</button>
-              <button class="btn" type="submit">Save Entry</button>
-              <button id="cancelEditBtn" class="btn ghost hidden" type="button">Cancel edit</button>
+              <button id="saveDraftBtn" class="btn ghost" type="button" data-i18n="journal.saveDraft">Save as Draft</button>
+              <button id="discardDraftBtn" class="btn ghost hidden" type="button" data-i18n="journal.discardDraft">Discard draft</button>
+              <button class="btn" type="submit" data-i18n="journal.saveEntry">Save Entry</button>
+              <button id="cancelEditBtn" class="btn ghost hidden" type="button" data-i18n="journal.cancelEdit">Cancel edit</button>
             </div>
           </form>
         </div>
 
-        <div class="card"><h3>All entries</h3>
+        <div class="card"><h3 data-i18n="journal.allEntries">All entries</h3>
           <div class="toolbar">
-            <input id="journalSearch" type="search" placeholder="Search title or text…" aria-label="Search entries">
-            <select id="journalMoodFilter" aria-label="Filter by mood"><option value="">All moods</option></select>
+            <input id="journalSearch" type="search" data-i18n-placeholder="journal.searchPlaceholder" placeholder="Search title or text…" data-i18n-aria-label="journal.searchPlaceholder" aria-label="Search entries">
+            <select id="journalMoodFilter" aria-label="Filter by mood"><option value="" data-i18n="journal.allMoods">All moods</option></select>
             <input id="journalDateFilter" type="date" aria-label="Filter by date">
-            <button id="clearJournalFilters" class="btn ghost small" type="button">Clear filters</button>
+            <button id="clearJournalFilters" class="btn ghost small" type="button" data-i18n="journal.clearFilters">Clear filters</button>
           </div>
           <div id="journalList"></div>
         </div>
@@ -247,128 +250,132 @@
 
       <!-- ======== JOURNAL DETAIL ======== -->
       <section id="page-entry" class="page" aria-label="Journal detail">
-        <div class="page-head"><h2>Journal Detail</h2><a href="#/journal">← Back to My Journal</a></div>
+        <div class="page-head"><h2 data-i18n="entry.title">Journal Detail</h2><a href="#/journal" data-i18n="entry.back">← Back to My Journal</a></div>
         <div class="card" id="entryDetail"></div>
-        <div class="card" id="entryDetailMediaWrap"><h3>Attached media</h3><div id="entryDetailMedia"></div></div>
+        <div class="card" id="entryDetailMediaWrap"><h3 data-i18n="entry.attachedMedia">Attached media</h3><div id="entryDetailMedia"></div></div>
       </section>
 
       <!-- ======== AI ASSISTANT ======== -->
       <section id="page-ai" class="page" aria-label="AI Assistant">
-        <div class="page-head"><h2>AI Assistant</h2></div>
-        <p class="muted">Your personal writing and reflection partner. Nothing is sent to Gemini until you press a button.</p>
+        <div class="page-head"><h2 data-i18n="ai.title">AI Assistant</h2></div>
+        <p class="muted" data-i18n="ai.subtitle">Your personal writing and reflection partner. Nothing is sent to Gemini until you press a button.</p>
         <div class="ai-cards">
-          <button class="ai-card" type="button" data-ai-action="summary"><span class="ai-ico">✎</span><strong>Summarize My Diary</strong><span class="small muted">Get key insights from your entries</span></button>
-          <button class="ai-card" type="button" data-ai-action="mood"><span class="ai-ico">◐</span><strong>Analyze My Mood</strong><span class="small muted">Understand your emotional patterns</span></button>
-          <button class="ai-card" type="button" data-ai-action="improve"><span class="ai-ico">✦</span><strong>Improve My Writing</strong><span class="small muted">Make your thoughts clearer</span></button>
-          <button class="ai-card" type="button" data-ai-action="reflect"><span class="ai-ico">☀</span><strong>Daily Reflection</strong><span class="small muted">Ask anything about your day</span></button>
+          <button class="ai-card" type="button" data-ai-action="summary"><span class="ai-ico">✎</span><strong data-i18n="ai.summarize">Summarize My Diary</strong><span class="small muted" data-i18n="ai.summarizeDesc">Get key insights from your entries</span></button>
+          <button class="ai-card" type="button" data-ai-action="mood"><span class="ai-ico">◐</span><strong data-i18n="ai.mood">Analyze My Mood</strong><span class="small muted" data-i18n="ai.moodDesc">Understand your emotional patterns</span></button>
+          <button class="ai-card" type="button" data-ai-action="improve"><span class="ai-ico">✦</span><strong data-i18n="ai.improve">Improve My Writing</strong><span class="small muted" data-i18n="ai.improveDesc">Make your thoughts clearer</span></button>
+          <button class="ai-card" type="button" data-ai-action="reflect"><span class="ai-ico">☀</span><strong data-i18n="ai.reflect">Daily Reflection</strong><span class="small muted" data-i18n="ai.reflectDesc">Ask anything about your day</span></button>
         </div>
-        <div class="card"><h3>Choose what to work on</h3>
-          <div class="field"><label for="aiEntrySelect">Diary entry</label><select id="aiEntrySelect"><option value="">— Most recent entry —</option></select></div>
-          <div class="field"><label for="aiFreeText">Or paste text here</label><textarea id="aiFreeText" placeholder="Paste the text you want help with…"></textarea></div>
-          <p class="small muted">Only the entry or text you choose is sent to Gemini, and only when you press an AI button above. Your original entry is never overwritten automatically.</p></div>
-        <div class="card"><h3>Transcribe audio</h3>
-          <div class="field"><label for="aiAudioFile">Audio file</label><input id="aiAudioFile" type="file" accept="audio/*"></div>
-          <button class="btn secondary" type="button" data-ai-action="transcribe">Transcribe</button>
-          <p class="small muted">Review the transcript before saving it — you can save it as a journal draft from the result below.</p></div>
-        <div class="card"><h3>Ask me anything about your diary…</h3>
+        <div class="card"><h3 data-i18n="ai.choose">Choose what to work on</h3>
+          <div class="field"><label for="aiEntrySelect" data-i18n="ai.entryLabel">Diary entry</label><select id="aiEntrySelect"><option value="">— Most recent entry —</option></select></div>
+          <div class="field"><label for="aiFreeText" data-i18n="ai.pasteLabel">Or paste text here</label><textarea id="aiFreeText" data-i18n-placeholder="ai.pastePlaceholder" placeholder="Paste the text you want help with…"></textarea></div>
+          <p class="small muted" data-i18n="ai.onlyChosen">Only the entry or text you choose is sent to Gemini, and only when you press an AI button above. Your original entry is never overwritten automatically.</p></div>
+        <div class="card"><h3 data-i18n="ai.transcribeTitle">Transcribe audio</h3>
+          <div class="field"><label for="aiAudioFile" data-i18n="ai.audioLabel">Audio file</label><input id="aiAudioFile" type="file" accept="audio/*"></div>
+          <button class="btn secondary" type="button" data-ai-action="transcribe" data-i18n="ai.transcribeBtn">Transcribe</button>
+          <p class="small muted" data-i18n="ai.reviewNote">Review the transcript before saving it — you can save it as a journal draft from the result below.</p></div>
+        <div class="card"><h3 data-i18n="ai.askTitle">Ask me anything about your diary…</h3>
           <div id="aiChatLog" class="chat-log" aria-live="polite"></div>
           <div class="chat-row">
-            <input id="aiChatInput" type="text" placeholder="Ask me anything about your diary…" aria-label="Ask the AI assistant" autocomplete="off">
+            <input id="aiChatInput" type="text" data-i18n-placeholder="ai.chatPlaceholder" placeholder="Ask me anything about your diary…" data-i18n-aria-label="ai.chatPlaceholder" aria-label="Ask the AI assistant" autocomplete="off">
             <button id="aiChatSend" class="btn" type="button" aria-label="Send">➤</button>
           </div>
-          <p class="small muted">Answers are AI reflections on the entry you chose above — suggestions only, never facts or diagnoses.</p></div>
-        <div class="card"><h3>Result</h3><div id="aiResult" class="ai-result"><p class="muted">Your AI result will appear here.</p></div></div>
+          <p class="small muted" data-i18n="ai.answersNote">Answers are AI reflections on the entry you chose above — suggestions only, never facts or diagnoses.</p></div>
+        <div class="card"><h3 data-i18n="ai.resultTitle">Result</h3><div id="aiResult" class="ai-result"><p class="muted" data-i18n="ai.resultEmpty">Your AI result will appear here.</p></div></div>
       </section>
 
       <!-- ======== MEDIA VAULT ======== -->
       <section id="page-media" class="page" aria-label="Media Vault">
-        <div class="page-head"><h2>Media Vault</h2>
-          <button class="btn" type="button" id="mediaUploadBtn">＋ Upload</button></div>
+        <div class="page-head"><h2 data-i18n="media.title">Media Vault</h2>
+          <button class="btn" type="button" id="mediaUploadBtn" data-i18n="media.upload">＋ Upload</button></div>
         <input id="mediaUploadInput" type="file" accept="image/*,audio/*" class="hidden">
         <div class="tabs" role="tablist" aria-label="Media type">
-          <button class="tab active" type="button" data-media-tab="all" role="tab" aria-selected="true">All</button>
-          <button class="tab" type="button" data-media-tab="photo" role="tab" aria-selected="false">Photos</button>
-          <button class="tab" type="button" data-media-tab="audio" role="tab" aria-selected="false">Audio</button>
-          <button class="tab" type="button" data-media-tab="files" role="tab" aria-selected="false">Files</button>
+          <button class="tab active" type="button" data-media-tab="all" role="tab" aria-selected="true"><span data-i18n="media.all">All</span></button>
+          <button class="tab" type="button" data-media-tab="photo" role="tab" aria-selected="false"><span data-i18n="media.photos">Photos</span></button>
+          <button class="tab" type="button" data-media-tab="audio" role="tab" aria-selected="false"><span data-i18n="media.audio">Audio</span></button>
+          <button class="tab" type="button" data-media-tab="files" role="tab" aria-selected="false"><span data-i18n="media.files">Files</span></button>
         </div>
         <div class="card"><div id="mediaGallery" class="gallery"></div></div>
       </section>
 
       <!-- ======== CALENDAR ======== -->
       <section id="page-calendar" class="page" aria-label="Calendar">
-        <div class="page-head"><h2>Calendar</h2>
-          <div><button id="prevMonthBtn" class="btn ghost small" type="button">← Prev</button>
-          <button id="todayMonthBtn" class="btn ghost small" type="button">Today</button>
-          <button id="nextMonthBtn" class="btn ghost small" type="button">Next →</button></div></div>
+        <div class="page-head"><h2 data-i18n="cal.title">Calendar</h2>
+          <div><button id="prevMonthBtn" class="btn ghost small" type="button" data-i18n="cal.prev">← Prev</button>
+          <button id="todayMonthBtn" class="btn ghost small" type="button" data-i18n="cal.today">Today</button>
+          <button id="nextMonthBtn" class="btn ghost small" type="button" data-i18n="cal.next">Next →</button></div></div>
         <div class="card"><h3 id="calLabel">This month</h3><div id="bigCalendar"></div>
-          <p class="small muted">Dots mark days with entries. Today is highlighted in teal.</p></div>
-        <div class="card"><h3>Entries on <span id="selectedDayLabel">—</span></h3>
+          <p class="small muted" data-i18n="cal.dotsNote">Dots mark days with entries. Today is highlighted in teal.</p></div>
+        <div class="card"><h3><span data-i18n="cal.entriesOn">Entries on</span> <span id="selectedDayLabel">—</span></h3>
           <div id="dayEntries"></div>
-          <button id="newEntryForDayBtn" class="btn hidden" type="button">+ New entry for this day</button></div>
+          <button id="newEntryForDayBtn" class="btn hidden" type="button" data-i18n="cal.newEntryDay">+ New entry for this day</button></div>
       </section>
 
       <!-- ======== INSIGHTS ======== -->
       <section id="page-insights" class="page" aria-label="Mood Insights">
-        <div class="page-head"><h2>My Insights</h2></div>
+        <div class="page-head"><h2 data-i18n="ins.title">My Insights</h2></div>
         <div class="dash-grid">
-          <div class="card"><h3>Mood Trend — last 30 days</h3>
-            <p class="small muted">Entries written per day. Mood counts come from the moods you chose.</p>
+          <div class="card"><h3 data-i18n="ins.trendTitle">Mood Trend — last 30 days</h3>
+            <p class="small muted" data-i18n="ins.trendNote">Entries written per day. Mood counts come from the moods you chose.</p>
             <div id="moodTrend"></div></div>
-          <div class="card"><h3>Diary Stats</h3><div id="diaryStats"></div></div>
+          <div class="card"><h3 data-i18n="ins.statsTitle">Diary Stats</h3><div id="diaryStats"></div></div>
         </div>
-        <div class="card"><h3>Entries by mood</h3><p class="muted small" id="insightsTotal"></p><div id="moodChart"></div></div>
-        <div class="card"><h3>Overall Mood</h3><div id="overallMood" class="donut-wrap"></div><div id="overallLegend" class="legend"></div></div>
-        <div class="card"><h3>A note on mood</h3><p class="small">Moods here are your own labels, plus AI suggestions you chose to keep. They are reflections, not facts or medical diagnoses. If you are struggling, please reach out to someone you trust or a local support service.</p></div>
+        <div class="card"><h3 data-i18n="ins.byMood">Entries by mood</h3><p class="muted small" id="insightsTotal"></p><div id="moodChart"></div></div>
+        <div class="card"><h3 data-i18n="ins.overall">Overall Mood</h3><div id="overallMood" class="donut-wrap"></div><div id="overallLegend" class="legend"></div></div>
+        <div class="card"><h3 data-i18n="ins.noteTitle">A note on mood</h3><p class="small" data-i18n="ins.noteText">Moods here are your own labels, plus AI suggestions you chose to keep. They are reflections, not facts or medical diagnoses. If you are struggling, please reach out to someone you trust or a local support service.</p></div>
       </section>
 
       <!-- ======== SETTINGS ======== -->
       <section id="page-settings" class="page" aria-label="Settings">
-        <div class="page-head"><h2>Settings</h2></div>
-        <div class="card"><h3>Profile</h3>
+        <div class="page-head"><h2 data-i18n="set.title">Settings</h2></div>
+        <div class="card"><h3 data-i18n="set.profile">Profile</h3>
           <div class="profile-row"><span class="avatar lg" data-profile-initial>?</span>
-          <div><strong data-profile-name>Owner</strong><br><span class="muted" data-profile-email></span><br><span class="muted small">Admin — the only account that can sign in.</span></div></div></div>
-        <div class="card"><h3>Set / Change Password</h3>
-          <p class="small muted">Sign in with your User ID and password instead of Google. Your password is stored only as a secure hash — never in plain text, and never shown here.</p>
-          <div class="field"><label for="newPassword">New password</label>
-            <input id="newPassword" type="password" placeholder="At least 4 characters" autocomplete="new-password"></div>
-          <div class="field"><label for="confirmPassword">Confirm new password</label>
-            <input id="confirmPassword" type="password" placeholder="Type the password again" autocomplete="new-password"></div>
-          <p><button id="savePasswordBtn" class="btn secondary" type="button">Save Password</button></p>
+          <div><strong data-profile-name>Owner</strong><br><span class="muted" data-profile-email></span><br><span class="muted small" data-i18n="set.adminOnly">Admin — the only account that can sign in.</span></div></div></div>
+        <div class="card"><h3 data-i18n="set.passwordTitle">Set / Change Password</h3>
+          <p class="small muted" data-i18n="set.passwordHint">Sign in with your User ID and password instead of Google. Your password is stored only as a secure hash — never in plain text, and never shown here.</p>
+          <div class="field"><label for="newPassword" data-i18n="set.newPassword">New password</label>
+            <input id="newPassword" type="password" data-i18n-placeholder="set.newPasswordPh" placeholder="At least 4 characters" autocomplete="new-password"></div>
+          <div class="field"><label for="confirmPassword" data-i18n="set.confirmPassword">Confirm new password</label>
+            <input id="confirmPassword" type="password" data-i18n-placeholder="set.confirmPasswordPh" placeholder="Type the password again" autocomplete="new-password"></div>
+          <p><button id="savePasswordBtn" class="btn secondary" type="button" data-i18n="set.savePassword">Save Password</button></p>
           <p id="passwordMsg" class="small hidden" role="status"></p></div>
-        <div class="card"><h3>Appearance</h3>
+        <div class="card"><h3 data-i18n="set.language">Language</h3>
+          <p class="small muted" data-i18n="set.languageHint">Choose the language for the app. Your name always stays in Bengali.</p>
+          <div class="lang-toggle" role="group" aria-label="Language"><button type="button" data-lang="en" aria-pressed="true">English</button><button type="button" data-lang="bn" aria-pressed="false">বাংলা</button></div></div>
+        <div class="card"><h3 data-i18n="set.appearance">Appearance</h3>
           <p><button id="themeToggle" class="btn secondary" type="button" aria-pressed="false">Switch to dark theme</button>
-          <span class="small muted">Saved on this device only.</span></p></div>
-        <div class="card"><h3>AI preferences</h3>
-          <label class="check"><input id="aiPrefEnabled" type="checkbox" checked> Allow AI features (summaries, mood suggestions, transcription)</label>
-          <p class="small muted">AI is only used when you press an AI button, and only on the entry or audio you choose. Turning this off hides the AI buttons.</p></div>
-        <div class="card"><h3>Connected services</h3>
-          <p>Google Drive: <span id="driveStatus"><span class="status-dot"></span>Unknown</span></p>
-          <p>Gemini AI: <span id="geminiStatus"><span class="status-dot"></span>Unknown</span> <span class="muted small">(status only — no API key is ever shown here)</span></p>
-          <p>Database: <span id="dbStatus"><span class="status-dot"></span>Unknown</span></p>
-          <p class="small muted">If Drive is not connected, photo and voice uploads will fail. Reconnect from the Google sign-in flow; if the problem persists, sign out and sign in again.</p></div>
-        <div class="card"><h3>Privacy</h3>
-          <p class="small">Your diary is private by default. Entries and media are visible only to the signed-in owner. AI features send only the entry or audio you explicitly choose to Google’s Gemini service when you press an AI button. The tagline appears here as a reminder:</p>
+          <span class="small muted" data-i18n="set.themeHint">Saved on this device only.</span></p></div>
+        <div class="card"><h3 data-i18n="set.aiPrefs">AI preferences</h3>
+          <label class="check"><input id="aiPrefEnabled" type="checkbox" checked> <span data-i18n="set.aiAllow">Allow AI features (summaries, mood suggestions, transcription)</span></label>
+          <p class="small muted" data-i18n="set.aiHint">AI is only used when you press an AI button, and only on the entry or audio you choose. Turning this off hides the AI buttons.</p></div>
+        <div class="card"><h3 data-i18n="set.services">Connected services</h3>
+          <p><span data-i18n="set.drive">Google Drive:</span> <span id="driveStatus"><span class="status-dot"></span>Unknown</span></p>
+          <p><span data-i18n="set.gemini">Gemini AI:</span> <span id="geminiStatus"><span class="status-dot"></span>Unknown</span> <span class="muted small" data-i18n="set.geminiNote">(status only — no API key is ever shown here)</span></p>
+          <p><span data-i18n="set.database">Database:</span> <span id="dbStatus"><span class="status-dot"></span>Unknown</span></p>
+          <p class="small muted" data-i18n="set.driveHint">If Drive is not connected, photo and voice uploads will fail. Reconnect from the Google sign-in flow; if the problem persists, sign out and sign in again.</p></div>
+        <div class="card"><h3 data-i18n="set.privacy">Privacy</h3>
+          <p class="small" data-i18n="set.privacyText">Your diary is private by default. Entries and media are visible only to the signed-in owner. AI features send only the entry or audio you explicitly choose to Google’s Gemini service when you press an AI button. The tagline appears here as a reminder:</p>
           <p class="tagline">“You are nothing but a number of days; whenever a day passes, a part of you is gone.”<cite>— Imam Hasan al-Basri</cite></p></div>
-        <div class="card"><h3>Your data</h3>
-          <p><button id="exportBtn" class="btn secondary" type="button">Export my entries (JSON)</button></p>
-          <p><button id="clearDataBtn" class="btn danger" type="button">Delete all diary entries…</button></p>
-          <p class="small muted">Export downloads a JSON file of your entries. “Delete all” removes entries only; delete photos and voice memories from the Media Vault.</p></div>
-        <div class="card"><h3>About MyDimension</h3>
-          <p class="small">A private, single-owner AI diary &amp; memory vault. Frontend: HTML, CSS and vanilla JavaScript (PWA). Backend: Python FastAPI. Storage: PostgreSQL + the owner’s private Google Drive.</p>
-          <p><button id="logoutBtn2" class="btn ghost" type="button">Sign out</button></p></div>
+        <div class="card"><h3 data-i18n="set.yourData">Your data</h3>
+          <p><button id="exportBtn" class="btn secondary" type="button" data-i18n="set.export">Export my entries (JSON)</button></p>
+          <p><button id="clearDataBtn" class="btn danger" type="button" data-i18n="set.deleteAll">Delete all diary entries…</button></p>
+          <p class="small muted" data-i18n="set.deleteHint">Export downloads a JSON file of your entries. “Delete all” removes entries only; delete photos and voice memories from the Media Vault.</p></div>
+        <div class="card"><h3 data-i18n="set.about">About MyDimension</h3>
+          <p class="small" data-i18n="set.aboutText">A private, single-owner AI diary &amp; memory vault. Frontend: HTML, CSS and vanilla JavaScript (PWA). Backend: Python FastAPI. Storage: PostgreSQL + the owner’s private Google Drive.</p>
+          <p><button id="logoutBtn2" class="btn ghost" type="button" data-i18n="app.signOut">Sign out</button></p></div>
       </section>
     </main>
   </div>
 
   <nav class="bottom-nav" aria-label="Main navigation (mobile)">
-    <a data-route-link href="#/dashboard"><span class="ico">⌂</span>Home</a>
-    <a data-route-link href="#/journal"><span class="ico">✎</span>Journal</a>
-    <a data-route-link href="#/media"><span class="ico">▣</span>Media</a>
-    <a data-route-link href="#/calendar"><span class="ico">▦</span>Calendar</a>
-    <a data-route-link href="#/ai"><span class="ico">✦</span>AI</a>
+    <a data-route-link href="#/dashboard"><span class="ico">⌂</span><span data-i18n="bottom.home">Home</span></a>
+    <a data-route-link href="#/journal"><span class="ico">✎</span><span data-i18n="bottom.journal">Journal</span></a>
+    <a data-route-link href="#/media"><span class="ico">▣</span><span data-i18n="bottom.media">Media</span></a>
+    <a data-route-link href="#/calendar"><span class="ico">▦</span><span data-i18n="bottom.calendar">Calendar</span></a>
+    <a data-route-link href="#/ai"><span class="ico">✦</span><span data-i18n="bottom.ai">AI</span></a>
   </nav>
 </div>
 
+<script src="js/i18n.js" defer></script>
 <script src="js/api.js" defer></script>
 <script src="js/auth.js" defer></script>
 <script src="js/journal.js" defer></script>
