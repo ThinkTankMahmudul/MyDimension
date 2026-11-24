@@ -39,7 +39,23 @@ img{max-width:100%} .hidden{display:none!important}
  * no new colours. Floating soft circles (mint / lavender), a white
  * rounded card, a lock icon in a teal-gradient circle, pill inputs,
  * and a gradient Login button that fills + shimmers. */
-.login-wrap{position:relative;overflow:hidden;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:48px 24px;background:linear-gradient(160deg,var(--pale-mint),#fff 60%,var(--lav))}
+.login-wrap{position:relative;overflow:hidden;min-height:100vh;display:flex;align-items:stretch;padding:0;background:linear-gradient(160deg,var(--pale-mint),#fff 60%,var(--lav))}
+
+/* ---------- Login hero image (user photo, palette-matched by overlay) ----------
+ * Left half on desktop: the astronaut-under-the-stars photo, full height,
+ * with a teal/mint gradient overlay (palette only) so its deep blue and
+ * orange tones sit with #0F766E / #14B8A6 / #A7F3D0. White brand text on
+ * the dark part of the photo. On mobile it becomes a short top banner. */
+.login-hero{position:relative;flex:1 1 52%;min-height:100vh;overflow:hidden;background:var(--forest)}
+.login-hero-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 50%;animation:heroZoom 1.2s ease both}
+@keyframes heroZoom{from{opacity:0;transform:scale(1.05)}to{opacity:1;transform:scale(1)}}
+.login-hero-overlay{position:absolute;inset:0;background:linear-gradient(180deg,rgba(15,118,110,.04) 0%,rgba(15,118,110,.10) 45%,rgba(20,184,166,.22) 70%,rgba(36,92,73,.55) 100%),linear-gradient(120deg,rgba(20,184,166,.14),rgba(15,118,110,.06) 55%,rgba(167,243,208,.10));mix-blend-mode:normal;opacity:.95}
+.login-hero-text{position:absolute;left:0;right:0;bottom:0;padding:44px 40px 36px;color:#fff;text-shadow:0 2px 14px rgba(0,0,0,.55)}
+.login-hero-brand{display:block;font-family:Poppins,sans-serif;font-weight:800;font-size:1.9rem;letter-spacing:.01em}
+.login-hero-line{margin:6px 0 0;font-size:1rem;color:rgba(255,255,255,.92)}
+
+/* On desktop the card sits centred in the right half, beside the photo. */
+.login-wrap .login-card{flex:0 1 440px;margin:auto 56px}
 .bg-circle{position:absolute;border-radius:50%;pointer-events:none;box-shadow:0 18px 40px rgba(38,53,47,.10),inset 0 2px 10px rgba(255,255,255,.9)}
 .bg1{width:280px;height:280px;top:-70px;left:-60px;background:radial-gradient(circle at 35% 30%,#E4FAF5,#A7F3D0 70%);animation:floatY 11s ease-in-out infinite alternate}
 .bg2{width:210px;height:210px;bottom:-60px;right:-40px;background:radial-gradient(circle at 35% 30%,#FFFFFF,#EDE9FE 70%);animation:floatY 13s ease-in-out infinite alternate-reverse}
@@ -306,6 +322,12 @@ html[data-theme="dark"] .stat b{color:#BFE8D8}
   .bottom-nav .ico{display:block;font-size:1.15rem}
   .search-box{min-width:0;flex:1}
   .dash-head-actions{width:100%}
+  /* Login: photo becomes a short top banner, card overlaps it slightly. */
+  .login-wrap{flex-direction:column}
+  .login-hero{flex:none;width:100%;min-height:230px}
+  .login-hero-text{padding:20px 24px 18px}
+  .login-hero-brand{font-size:1.5rem}
+  .login-wrap .login-card{flex:none;width:auto;max-width:520px;margin:-44px 20px 32px;padding:28px 24px 24px}
 }
 
 /* ---------- Islamic / Arabian old-age decorative accents ----------
