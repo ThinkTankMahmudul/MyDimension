@@ -13,14 +13,22 @@ Both work because all imports inside the package are relative.
 The app serves only JSON APIs -- no secrets are ever served. Private
 routes are protected by ``require_admin``; ``GET /health`` is public
 so hosting / monitoring can check the service is up.
+
+When the ``frontend/`` folder is present next to ``backend/`` (the
+normal repository layout, and the Vercel layout via ``api/index.py``),
+the app also serves the HTML dashboard at ``/``. API routes are
+registered first, so ``/health`` and ``/api/...`` still win over the
+static files.
 """
 from __future__ import annotations
 
 import logging
+import os
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 
 from .api import routes_ai, routes_auth, routes_calendar, routes_entries, routes_media
 from .core.config import settings
@@ -85,6 +93,16 @@ app.include_router(routes_entries.router)
 app.include_router(routes_media.router)
 app.include_router(routes_ai.router)
 app.include_router(routes_calendar.router)
+
+# Serve the HTML/CSS/JS frontend at / when it is present.
+# Registered last, so /health and /api/... routes take precedence.
+_FRONTEND_DIR = os.path.normpath(
+    os.path.join(os.path.dirname(__file__), "..", "..", "frontend")
+)
+if os.path.isdir(_FRONTEND_DIR):
+    app.mount("/", StaticFiles(directory=_FRONTEND_DIR, html=True), name="frontend")
+else:  # pragma: no cover - local API-only runs
+    logger.info("Frontend directory not found at %s; serving API only.", _FRONTEND_DIR)
 
 
 if __name__ == "__main__":
