@@ -1,12 +1,21 @@
 /* MyDimension — js/api.js
- * Thin fetch wrapper for the backend API (spec §10).
+ * Thin fetch wrapper for the backend API.
  * Same-origin, cookies included. No secrets / keys here.
- * Endpoints used (relative, so the same frontend works on Vercel or any host):
- *   GET  /api/me, GET/POST /api/entries, PUT/DELETE /api/entries/{id}
- *   POST /api/media/upload, GET /api/media, GET /api/media/{id} (metadata),
- *   GET /api/media/{id}/file (file bytes for <img>/<audio>), DELETE /api/media/{id}
- *   POST /api/ai/mood, /api/ai/summary, /api/ai/improve, /api/ai/transcribe
- *   GET  /api/calendar, GET /api/insights/moods
+ * Verified against the backend routes (schemas.py / api/*.py):
+ *   GET  /health                      -> { status, app, storage, ai_configured, drive_configured }
+ *   GET  /api/me                      -> { email, is_owner }  (no name/picture/status fields)
+ *   GET  /api/entries?search=&mood=&month=YYYY-MM   (no q/date params)
+ *   POST /api/entries  { title, content, mood, tags }
+ *   PUT  /api/entries/{id}  { title?, content?, mood?, tags?, summary? }
+ *   GET  /api/calendar?year=&month=   -> [{ date, entry_count, has_entry }]
+ *   GET  /api/insights/moods          -> [{ mood, count }]
+ *   POST /api/media/upload  FormData: file, media_type ('photo'|'audio'), caption?, entry_id?
+ *   GET  /api/media?media_type=       -> [{ id, drive_file_id, file_name, mime_type,
+ *                                          media_type, file_size, entry_id, caption,
+ *                                          transcript, created_at }]
+ *   GET  /api/media/{id}/file         -> file bytes for <img>/<audio>
+ *   POST /api/ai/mood|summary|improve { text, entry_id? } -> { result, model?, note? }
+ *   POST /api/ai/transcribe  FormData: file (audio/*)     -> { result, ... }
  *   GET  /auth/google/login (redirect), POST /auth/logout
  */
 (function () {
@@ -63,13 +72,25 @@
   }
 
   var api = {
-    // Auth / profile. Response shape (backend): { email, name, picture?, drive_connected, gemini_configured }
+    // Public health check — also the only source for Drive/Gemini status
+    // (/api/me returns only email + is_owner).
+    getHealth: function () { return request('/health'); },
+
+    // Auth / profile. Response shape (backend): { email, is_owner }
     getMe: function () { return request('/api/me'); },
     logout: function () { return json('/auth/logout', 'POST', {}); },
 
-    // Entries
+    // Entries. Entry fields: id, title, content, mood, tags, summary,
+    // created_at, updated_at. The entry "date" is created_at's date —
+    // there is no separate entry_date field on the API.
     listEntries: function (params) {
-      var q = params ? '?' + new URLSearchParams(params).toString() : '';
+      var clean = {};
+      if (params) {
+        if (params.search) clean.search = params.search;
+        if (params.mood) clean.mood = params.mood;
+        if (params.month) clean.month = params.month;
+      }
+      var q = Object.keys(clean).length ? '?' + new URLSearchParams(clean).toString() : '';
       return request('/api/entries' + q);
     },
     getEntry: function (id) { return request('/api/entries/' + encodeURIComponent(id)); },
@@ -79,13 +100,10 @@
 
     // Calendar + insights
     getCalendar: function (year, month) {
-      // month: 1-12. Backend returns days with entries, e.g. { days: { "2026-11-25": 2 } } or a list — both handled by callers.
+      // month: 1-12. Backend returns [{ date, entry_count, has_entry }].
       return request('/api/calendar?year=' + year + '&month=' + month);
     },
-    getMoodInsights: function (params) {
-      var q = params ? '?' + new URLSearchParams(params).toString() : '';
-      return request('/api/insights/moods' + q);
-    },
+    getMoodInsights: function () { return request('/api/insights/moods'); },
 
     // Media (photos + voice). Upload uses FormData — never set Content-Type manually.
     listMedia: function (kind) {
@@ -99,6 +117,7 @@
     deleteMedia: function (id) { return request('/api/media/' + encodeURIComponent(id), { method: 'DELETE' }); },
 
     // AI — each call sends ONLY the selected entry/audio, on an explicit user action.
+    // Request: { text, entry_id? }. Response: { result, model?, note? }.
     aiMood: function (payload) { return json('/api/ai/mood', 'POST', payload); },
     aiSummary: function (payload) { return json('/api/ai/summary', 'POST', payload); },
     aiImprove: function (payload) { return json('/api/ai/improve', 'POST', payload); },

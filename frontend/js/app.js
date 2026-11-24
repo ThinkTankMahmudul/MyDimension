@@ -1,15 +1,20 @@
 /* MyDimension — js/app.js
  * App shell: hash routing, dashboard, calendar, mood insights, settings,
  * shared confirm modal + toast. Screens are sections in index.html (SPA);
- * routes: #/dashboard, #/journal, #/calendar, #/insights, #/voice,
- *          #/photo, #/ai, #/settings
+ * routes: #/dashboard, #/journal, #/entry/<id>, #/ai, #/media,
+ *          #/calendar, #/insights, #/settings
+ * Mood math is always from real API data — no hard-coded 82%/128 numbers.
+ * Calendars are Monday-first, as on the design board.
  */
 (function () {
   'use strict';
 
-  var ROUTES = ['dashboard', 'journal', 'calendar', 'insights', 'voice', 'photo', 'ai', 'settings'];
+  var ROUTES = ['dashboard', 'journal', 'entry', 'ai', 'media', 'calendar', 'insights', 'settings'];
   var calCursor = new Date(); calCursor.setDate(1);
+  var miniCursor = new Date(); miniCursor.setDate(1);
   var selectedDay = null;
+  var mediaTab = 'all';
+  var entryRec = { recorder: null, chunks: [], timer: null, blob: null };
 
   /* ---------- helpers ---------- */
   function toast(msg) {
@@ -44,61 +49,140 @@
   }
 
   /* ---------- routing ---------- */
-  function currentRoute() {
-    var r = (window.location.hash || '#/dashboard').replace('#/', '');
-    return ROUTES.indexOf(r) >= 0 ? r : 'dashboard';
+  function parseRoute() {
+    var hash = (window.location.hash || '#/dashboard').replace('#/', '');
+    var parts = hash.split('/');
+    var route = ROUTES.indexOf(parts[0]) >= 0 ? parts[0] : 'dashboard';
+    return { route: route, param: parts[1] || null };
   }
-  function showRoute(route) {
+  function showRoute() {
+    var parsed = parseRoute();
+    var route = parsed.route;
     document.querySelectorAll('.page').forEach(function (p) { p.classList.toggle('active', p.id === 'page-' + route); });
     document.querySelectorAll('[data-route-link]').forEach(function (a) {
-      a.classList.toggle('active', a.getAttribute('href') === '#/' + route);
+      var href = a.getAttribute('href') || '';
+      a.classList.toggle('active', href === '#/' + route || (route === 'entry' && href === '#/journal'));
     });
     document.getElementById('sidebar').classList.remove('open');
-    var loaders = { dashboard: loadDashboard, journal: loadJournalPage, calendar: loadCalendarPage, insights: loadInsights, voice: loadVoicePage, photo: loadPhotoPage, ai: loadAiPage, settings: loadSettings };
+    var loaders = { dashboard: loadDashboard, journal: loadJournalPage, entry: function () { return loadEntryDetail(parsed.param); }, ai: loadAiPage, media: loadMediaPage, calendar: loadCalendarPage, insights: loadInsights, settings: loadSettings };
     if (loaders[route]) loaders[route]().catch(function (err) { showError(err.message || err); });
     window.scrollTo(0, 0);
   }
 
-  /* ---------- dashboard ---------- */
-  function greeting() {
-    var h = new Date().getHours();
-    return h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
+  /* ---------- mood math (real data only) ---------- */
+  function moodGroups(entries) {
+    var total = 0, positive = 0, neutral = 0, challenging = 0;
+    var counts = {};
+    entries.forEach(function (e) {
+      if (!e.mood) return;
+      total++;
+      counts[e.mood] = (counts[e.mood] || 0) + 1;
+      if (window.MyDimensionJournal.POSITIVE_MOODS.indexOf(e.mood) >= 0) positive++;
+      else if (e.mood === 'Tired' || e.mood === 'Thoughtful') neutral++;
+      else challenging++;
+    });
+    function pct(n) { return total ? Math.round(n / total * 100) : 0; }
+    return { total: total, positive: positive, neutral: neutral, challenging: challenging,
+      pctPositive: pct(positive), pctNeutral: pct(neutral), pctChallenging: pct(challenging), counts: counts };
   }
-  var PROMPTS = [
-    'What made today feel like yours?',
-    'What is one small thing you are grateful for today?',
-    'What would you like to remember about today in a year?',
-    'What did you learn about yourself today?'
-  ];
-  async function loadDashboard() {
-    hideError();
-    var user = window.MyDimensionAuth.getUser();
-    var nameEl = document.getElementById('greetingName');
-    if (nameEl) nameEl.textContent = (user && user.name ? user.name : 'there');
-    document.getElementById('greetingLine').textContent = greeting() + ',';
-    document.getElementById('todayPrompt').textContent = PROMPTS[new Date().getDate() % PROMPTS.length];
-    document.getElementById('todayDateLine').textContent = new Date().toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-    var entries = await window.MyDimensionJournal.loadEntries({});
-    document.getElementById('entryCount').textContent = entries.length;
-    var thisMonth = entries.filter(function (e) { return e.date && e.date.slice(0, 7) === window.MyDimensionJournal.todayLocal().slice(0, 7); }).length;
-    document.getElementById('monthCount').textContent = thisMonth;
-    var moods = new Set(entries.map(function (e) { return e.mood; }).filter(Boolean));
-    document.getElementById('moodCount').textContent = moods.size;
-    var recent = entries.slice().sort(function (a, b) { return (b.date || '').localeCompare(a.date || ''); }).slice(0, 5);
-    window.MyDimensionJournal.renderList(document.getElementById('recentEntries'), recent);
-    renderMiniCalendar(entries);
-    renderRecentActivity(entries);
+  // SVG donut: positive share of mood-tagged entries. Empty state when no mood data.
+  function donutHtml(groups, size) {
+    size = size || 180;
+    if (!groups.total) {
+      return '<div class="empty"><p>No mood data yet.</p><p class="small">Add a mood when you write an entry, and your overview will appear here.</p></div>';
+    }
+    var r = (size / 2) - 14, c = 2 * Math.PI * r, cx = size / 2, cy = size / 2;
+    var segs = [
+      { value: groups.positive, color: '#14B8A6' },
+      { value: groups.neutral, color: '#F6C453' },
+      { value: groups.challenging, color: '#AFA0E8' }
+    ];
+    var offset = 0, circles = '';
+    segs.forEach(function (s) {
+      if (!s.value) return;
+      var len = c * s.value / groups.total;
+      circles += '<circle cx="' + cx + '" cy="' + cy + '" r="' + r + '" fill="none" stroke="' + s.color + '" stroke-width="18" stroke-dasharray="' + len + ' ' + (c - len) + '" stroke-dashoffset="' + (-offset) + '" transform="rotate(-90 ' + cx + ' ' + cy + ')"/>';
+      offset += len;
+    });
+    return '<svg width="' + size + '" height="' + size + '" viewBox="0 0 ' + size + ' ' + size + '" role="img" aria-label="Mood overview">' +
+      '<circle cx="' + cx + '" cy="' + cy + '" r="' + r + '" fill="none" stroke="#EDE9FE" stroke-width="18"/>' + circles +
+      '<text x="50%" y="47%" text-anchor="middle" font-size="30" font-weight="700" fill="#0F766E" font-family="Poppins, sans-serif">' + groups.pctPositive + '%</text>' +
+      '<text x="50%" y="60%" text-anchor="middle" font-size="11" fill="#87918D">positive</text></svg>';
   }
-  function renderRecentActivity(entries) {
-    var box = document.getElementById('recentActivity');
-    if (!box) return;
-    var recent = entries.slice().sort(function (a, b) { return (b.date || '').localeCompare(a.date || ''); }).slice(0, 4);
-    box.innerHTML = recent.length ? recent.map(function (e) {
-      return '<p class="small">✎ ' + window.MyDimensionJournal.esc(e.title) + ' <span class="muted">· ' + window.MyDimensionJournal.esc(window.MyDimensionJournal.fmtDate(e.date)) + '</span></p>';
-    }).join('') : '<p class="small muted">No activity yet.</p>';
+  function legendHtml(groups) {
+    if (!groups.total) return '';
+    var rows = [
+      ['Positive', groups.positive, groups.pctPositive, '#14B8A6'],
+      ['Neutral', groups.neutral, groups.pctNeutral, '#F6C453'],
+      ['Challenging', groups.challenging, groups.pctChallenging, '#AFA0E8']
+    ];
+    return rows.map(function (r) {
+      return '<div class="legend-row"><span><span class="dot" style="background:' + r[3] + '"></span>' + r[0] + '</span><strong>' + r[2] + '% · ' + r[1] + '</strong></div>';
+    }).join('') + '<div class="legend-row"><span>All Journals</span><strong>' + groups.total + ' mood-tagged</strong></div>';
   }
 
-  /* ---------- calendar (shared by dashboard mini-calendar + Calendar page) ---------- */
+  /* ---------- dashboard ---------- */
+  async function loadDashboard() {
+    hideError();
+    var entries = await window.MyDimensionJournal.loadEntries({});
+    var sorted = window.MyDimensionJournal.sortedEntries(entries);
+    var today = window.MyDimensionJournal.todayLocal();
+    var thisMonth = entries.filter(function (e) { return e.date && e.date.slice(0, 7) === today.slice(0, 7); }).length;
+    document.getElementById('statTotal').textContent = entries.length;
+    document.getElementById('statMonth').textContent = thisMonth;
+    try {
+      var media = await window.MyDimensionMedia.loadAllMedia();
+      document.getElementById('statMedia').textContent = media.length;
+    } catch (e) { document.getElementById('statMedia').textContent = '—'; }
+
+    // My Journals: 3 most recent entries as cover cards (CSS gradients, no external images).
+    var cards = document.getElementById('journalCards');
+    if (!sorted.length) {
+      cards.innerHTML = '<div class="empty" style="grid-column:1/-1"><p>No journals yet.</p><button class="btn" data-goto-new-entry>Write your first memory</button></div>';
+    } else {
+      cards.innerHTML = sorted.slice(0, 3).map(function (e, i) {
+        return '<button type="button" class="journal-cover ' + window.MyDimensionJournal.coverClass(e, i) + '" data-open-entry="' + window.MyDimensionJournal.esc(e.id) + '">' +
+          '<span class="cover-badge" aria-hidden="true">' + (window.MyDimensionJournal.MOOD_EMOJI[e.mood] || '✎') + '</span>' +
+          '<span class="cover-art" aria-hidden="true"></span>' +
+          '<span class="cover-body"><span class="cover-title">' + window.MyDimensionJournal.esc(e.title) + '</span>' +
+          '<span class="cover-meta">Created at ' + window.MyDimensionJournal.esc(window.MyDimensionJournal.fmtDate(e.date)) + '</span></span></button>';
+      }).join('');
+    }
+
+    // Recent entries + mood donut (real data).
+    window.MyDimensionJournal.renderList(document.getElementById('recentEntries'), sorted.slice(0, 5));
+    var groups = moodGroups(entries);
+    document.getElementById('moodDonut').innerHTML = donutHtml(groups);
+    document.getElementById('moodLegend').innerHTML = legendHtml(groups);
+
+    renderMiniCalendar(entries);
+    renderTodayActivity(entries);
+  }
+
+  function renderTodayActivity(entries) {
+    var box = document.getElementById('todayActivity');
+    var badge = document.getElementById('bellBadge');
+    if (!box) return;
+    var today = window.MyDimensionJournal.todayLocal();
+    var todays = window.MyDimensionJournal.sortedEntries(entries).filter(function (e) { return e.date === today; });
+    if (badge) {
+      badge.textContent = todays.length;
+      badge.classList.toggle('hidden', !todays.length);
+    }
+    if (!todays.length) {
+      box.innerHTML = '<p class="small muted">Nothing yet today. Write your first entry of the day.</p>';
+    } else {
+      box.innerHTML = todays.map(function (e) {
+        return '<div class="activity-item"><span class="activity-ico" aria-hidden="true">✎</span>' +
+          '<div><p><strong>' + window.MyDimensionJournal.esc(e.title) + '</strong></p>' +
+          '<p class="small muted">New Diary Entry · ' + window.MyDimensionJournal.esc(window.MyDimensionJournal.relTime(e.created_at)) + '</p></div></div>';
+      }).join('');
+    }
+    var panel = document.getElementById('bellPanel');
+    if (panel) panel.innerHTML = '<h4>Today\'s Activity</h4>' + box.innerHTML;
+  }
+
+  /* ---------- calendar (Monday-first, as on the design board) ---------- */
   function entryDaysMap(entries) {
     var map = {};
     entries.forEach(function (e) { if (e.date) map[e.date] = (map[e.date] || 0) + 1; });
@@ -106,11 +190,11 @@
   }
   function renderCalendarInto(container, year, month /* 0-based */, daysMap, onPick) {
     var first = new Date(year, month, 1);
-    var startDow = first.getDay(); // Sunday-first
+    var startDow = (first.getDay() + 6) % 7; // Monday-first
     var daysInMonth = new Date(year, month + 1, 0).getDate();
     var today = window.MyDimensionJournal.todayLocal();
     var html = '<div class="cal-grid">' +
-      ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(function (d) { return '<div class="dow">' + d + '</div>'; }).join('');
+      ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'].map(function (d) { return '<div class="dow">' + d + '</div>'; }).join('');
     for (var i = 0; i < startDow; i++) html += '<div class="cal-day blank"></div>';
     for (var d = 1; d <= daysInMonth; d++) {
       var iso = year + '-' + String(month + 1).padStart(2, '0') + '-' + String(d).padStart(2, '0');
@@ -126,9 +210,8 @@
   function renderMiniCalendar(entries) {
     var box = document.getElementById('miniCalendar');
     if (!box) return;
-    var now = new Date();
-    document.getElementById('miniCalLabel').textContent = now.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
-    renderCalendarInto(box, now.getFullYear(), now.getMonth(), entryDaysMap(entries), function (iso) {
+    document.getElementById('miniCalLabel').textContent = miniCursor.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
+    renderCalendarInto(box, miniCursor.getFullYear(), miniCursor.getMonth(), entryDaysMap(entries), function (iso) {
       selectedDay = iso; window.location.hash = '#/calendar';
     });
   }
@@ -137,13 +220,15 @@
     var year = calCursor.getFullYear(), month = calCursor.getMonth();
     document.getElementById('calLabel').textContent = calCursor.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
     var entries = await window.MyDimensionJournal.loadEntries({});
-    // Prefer the backend calendar endpoint for entry-day marks; fall back to the entry list.
     var daysMap = entryDaysMap(entries);
     try {
+      // Backend returns [{ date, entry_count, has_entry }] for the month.
       var cal = await window.MyDimensionApi.getCalendar(year, month + 1);
-      if (cal && cal.days && typeof cal.days === 'object') daysMap = cal.days;
-      else if (Array.isArray(cal)) { daysMap = {}; cal.forEach(function (d) { daysMap[(d.date || d.day || '').slice(0, 10)] = d.count || 1; }); }
-    } catch (e) { /* offline calendar marks: entry list already covers it */ }
+      if (Array.isArray(cal)) {
+        daysMap = {};
+        cal.forEach(function (d) { if (d.has_entry) daysMap[d.date] = d.entry_count || 1; });
+      }
+    } catch (e) { /* entry list already covers the marks */ }
     var pickDay = function (iso) {
       selectedDay = iso;
       renderCalendarInto(document.getElementById('bigCalendar'), year, month, daysMap, pickDay);
@@ -157,58 +242,163 @@
     var box = document.getElementById('dayEntries');
     document.getElementById('selectedDayLabel').textContent = window.MyDimensionJournal.fmtDate(iso);
     var list = window.MyDimensionJournal.getCached().filter(function (e) { return e.date === iso; });
-    window.MyDimensionJournal.renderList(box, list);
+    window.MyDimensionJournal.renderList(box, window.MyDimensionJournal.sortedEntries(list));
     var btn = document.getElementById('newEntryForDayBtn');
     btn.classList.remove('hidden');
-    btn.onclick = function () { window.MyDimensionJournal.startNew(iso); };
+    btn.onclick = function () {
+      window.MyDimensionJournal.startNew();
+      if (iso !== window.MyDimensionJournal.todayLocal()) {
+        toast('Note: entries are dated by the day they are saved, so this entry will be dated today.');
+      }
+    };
   }
 
-  /* ---------- other pages ---------- */
+  /* ---------- journal page / detail ---------- */
   async function loadJournalPage() {
     hideError();
     var sel = document.getElementById('journalMoodFilter');
-    if (!sel.options.length || sel.options.length === 1) {
+    if (sel.options.length <= 1) {
       window.MyDimensionJournal.MOODS.forEach(function (m) { var o = document.createElement('option'); o.value = m; o.textContent = m; sel.appendChild(o); });
     }
-    if (!document.getElementById('entryDate').value) document.getElementById('entryDate').value = window.MyDimensionJournal.todayLocal();
+    window.MyDimensionJournal.renderMoodPicker();
+    window.MyDimensionJournal.restoreDraftIfAny();
     await window.MyDimensionJournal.refreshJournalList();
   }
+  async function loadEntryDetail(id) {
+    hideError();
+    var box = document.getElementById('entryDetail');
+    if (!id) { box.innerHTML = '<p class="muted">No entry selected.</p>'; return; }
+    var entry = window.MyDimensionJournal.findCached(id);
+    if (!entry) {
+      try { entry = (await window.MyDimensionJournal.loadEntries({})).find(function (e) { return String(e.id) === String(id); }); }
+      catch (e) { /* fall through */ }
+    }
+    if (!entry) { box.innerHTML = '<div class="empty"><p>That entry could not be found. It may already have been deleted.</p><a class="btn" href="#/journal">Back to My Journal</a></div>'; return; }
+    var J = window.MyDimensionJournal;
+    box.innerHTML =
+      '<div class="entry-row"><span class="entry-thumb ' + J.coverClass(entry, 0) + '" aria-hidden="true">' + (J.MOOD_EMOJI[entry.mood] || '✎') + '</span>' +
+      '<div class="entry-body"><h3>' + J.esc(entry.title) + '</h3>' +
+      '<p class="muted small">' + J.esc(J.fmtDate(entry.date)) + (entry.created_at ? ' · ' + J.esc(J.fmtTime(entry.created_at)) : '') +
+      (entry.mood ? ' · <span class="mood-pill">' + J.esc(J.MOOD_EMOJI[entry.mood] || '') + ' ' + J.esc(entry.mood) + '</span>' : '') +
+      entry.tags.map(function (t) { return ' <span class="tag-pill">' + J.esc(t) + '</span>'; }).join('') + '</p></div></div>' +
+      '<div class="detail-content">' + J.esc(entry.body) + '</div>' +
+      (entry.summary ? '<h4>AI summary</h4><p class="muted">' + J.esc(entry.summary) + '</p>' : '') +
+      '<div class="entry-actions">' +
+      '<button class="btn secondary" data-edit-entry="' + J.esc(entry.id) + '">Edit</button>' +
+      '<button class="btn ghost" data-delete-entry="' + J.esc(entry.id) + '" data-entry-title="' + J.esc(entry.title) + '">Delete</button>' +
+      '<button class="btn ghost" data-ai-entry="' + J.esc(entry.id) + '">AI reflection</button></div>';
+    // Media linked to this entry (media rows carry entry_id).
+    var mediaBox = document.getElementById('entryDetailMedia');
+    try {
+      var all = await window.MyDimensionMedia.loadAllMedia();
+      var linked = all.filter(function (m) { return String(m.entry_id || '') === String(entry.id); });
+      mediaBox.innerHTML = linked.length ? linked.map(function (m) {
+        return m.kind === 'audio'
+          ? '<div class="voice-item"><strong>' + J.esc(m.caption || m.name) + '</strong><audio class="detail-audio" controls preload="none" src="' + window.MyDimensionApi.getMediaUrl(m.id) + '"></audio></div>'
+          : '<figure class="thumb"><img loading="lazy" alt="' + J.esc(m.caption || m.name) + '" src="' + window.MyDimensionApi.getMediaUrl(m.id) + '"><figcaption>' + J.esc(m.caption || m.name) + '</figcaption></figure>';
+      }).join('') : '<p class="small muted">No photos or voice notes attached to this entry.</p>';
+    } catch (e) { mediaBox.innerHTML = '<p class="small muted">Media could not be loaded.</p>'; }
+  }
+
+  /* ---------- insights ---------- */
   async function loadInsights() {
     hideError();
-    var box = document.getElementById('moodChart');
+    var entries = window.MyDimensionJournal.getCached().length ? window.MyDimensionJournal.getCached() : await window.MyDimensionJournal.loadEntries({});
     var counts = {};
     try {
-      var data = await window.MyDimensionApi.getMoodInsights({});
-      var src = data.counts || data.moods || data;
-      if (Array.isArray(src)) src.forEach(function (r) { counts[r.mood || r.label] = r.count || r.total || 0; });
-      else if (src && typeof src === 'object') Object.keys(src).forEach(function (k) { counts[k] = src[k]; });
+      var data = await window.MyDimensionApi.getMoodInsights();
+      if (Array.isArray(data)) data.forEach(function (r) { if (r.mood) counts[r.mood] = r.count || 0; });
     } catch (e) { /* fall through to entry-derived counts */ }
     if (!Object.keys(counts).length) {
-      var entries = window.MyDimensionJournal.getCached().length ? window.MyDimensionJournal.getCached() : await window.MyDimensionJournal.loadEntries({});
       entries.forEach(function (e) { if (e.mood) counts[e.mood] = (counts[e.mood] || 0) + 1; });
     }
     var total = Object.values(counts).reduce(function (a, b) { return a + b; }, 0);
     document.getElementById('insightsTotal').textContent = total + (total === 1 ? ' mood-tagged entry' : ' mood-tagged entries');
-    if (!total) { box.innerHTML = '<div class="empty"><p>No mood data yet.</p><p class="small">Add a mood when you write an entry, and your insights will appear here.</p></div>'; return; }
-    var max = Math.max.apply(null, Object.values(counts));
-    box.innerHTML = Object.keys(counts).sort(function (a, b) { return counts[b] - counts[a]; }).map(function (mood, i) {
-      var pct = Math.round(counts[mood] / max * 100);
-      return '<div class="bar-row"><span>' + window.MyDimensionJournal.esc(mood) + '</span>' +
-        '<div class="bar-track"><div class="bar-fill' + (i % 2 ? ' lav' : '') + '" style="width:' + pct + '%"></div></div>' +
-        '<strong>' + counts[mood] + '</strong></div>';
-    }).join('') + '<p class="small muted">Counts of entries by mood. AI mood suggestions are suggestions only — they are not facts or diagnoses.</p>';
+    var box = document.getElementById('moodChart');
+    if (!total) { box.innerHTML = '<div class="empty"><p>No mood data yet.</p><p class="small">Add a mood when you write an entry, and your insights will appear here.</p></div>'; }
+    else {
+      var max = Math.max.apply(null, Object.values(counts));
+      box.innerHTML = Object.keys(counts).sort(function (a, b) { return counts[b] - counts[a]; }).map(function (mood, i) {
+        var pct = Math.round(counts[mood] / max * 100);
+        return '<div class="bar-row"><span>' + window.MyDimensionJournal.esc(mood) + '</span>' +
+          '<div class="bar-track"><div class="bar-fill' + (i % 2 ? ' lav' : '') + '" style="width:' + pct + '%"></div></div>' +
+          '<strong>' + counts[mood] + '</strong></div>';
+      }).join('') + '<p class="small muted">Counts of entries by mood. AI mood suggestions are suggestions only — they are not facts or diagnoses.</p>';
+    }
+    // Overall mood donut + stats (real data).
+    var groups = moodGroups(entries);
+    document.getElementById('overallMood').innerHTML = donutHtml(groups, 160);
+    document.getElementById('overallLegend').innerHTML = legendHtml(groups);
+    var media = [];
+    try { media = await window.MyDimensionMedia.loadAllMedia(); } catch (e) { /* stats show entries only */ }
+    var photos = media.filter(function (m) { return m.kind === 'photo'; }).length;
+    var audio = media.filter(function (m) { return m.kind === 'audio'; }).length;
+    var thisMonth = entries.filter(function (e) { return e.date && e.date.slice(0, 7) === window.MyDimensionJournal.todayLocal().slice(0, 7); }).length;
+    document.getElementById('diaryStats').innerHTML =
+      '<div class="legend-row"><span>Total Entries</span><strong>' + entries.length + '</strong></div>' +
+      '<div class="legend-row"><span>With Voice</span><strong>' + audio + '</strong></div>' +
+      '<div class="legend-row"><span>With Photos</span><strong>' + photos + '</strong></div>' +
+      '<div class="legend-row"><span>This Month</span><strong>' + thisMonth + '</strong></div>' +
+      '<div class="legend-row"><span>Mood-tagged</span><strong>' + total + '</strong></div>';
+    renderTrend(entries);
   }
-  async function loadVoicePage() { hideError(); await window.MyDimensionMedia.refreshVoiceList().catch(function (e) { showError(e.message); }); }
-  async function loadPhotoPage() { hideError(); await window.MyDimensionMedia.refreshPhotoList().catch(function (e) { showError(e.message); }); }
+  function renderTrend(entries) {
+    var box = document.getElementById('moodTrend');
+    if (!box) return;
+    var days = [];
+    for (var i = 29; i >= 0; i--) {
+      var d = new Date(); d.setDate(d.getDate() - i);
+      days.push(d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'));
+    }
+    var perDay = days.map(function (iso) { return entries.filter(function (e) { return e.date === iso; }).length; });
+    var max = Math.max.apply(null, perDay.concat([1]));
+    var W = 560, H = 180, PL = 34, PB = 22, PT = 12, PR = 8;
+    var x = function (i) { return PL + i * (W - PL - PR) / 29; };
+    var y = function (v) { return PT + (H - PT - PB) * (1 - v / max); };
+    var points = perDay.map(function (v, i) { return x(i).toFixed(1) + ',' + y(v).toFixed(1); }).join(' ');
+    var area = PL + ',' + y(0) + ' ' + points + ' ' + x(29).toFixed(1) + ',' + y(0);
+    var grid = '';
+    for (var g = 0; g <= max; g++) {
+      grid += '<line class="grid" x1="' + PL + '" y1="' + y(g) + '" x2="' + (W - PR) + '" y2="' + y(g) + '"/><text x="6" y="' + (y(g) + 4) + '">' + g + '</text>';
+    }
+    box.innerHTML = '<svg class="trend-chart" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Entries per day, last 30 days">' +
+      grid + '<polygon class="area" points="' + area + '"/>' +
+      '<polyline class="line" points="' + points + '"/>' +
+      perDay.map(function (v, i) { return '<circle class="dot" cx="' + x(i) + '" cy="' + y(v) + '" r="3"/>'; }).join('') +
+      '<text x="' + PL + '" y="' + (H - 6) + '">' + days[0].slice(5) + '</text>' +
+      '<text x="' + (W - PR - 34) + '" y="' + (H - 6) + '">' + days[29].slice(5) + '</text></svg>';
+  }
+
+  /* ---------- AI / media pages ---------- */
   async function loadAiPage() {
     hideError();
     if (!window.MyDimensionJournal.getCached().length) { try { await window.MyDimensionJournal.loadEntries({}); } catch (e) { /* entry list is optional here */ } }
     window.MyDimensionAI.populateEntrySelect();
   }
+  async function loadMediaPage() {
+    hideError();
+    try { await window.MyDimensionMedia.refreshVault(mediaTab); }
+    catch (err) { showError(err.message); }
+  }
+
+  /* ---------- settings ---------- */
   async function loadSettings() {
     hideError();
-    var user = window.MyDimensionAuth.getUser();
-    if (user) { /* profile + status already rendered by auth.js; re-check in case status changed */ }
+    applyTheme();
+    window.MyDimensionAuth.refreshServiceStatus();
+  }
+  function applyTheme() {
+    var saved = null;
+    try { saved = localStorage.getItem('mydimension-theme'); } catch (e) { /* ignore */ }
+    var dark = saved === 'dark';
+    document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+    var btn = document.getElementById('themeToggle');
+    if (btn) { btn.textContent = dark ? 'Switch to light theme' : 'Switch to dark theme'; btn.setAttribute('aria-pressed', String(dark)); }
+  }
+  function toggleTheme() {
+    var dark = document.documentElement.getAttribute('data-theme') !== 'dark';
+    try { localStorage.setItem('mydimension-theme', dark ? 'dark' : 'light'); } catch (e) { /* ignore */ }
+    applyTheme();
   }
 
   async function exportData() {
@@ -222,27 +412,151 @@
     } catch (err) { showError(err.message || err); }
   }
 
-  /* ---------- events (delegated, so dynamically rendered buttons work) ---------- */
+  /* ---------- entry-form tabs / rich text / voice note ---------- */
+  function setEntryTab(name) {
+    document.querySelectorAll('[data-entry-tab]').forEach(function (b) {
+      var on = b.getAttribute('data-entry-tab') === name;
+      b.classList.toggle('active', on); b.setAttribute('aria-selected', String(on));
+    });
+    ['write', 'voice', 'photo', 'file'].forEach(function (n) {
+      document.getElementById('tab-' + n).classList.toggle('hidden', n !== name);
+    });
+  }
+  function entryRecTimerText() {
+    var el = document.getElementById('entryRecTimer');
+    if (el && entryRec.start) el.textContent = new Date(Date.now() - entryRec.start).toISOString().slice(14, 19);
+  }
+  async function startEntryRecording() {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || !window.MediaRecorder) {
+      throw new Error('This browser cannot record audio here. Please upload an audio file from the Media Vault instead.');
+    }
+    var stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    entryRec.chunks = [];
+    entryRec.recorder = new MediaRecorder(stream);
+    entryRec.recorder.ondataavailable = function (e) { if (e.data && e.data.size) entryRec.chunks.push(e.data); };
+    entryRec.recorder.onstop = function () {
+      stream.getTracks().forEach(function (t) { t.stop(); });
+      entryRec.blob = new Blob(entryRec.chunks, { type: entryRec.recorder.mimeType || 'audio/webm' });
+      var preview = document.getElementById('entryRecPreview');
+      preview.src = URL.createObjectURL(entryRec.blob); preview.classList.remove('hidden');
+      document.getElementById('entryTranscribeBtn').classList.remove('hidden');
+      document.getElementById('entryRecBtn').disabled = false;
+      document.getElementById('entryRecStopBtn').disabled = true;
+    };
+    entryRec.recorder.start();
+    entryRec.start = Date.now();
+    entryRec.timer = setInterval(entryRecTimerText, 500);
+    document.getElementById('entryRecBtn').disabled = true;
+    document.getElementById('entryRecStopBtn').disabled = false;
+  }
+  function stopEntryRecording() {
+    if (entryRec.timer) clearInterval(entryRec.timer);
+    if (entryRec.recorder && entryRec.recorder.state !== 'inactive') entryRec.recorder.stop();
+  }
+  async function transcribeEntryRecording() {
+    if (!entryRec.blob) { toast('Record a voice note first.'); return; }
+    var status = document.getElementById('entryTranscribeStatus');
+    status.textContent = 'Transcribing…';
+    try {
+      var fd = new FormData();
+      fd.append('file', new File([entryRec.blob], 'voice-note.webm', { type: entryRec.blob.type || 'audio/webm' }));
+      var tr = await window.MyDimensionApi.aiTranscribe(fd);
+      var text = tr.result || tr.text || '';
+      status.textContent = text ? 'Transcript added below — review it before saving.' : 'No transcript returned.';
+      if (text) {
+        var cur = document.getElementById('entryBody').innerText.trim();
+        document.getElementById('entryBody').innerText = cur ? cur + '\n\n' + text : text;
+        setEntryTab('write');
+      }
+    } catch (err) { status.textContent = 'Transcription failed: ' + err.message; }
+  }
+
+  /* ---------- events ---------- */
   function bindEvents() {
     document.getElementById('loginBtn').addEventListener('click', window.MyDimensionAuth.login);
     document.getElementById('logoutBtn').addEventListener('click', window.MyDimensionAuth.logout);
     document.getElementById('logoutBtn2').addEventListener('click', window.MyDimensionAuth.logout);
     document.getElementById('menuBtn').addEventListener('click', function () { document.getElementById('sidebar').classList.toggle('open'); });
     document.getElementById('exportBtn').addEventListener('click', exportData);
+    document.getElementById('themeToggle').addEventListener('click', toggleTheme);
+    var aiPref = document.getElementById('aiPrefEnabled');
+    try { aiPref.checked = localStorage.getItem('mydimension-ai-off') !== '1'; } catch (e) { /* default on */ }
+    aiPref.addEventListener('change', function () {
+      try { localStorage.setItem('mydimension-ai-off', aiPref.checked ? '0' : '1'); } catch (e) { /* ignore */ }
+      toast(aiPref.checked ? 'AI features turned on.' : 'AI features turned off.');
+    });
 
+    // Bell: today's activity panel.
+    function toggleBell() {
+      var panel = document.getElementById('bellPanel');
+      var btn = document.getElementById('bellBtn');
+      var open = panel.classList.toggle('hidden');
+      btn.setAttribute('aria-expanded', String(!open));
+    }
+    document.getElementById('bellBtn').addEventListener('click', function (e) { e.stopPropagation(); toggleBell(); });
+    document.getElementById('bellBtnMobile').addEventListener('click', function () { window.location.hash = '#/dashboard'; toast("Today's activity is on the dashboard."); });
+    document.addEventListener('click', function (e) {
+      var panel = document.getElementById('bellPanel');
+      if (panel && !panel.classList.contains('hidden') && !e.target.closest('.bell-wrap')) panel.classList.add('hidden');
+    });
+
+    // Dashboard search: filter recent entries live; Enter jumps to My Journal.
     document.getElementById('dashboardSearch').addEventListener('input', function (e) {
       var q = e.target.value.toLowerCase();
       var entries = window.MyDimensionJournal.getCached();
-      var filtered = q ? entries.filter(function (en) { return (en.title + ' ' + en.body).toLowerCase().includes(q); }) : entries.slice().sort(function (a, b) { return (b.date || '').localeCompare(a.date || ''); }).slice(0, 5);
-      window.MyDimensionJournal.renderList(document.getElementById('recentEntries'), filtered);
+      var filtered = q ? entries.filter(function (en) { return (en.title + ' ' + en.body).toLowerCase().includes(q); }) : window.MyDimensionJournal.sortedEntries(entries).slice(0, 5);
+      window.MyDimensionJournal.renderList(document.getElementById('recentEntries'), window.MyDimensionJournal.sortedEntries(filtered).slice(0, 5));
+    });
+    document.getElementById('dashboardSearch').addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') {
+        document.getElementById('journalSearch').value = e.target.value;
+        window.location.hash = '#/journal';
+      }
     });
 
+    // Mini calendar month navigation.
+    document.getElementById('miniPrevBtn').addEventListener('click', function () { miniCursor.setMonth(miniCursor.getMonth() - 1); loadDashboard(); });
+    document.getElementById('miniNextBtn').addEventListener('click', function () { miniCursor.setMonth(miniCursor.getMonth() + 1); loadDashboard(); });
+
+    // Entry form: submit, draft, cancel, tabs, rich text, voice, photo/file.
     document.getElementById('entryForm').addEventListener('submit', async function (e) {
       e.preventDefault();
       try { await window.MyDimensionJournal.saveCurrent(); toast('Entry saved.'); loadDashboard().catch(function () {}); }
       catch (err) { showError(err.message || err); }
     });
+    document.getElementById('saveDraftBtn').addEventListener('click', function () {
+      try { window.MyDimensionJournal.saveDraft(); toast('Draft saved on this device.'); }
+      catch (err) { showError(err.message || err); }
+    });
+    document.getElementById('discardDraftBtn').addEventListener('click', function () {
+      window.MyDimensionJournal.clearDraft(); window.MyDimensionJournal.resetForm(); toast('Draft discarded.');
+    });
     document.getElementById('cancelEditBtn').addEventListener('click', function () { window.MyDimensionJournal.resetForm(); });
+    document.querySelectorAll('[data-entry-tab]').forEach(function (b) {
+      b.addEventListener('click', function () { setEntryTab(b.getAttribute('data-entry-tab')); });
+    });
+    document.querySelectorAll('[data-rte]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        document.getElementById('entryBody').focus();
+        document.execCommand(b.getAttribute('data-rte'), false, null);
+      });
+    });
+    document.getElementById('entryRecBtn').addEventListener('click', async function () {
+      try { await startEntryRecording(); } catch (err) { showError(err.message); }
+    });
+    document.getElementById('entryRecStopBtn').addEventListener('click', stopEntryRecording);
+    document.getElementById('entryTranscribeBtn').addEventListener('click', transcribeEntryRecording);
+    document.getElementById('entryPhoto').addEventListener('change', function (e) {
+      var f = e.target.files[0]; if (!f) return;
+      var img = document.getElementById('entryPhotoPreview');
+      img.src = URL.createObjectURL(f); img.classList.remove('hidden');
+    });
+    document.getElementById('entryFile').addEventListener('change', function (e) {
+      var f = e.target.files[0];
+      document.getElementById('entryFileName').textContent = f ? 'Selected: ' + f.name + ' (' + window.MyDimensionMedia.fmtSize(f.size) + ')' : '';
+    });
+
+    // Journal filters.
     ['journalSearch', 'journalMoodFilter', 'journalDateFilter'].forEach(function (id) {
       document.getElementById(id).addEventListener('input', function () { window.MyDimensionJournal.refreshJournalList().catch(function (err) { showError(err.message); }); });
     });
@@ -251,36 +565,45 @@
       window.MyDimensionJournal.refreshJournalList();
     });
 
+    // Calendar navigation.
     document.getElementById('prevMonthBtn').addEventListener('click', function () { calCursor.setMonth(calCursor.getMonth() - 1); loadCalendarPage(); });
     document.getElementById('nextMonthBtn').addEventListener('click', function () { calCursor.setMonth(calCursor.getMonth() + 1); loadCalendarPage(); });
     document.getElementById('todayMonthBtn').addEventListener('click', function () { calCursor = new Date(); calCursor.setDate(1); selectedDay = window.MyDimensionJournal.todayLocal(); loadCalendarPage(); });
 
-    document.getElementById('startRecBtn').addEventListener('click', async function () { try { await window.MyDimensionMedia.startRecording(); } catch (err) { showError(err.message); } });
-    document.getElementById('stopRecBtn').addEventListener('click', function () { window.MyDimensionMedia.stopRecording(); });
-    document.getElementById('discardRecBtn').addEventListener('click', function () { window.MyDimensionMedia.discardRecording(); });
-    document.getElementById('saveRecBtn').addEventListener('click', async function () { try { await window.MyDimensionMedia.saveRecording(); toast('Voice memory saved.'); } catch (err) { showError(err.message); } });
-    document.getElementById('voiceUpload').addEventListener('change', async function (e) {
+    // Media Vault: tabs + upload.
+    document.querySelectorAll('[data-media-tab]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        mediaTab = b.getAttribute('data-media-tab');
+        document.querySelectorAll('[data-media-tab]').forEach(function (x) {
+          var on = x === b; x.classList.toggle('active', on); x.setAttribute('aria-selected', String(on));
+        });
+        window.MyDimensionMedia.refreshVault(mediaTab).catch(function (err) { showError(err.message); });
+      });
+    });
+    document.getElementById('mediaUploadBtn').addEventListener('click', function () { document.getElementById('mediaUploadInput').click(); });
+    document.getElementById('mediaUploadInput').addEventListener('change', async function (e) {
       var f = e.target.files[0]; if (!f) return;
-      try { await window.MyDimensionMedia.uploadFile(f, 'voice', ''); toast('Audio uploaded.'); await loadVoicePage(); } catch (err) { showError(err.message); }
+      var kind = f.type.indexOf('audio/') === 0 ? 'audio' : 'photo';
+      try { await window.MyDimensionMedia.uploadFile(f, kind, ''); toast('Uploaded.'); await loadMediaPage(); }
+      catch (err) { showError(err.message); }
       e.target.value = '';
     });
-    document.getElementById('photoUpload').addEventListener('change', function (e) {
-      var f = e.target.files[0]; if (!f) return;
-      var img = document.getElementById('photoPreview');
-      img.src = URL.createObjectURL(f); img.classList.remove('hidden');
+
+    // AI actions + chat.
+    document.querySelectorAll('[data-ai-action]').forEach(function (btn) {
+      btn.addEventListener('click', function () { window.MyDimensionAI.run(btn.getAttribute('data-ai-action')); });
     });
-    document.getElementById('photoForm').addEventListener('submit', async function (e) {
-      e.preventDefault();
-      var f = document.getElementById('photoUpload').files[0];
-      if (!f) { showError('Choose a photo first.'); return; }
-      try {
-        await window.MyDimensionMedia.uploadFile(f, 'photo', document.getElementById('photoCaption').value.trim());
-        toast('Photo saved.'); e.target.reset(); document.getElementById('photoPreview').classList.add('hidden');
-        await loadPhotoPage();
-      } catch (err) { showError(err.message); }
-    });
+    function sendChat() {
+      var input = document.getElementById('aiChatInput');
+      var q = input.value.trim(); if (!q) return;
+      input.value = '';
+      window.MyDimensionAI.askChat(q);
+    }
+    document.getElementById('aiChatSend').addEventListener('click', sendChat);
+    document.getElementById('aiChatInput').addEventListener('keydown', function (e) { if (e.key === 'Enter') sendChat(); });
+
     document.getElementById('clearDataBtn').addEventListener('click', async function () {
-      var ok = await confirmDialog({ title: 'Delete all diary data?', text: 'This permanently deletes all of your diary entries. Photos and voice memories are deleted separately from their own pages. This cannot be undone.', yes: 'Delete all entries', strong: true });
+      var ok = await confirmDialog({ title: 'Delete all diary data?', text: 'This permanently deletes all of your diary entries. Photos and voice memories are deleted separately from the Media Vault. This cannot be undone.', yes: 'Delete all entries', strong: true });
       if (!ok) return;
       try {
         var entries = await window.MyDimensionJournal.loadEntries({});
@@ -291,12 +614,13 @@
 
     // Delegated clicks for dynamically rendered lists.
     document.addEventListener('click', async function (e) {
-      var t = e.target.closest('[data-edit-entry],[data-delete-entry],[data-ai-entry],[data-delete-media],[data-transcribe-media],[data-goto-new-entry]');
+      var t = e.target.closest('[data-edit-entry],[data-delete-entry],[data-ai-entry],[data-delete-media],[data-transcribe-media],[data-goto-new-entry],[data-open-entry]');
       if (!t) return;
       if (t.hasAttribute('data-goto-new-entry')) { window.MyDimensionJournal.startNew(); return; }
+      if (t.hasAttribute('data-open-entry')) { window.location.hash = '#/entry/' + t.getAttribute('data-open-entry'); return; }
       if (t.hasAttribute('data-edit-entry')) {
         var entry = window.MyDimensionJournal.findCached(t.getAttribute('data-edit-entry'));
-        if (entry) { window.location.hash = '#/journal'; window.MyDimensionJournal.fillForm(entry); }
+        if (entry) { window.location.hash = '#/journal'; setTimeout(function () { window.MyDimensionJournal.fillForm(entry); }, 50); }
         return;
       }
       if (t.hasAttribute('data-delete-entry')) {
@@ -309,14 +633,17 @@
       }
       if (t.hasAttribute('data-ai-entry')) {
         window.location.hash = '#/ai';
-        setTimeout(function () { var sel = document.getElementById('aiEntrySelect'); sel.value = t.getAttribute('data-ai-entry'); }, 100);
+        setTimeout(function () {
+          var sel = document.getElementById('aiEntrySelect');
+          if (sel) sel.value = t.getAttribute('data-ai-entry');
+        }, 100);
         return;
       }
       if (t.hasAttribute('data-delete-media')) {
         var name = t.getAttribute('data-media-name') || 'this file';
         var okM = await confirmDialog({ title: 'Delete this file?', text: '“' + name + '” will be permanently deleted from your Drive storage. This cannot be undone.', yes: 'Delete file' });
         if (!okM) return;
-        try { await window.MyDimensionApi.deleteMedia(t.getAttribute('data-delete-media')); toast('File deleted.'); if (currentRoute() === 'voice') loadVoicePage(); else loadPhotoPage(); }
+        try { await window.MyDimensionApi.deleteMedia(t.getAttribute('data-delete-media')); toast('File deleted.'); loadMediaPage(); }
         catch (err) { showError(err.message); }
         return;
       }
@@ -331,33 +658,28 @@
           var blob = await res.blob();
           var fd = new FormData(); fd.append('file', blob, 'voice-memory.webm');
           var tr = await window.MyDimensionApi.aiTranscribe(fd);
-          var text = tr.transcript || tr.transcription || tr.text || tr.result || '';
+          var text = tr.result || tr.text || '';
           if (out) out.innerHTML = text ? '<strong>Transcript:</strong> ' + window.MyDimensionJournal.esc(text) : 'No transcript returned.';
         } catch (err) { if (out) out.textContent = 'Transcription failed: ' + err.message; }
       }
     });
 
-    document.querySelectorAll('[data-ai-action]').forEach(function (btn) {
-      btn.addEventListener('click', function () { window.MyDimensionAI.run(btn.getAttribute('data-ai-action')); });
-    });
     document.querySelectorAll('[data-quick]').forEach(function (btn) {
       btn.addEventListener('click', function () {
         var kind = btn.getAttribute('data-quick');
         if (kind === 'note') window.MyDimensionJournal.startNew();
-        else window.location.hash = kind === 'voice' ? '#/voice' : '#/photo';
+        else window.location.hash = kind === 'voice' ? '#/media' : '#/media';
       });
     });
-    window.addEventListener('hashchange', function () { showRoute(currentRoute()); });
+    window.addEventListener('hashchange', showRoute);
   }
 
   /* ---------- init ---------- */
   async function init() {
-    // Mood select options for the entry form.
-    var moodSel = document.getElementById('entryMood');
-    window.MyDimensionJournal.MOODS.forEach(function (m) { var o = document.createElement('option'); o.value = m; o.textContent = m; moodSel.appendChild(o); });
+    applyTheme();
     bindEvents();
     var user = await window.MyDimensionAuth.checkAuth();
-    if (user) showRoute(currentRoute());
+    if (user) showRoute();
     if ('serviceWorker' in navigator) {
       // PWA shell only; the worker never caches API responses, media or tokens.
       navigator.serviceWorker.register('service-worker.js').catch(function () { /* PWA is optional; the app works without it */ });
