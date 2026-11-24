@@ -18,7 +18,7 @@
   // prettified from its local part. Display only — never an auth check.
   function displayName(email) {
     if (!email) return 'Owner';
-    if (email.toLowerCase() === 'technicalmahmudull@gmail.com') return 'Mahmudul Hasan';
+    if (email.toLowerCase() === 'technicalmahmudull@gmail.com') return 'মাহমুদুল হাসান ওয়ালিদ';
     var local = email.split('@')[0].replace(/[._-]+/g, ' ').trim();
     return local ? local.replace(/\b\w/g, function (c) { return c.toUpperCase(); }) : 'Owner';
   }
