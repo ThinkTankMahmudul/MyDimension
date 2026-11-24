@@ -94,14 +94,16 @@
     var r = (size / 2) - 14, c = 2 * Math.PI * r, cx = size / 2, cy = size / 2;
     var segs = [
       { value: groups.positive, color: '#14B8A6' },
-      { value: groups.neutral, color: '#F6C453' },
-      { value: groups.challenging, color: '#AFA0E8' }
+      { value: groups.neutral, color: '#AFA0E8' },
+      { value: groups.challenging, color: '#245C49' }
     ];
     var offset = 0, circles = '';
     segs.forEach(function (s) {
       if (!s.value) return;
       var len = c * s.value / groups.total;
-      circles += '<circle cx="' + cx + '" cy="' + cy + '" r="' + r + '" fill="none" stroke="' + s.color + '" stroke-width="18" stroke-dasharray="' + len + ' ' + (c - len) + '" stroke-dashoffset="' + (-offset) + '" transform="rotate(-90 ' + cx + ' ' + cy + ')"/>';
+      // Start invisible (dasharray 0); animateDonuts() draws each segment
+      // to its final length once the SVG is in the DOM.
+      circles += '<circle cx="' + cx + '" cy="' + cy + '" r="' + r + '" fill="none" stroke="' + s.color + '" stroke-width="18" style="stroke-dasharray:0 ' + c + ';stroke-dashoffset:0" data-dash="' + len + ' ' + (c - len) + '" data-off="' + (-offset) + '" transform="rotate(-90 ' + cx + ' ' + cy + ')"/>';
       offset += len;
     });
     return '<svg width="' + size + '" height="' + size + '" viewBox="0 0 ' + size + ' ' + size + '" role="img" aria-label="Mood overview">' +
@@ -109,12 +111,28 @@
       '<text x="50%" y="47%" text-anchor="middle" font-size="30" font-weight="700" fill="#0F766E" font-family="Poppins, sans-serif">' + groups.pctPositive + '%</text>' +
       '<text x="50%" y="60%" text-anchor="middle" font-size="11" fill="#87918D">positive</text></svg>';
   }
+  // Draw the donut segments: set each segment to its final dash length on
+  // the next frame so the CSS transition on stroke-dasharray animates it.
+  // With prefers-reduced-motion the transition is ~0ms, so it just appears.
+  function animateDonuts(root) {
+    if (!root) return;
+    var circles = root.querySelectorAll('circle[data-dash]');
+    if (!circles.length) return;
+    function draw() {
+      circles.forEach(function (ci) {
+        ci.style.strokeDasharray = ci.getAttribute('data-dash');
+        ci.style.strokeDashoffset = ci.getAttribute('data-off');
+      });
+    }
+    if (window.requestAnimationFrame) requestAnimationFrame(function () { requestAnimationFrame(draw); });
+    else draw();
+  }
   function legendHtml(groups) {
     if (!groups.total) return '';
     var rows = [
       ['Positive', groups.positive, groups.pctPositive, '#14B8A6'],
-      ['Neutral', groups.neutral, groups.pctNeutral, '#F6C453'],
-      ['Challenging', groups.challenging, groups.pctChallenging, '#AFA0E8']
+      ['Neutral', groups.neutral, groups.pctNeutral, '#AFA0E8'],
+      ['Challenging', groups.challenging, groups.pctChallenging, '#245C49']
     ];
     return rows.map(function (r) {
       return '<div class="legend-row"><span><span class="dot" style="background:' + r[3] + '"></span>' + r[0] + '</span><strong>' + r[2] + '% · ' + r[1] + '</strong></div>';
@@ -143,7 +161,7 @@
       cards.innerHTML = sorted.slice(0, 3).map(function (e, i) {
         return '<button type="button" class="journal-cover ' + window.MyDimensionJournal.coverClass(e, i) + '" data-open-entry="' + window.MyDimensionJournal.esc(e.id) + '">' +
           '<span class="cover-badge" aria-hidden="true">' + (window.MyDimensionJournal.MOOD_EMOJI[e.mood] || '✎') + '</span>' +
-          '<span class="cover-art" aria-hidden="true"></span>' +
+          '<span class="cover-art" aria-hidden="true"><img class="cover-img" src="' + window.MyDimensionJournal.coverArt(i) + '" alt="' + window.MyDimensionJournal.esc(window.MyDimensionJournal.coverArtAlt(i)) + '" loading="lazy"></span>' +
           '<span class="cover-body"><span class="cover-title">' + window.MyDimensionJournal.esc(e.title) + '</span>' +
           '<span class="cover-meta">Created at ' + window.MyDimensionJournal.esc(window.MyDimensionJournal.fmtDate(e.date)) + '</span></span></button>';
       }).join('');
@@ -153,6 +171,7 @@
     window.MyDimensionJournal.renderList(document.getElementById('recentEntries'), sorted.slice(0, 5));
     var groups = moodGroups(entries);
     document.getElementById('moodDonut').innerHTML = donutHtml(groups);
+    animateDonuts(document.getElementById('moodDonut'));
     document.getElementById('moodLegend').innerHTML = legendHtml(groups);
 
     renderMiniCalendar(entries);
@@ -328,6 +347,7 @@
     // Overall mood donut + stats (real data).
     var groups = moodGroups(entries);
     document.getElementById('overallMood').innerHTML = donutHtml(groups, 160);
+    animateDonuts(document.getElementById('overallMood'));
     document.getElementById('overallLegend').innerHTML = legendHtml(groups);
     var media = [];
     try { media = await window.MyDimensionMedia.loadAllMedia(); } catch (e) { /* stats show entries only */ }
@@ -474,6 +494,30 @@
   /* ---------- events ---------- */
   function bindEvents() {
     document.getElementById('loginBtn').addEventListener('click', window.MyDimensionAuth.login);
+    // User ID + Password sign-in form.
+    document.getElementById('passwordLoginForm').addEventListener('submit', async function (e) {
+      e.preventDefault();
+      var btn = e.target.querySelector('button[type="submit"]');
+      btn.disabled = true;
+      try {
+        await window.MyDimensionAuth.loginPassword(
+          document.getElementById('loginUsername').value.trim(),
+          document.getElementById('loginPassword').value);
+      } finally { btn.disabled = false; }
+    });
+    // Set / change password from Settings.
+    document.getElementById('savePasswordBtn').addEventListener('click', async function () {
+      var msg = document.getElementById('passwordMsg');
+      var result = await window.MyDimensionAuth.setPassword(
+        document.getElementById('newPassword').value,
+        document.getElementById('confirmPassword').value);
+      msg.textContent = result.message;
+      msg.classList.remove('hidden');
+      if (result.ok) {
+        document.getElementById('newPassword').value = '';
+        document.getElementById('confirmPassword').value = '';
+      }
+    });
     document.getElementById('logoutBtn').addEventListener('click', window.MyDimensionAuth.logout);
     document.getElementById('logoutBtn2').addEventListener('click', window.MyDimensionAuth.logout);
     document.getElementById('menuBtn').addEventListener('click', function () { document.getElementById('sidebar').classList.toggle('open'); });

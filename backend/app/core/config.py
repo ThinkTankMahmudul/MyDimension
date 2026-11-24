@@ -30,6 +30,13 @@ class Settings:
 
     def __init__(self) -> None:
         self.admin_email: str = os.getenv("ADMIN_EMAIL", "technicalmahmudull@gmail.com")
+        # User ID for password login (optional). Defaults to the local part
+        # of ADMIN_EMAIL, e.g. "technicalmahmudull". No password is ever
+        # stored in an environment variable — the password hash lives in
+        # the database (see services/password_auth.py).
+        self.admin_username: str = (
+            os.getenv("ADMIN_USERNAME") or self.admin_email.split("@")[0]
+        )
         self.database_url: str | None = os.getenv("DATABASE_URL") or None
         self.gemini_api_key: str | None = os.getenv("GEMINI_API_KEY") or None
         self.google_client_id: str | None = os.getenv("GOOGLE_CLIENT_ID") or None

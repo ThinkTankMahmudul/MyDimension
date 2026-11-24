@@ -3,12 +3,13 @@
  * NEVER cached: /api/* responses, /auth/*, media (/api/media/*),
  * tokens, or any private diary data. Those always go to the network.
  */
-var CACHE = 'mydimension-shell-v2';
+var CACHE = 'mydimension-shell-v3';
 var SHELL = [
   './', 'index.html',
   'css/styles.css',
   'js/api.js', 'js/auth.js', 'js/journal.js', 'js/media.js', 'js/ai.js', 'js/app.js',
-  'manifest.webmanifest', 'assets/logo.svg'
+  'manifest.webmanifest', 'assets/logo.svg',
+  'assets/cover-diary.svg', 'assets/cover-future.svg', 'assets/cover-sunset.svg', 'assets/empty-media.svg'
 ];
 
 self.addEventListener('install', function (event) {

@@ -11,7 +11,7 @@
   --primary:#0F766E; --secondary:#14B8A6; --teal:#12B89A; --teal-dark:#0E9A80;
   --mint:#A7F3D0; --pale-mint:#E4FAF5; --lav:#EDE9FE; --lavender:#AFA0E8;
   --lavender-mist:#F3F0FA; --forest:#245C49; --charcoal:#26352F; --muted:#87918D;
-  --border:#E7EFEB; --peach:#FBE5D8; --bg:#FFFFFF; --surface:#FFFFFF;
+  --border:#E7EFEB; --bg:#FFFFFF; --surface:#FFFFFF;
   --shadow:0 6px 24px rgba(38,53,47,.08); --radius:16px; --radius-sm:12px;
   --font-head:"Poppins","Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
   --font-body:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
@@ -42,6 +42,10 @@ img{max-width:100%} .hidden{display:none!important}
 .tagline{font-style:italic;color:var(--muted);margin:12px 0 4px}
 .tagline cite{display:block;font-style:normal;font-size:.85rem;margin-top:4px}
 .login-note{font-size:.9rem;color:var(--muted)}
+.login-divider{display:flex;align-items:center;gap:12px;color:var(--muted);font-size:.85rem;margin:18px 0}
+.login-divider::before,.login-divider::after{content:"";flex:1;height:1px;background:var(--border)}
+#passwordLoginForm{margin-top:16px;text-align:left}
+#passwordLoginForm .btn{margin-top:4px}
 .error-box{background:#FDF0EC;border:1px solid #F5C6B8;color:#8A3B26;border-radius:var(--radius-sm);padding:10px 12px;margin:12px 0;text-align:left}
 
 /* ---------- Buttons / forms ---------- */
@@ -125,12 +129,12 @@ html[data-theme="dark"] .stat b{color:#BFE8D8}
 .journal-cover h4{margin:0;color:#fff;font-size:1.05rem}
 .journal-cover .cover-title{display:block;font-family:var(--font-head);font-weight:700;font-size:1.05rem;color:#fff}
 .journal-cover .cover-meta{font-size:.8rem;opacity:.9}
-.cover-0 .cover-art{background:linear-gradient(135deg,#1E3A5F,#3B6EA5 55%,#7FB3D5)}
-.cover-1 .cover-art{background:linear-gradient(135deg,#F6C453,#F28C38 55%,#E94F64)}
-.cover-2 .cover-art{background:linear-gradient(135deg,#0F766E,#14B8A6 55%,#A7F3D0)}
-.cover-3 .cover-art{background:linear-gradient(135deg,#6D28D9,#AFA0E8 60%,#EDE9FE)}
-.cover-4 .cover-art{background:linear-gradient(135deg,#245C49,#12B89A 60%,#B9E4C9)}
-.cover-5 .cover-art{background:linear-gradient(135deg,#B45309,#FBE5D8 70%,#F6C453)}
+.cover-0 .cover-art{background:linear-gradient(135deg,#0F766E,#14B8A6 55%,#A7F3D0)}
+.cover-1 .cover-art{background:linear-gradient(135deg,#245C49,#12B89A 55%,#E4FAF5)}
+.cover-2 .cover-art{background:linear-gradient(135deg,#26352F,#0F766E 55%,#14B8A6)}
+.cover-3 .cover-art{background:linear-gradient(135deg,#AFA0E8,#EDE9FE 60%,#A7F3D0)}
+.cover-4 .cover-art{background:linear-gradient(135deg,#245C49,#12B89A 60%,#A7F3D0)}
+.cover-5 .cover-art{background:linear-gradient(135deg,#0F766E,#AFA0E8 70%,#EDE9FE)}
 .cover-badge{position:absolute;top:10px;left:10px;background:rgba(255,255,255,.92);color:var(--forest);border-radius:999px;width:34px;height:34px;display:flex;align-items:center;justify-content:center;font-size:1rem;z-index:1}
 .dash-grid{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:18px;align-items:start}
 .right-panel .avatar{width:48px;height:48px;border-radius:50%;background:var(--lavender);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;flex:none}
@@ -255,4 +259,94 @@ html[data-theme="dark"] .stat b{color:#BFE8D8}
   .bottom-nav .ico{display:block;font-size:1.15rem}
   .search-box{min-width:0;flex:1}
   .dash-head-actions{width:100%}
+}
+
+/* ---------- Islamic / Arabian old-age decorative accents ----------
+ * Vibe comes from SHAPE and PATTERN only — mosque arches, domes,
+ * minarets, crescents, stars, arabesque geometry, lanterns — drawn in
+ * the design-board palette. The palette itself never changes:
+ * #0F766E, #14B8A6, #A7F3D0, #EDE9FE, #FFFFFF, #E4FAF5, #12B89A,
+ * #AFA0E8, #245C49, #26352F. No gold, no sand colours anywhere.
+ */
+body{
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='72' height='72' viewBox='0 0 72 72'%3E%3Cpath d='M36 8 L43 29 L64 36 L43 43 L36 64 L29 43 L8 36 L29 29 Z' fill='none' stroke='%230F766E' stroke-opacity='0.05'/%3E%3Ccircle cx='36' cy='36' r='6' fill='none' stroke='%23AFA0E8' stroke-opacity='0.07'/%3E%3C/svg%3E");
+  background-size:72px 72px;
+}
+.tagline{font-family:Georgia,'Times New Roman',serif}
+
+/* ---------- Illustrations ---------- */
+.login-illus{margin:6px 0 4px;border-radius:14px;overflow:hidden;box-shadow:var(--shadow)}
+.login-illus svg{display:block;width:100%;height:auto}
+.login-illus .cloud-a,.login-illus .cloud-b{transform-box:fill-box}
+.login-illus .cloud-a{animation:drift 9s ease-in-out infinite alternate}
+.login-illus .cloud-b{animation:drift 11s ease-in-out infinite alternate-reverse}
+.login-illus .star{animation:twinkle 2.6s ease-in-out infinite}
+.login-illus .star.s2{animation-delay:.8s}
+.login-illus .lantern{transform-box:fill-box;transform-origin:top center;animation:sway 5s ease-in-out infinite alternate}
+.cover-art img.cover-img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .6s ease}
+.journal-cover:hover .cover-img{transform:scale(1.07)}
+.empty-illus{display:block;margin:0 auto 12px;max-width:260px;width:100%;height:auto}
+
+/* ---------- Motion (transform / opacity only) ---------- */
+@keyframes fadeUp{from{opacity:0;translate:0 14px}to{opacity:1;translate:0 0}}
+@keyframes pageFade{from{opacity:0;translate:0 8px}to{opacity:1;translate:0 0}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes softPulse{0%,100%{box-shadow:0 0 0 0 rgba(20,184,166,.45)}50%{box-shadow:0 0 0 9px rgba(20,184,166,0)}}
+@keyframes todayPulse{0%{box-shadow:0 0 0 0 rgba(20,184,166,.5)}70%{box-shadow:0 0 0 9px rgba(20,184,166,0)}100%{box-shadow:0 0 0 0 rgba(20,184,166,0)}}
+@keyframes toastIn{from{opacity:0;transform:translate(-50%,16px)}to{opacity:1;transform:translate(-50%,0)}}
+@keyframes modalIn{from{opacity:0;transform:translateY(12px) scale(.97)}to{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes pillIn{from{opacity:.4;transform:translateX(-6px)}to{opacity:1;transform:translateX(0)}}
+@keyframes drift{from{transform:translateX(-6px)}to{transform:translateX(8px)}}
+@keyframes twinkle{0%,100%{opacity:.25}50%{opacity:1}}
+@keyframes sway{from{transform:rotate(-2.5deg)}to{transform:rotate(2.5deg)}}
+
+/* Page change (hash routing): content fades/slides in. display:none -> block
+ * restarts the animation, so it replays on every navigation. */
+.page.active{animation:pageFade .32s ease both}
+/* Staggered card entrance: each card 60ms after the previous one. */
+.page.active .card,.page.active .journal-cover,.page.active .ai-card{animation:fadeUp .5s cubic-bezier(.2,.7,.3,1) both}
+.page.active .journal-cover:nth-child(2){animation-delay:60ms}
+.page.active .journal-cover:nth-child(3){animation-delay:120ms}
+.page.active .dash-grid .card:nth-child(2){animation-delay:120ms}
+.page.active .right-panel .card:nth-child(2){animation-delay:60ms}
+.page.active .right-panel .card:nth-child(3){animation-delay:120ms}
+.page.active .ai-card:nth-child(2){animation-delay:60ms}
+.page.active .ai-card:nth-child(3){animation-delay:120ms}
+.page.active .ai-card:nth-child(4){animation-delay:180ms}
+.page.active .entry:nth-child(2){animation-delay:60ms}
+.page.active .entry:nth-child(3){animation-delay:120ms}
+
+/* Card hover: lift + deeper shadow. */
+.card,.journal-cover,.ai-card,.entry,.thumb,.file-item,.voice-item{transition:transform .25s ease,box-shadow .25s ease,border-color .25s ease}
+.card:hover,.ai-card:hover,.entry:hover,.thumb:hover,.file-item:hover,.voice-item:hover{transform:translateY(-4px);box-shadow:0 12px 28px rgba(38,53,47,.14)}
+.journal-cover:hover{transform:translateY(-4px);box-shadow:0 14px 30px rgba(38,53,47,.2)}
+
+/* Buttons: hover lift, press squash. New Entry gets a soft pulse. */
+.btn{transition:transform .15s ease,filter .2s ease,box-shadow .2s ease}
+.btn:hover{transform:translateY(-1px)}
+.btn:active{transform:scale(.98)}
+button[data-quick="note"]{animation:softPulse 2.8s ease-in-out infinite}
+.icon-btn,.tab,.mood-opt{transition:transform .15s ease,border-color .2s ease,background .2s ease}
+.icon-btn:hover{transform:translateY(-1px)}
+
+/* Sidebar: active pill slides in. */
+.nav-link{transition:background .25s ease,color .25s ease,transform .25s ease}
+.nav-link.active{animation:pillIn .3s ease both}
+
+/* Calendar: today's date gets a pulsing ring. */
+.cal-day.today{animation:todayPulse 2.4s ease-in-out infinite}
+
+/* Mood donut: segments draw themselves (JS sets the final dash values). */
+.donut-wrap circle{transition:stroke-dasharray .9s ease,stroke-dashoffset .9s ease}
+
+/* Toast / modal / bell panel entrances. */
+.toast{animation:toastIn .3s ease both}
+.modal{animation:modalIn .25s ease both}
+.modal-backdrop{animation:fadeIn .2s ease both}
+.bell-panel:not(.hidden){animation:fadeUp .22s ease both}
+
+/* Reduced motion: everything appears at once, no looping motion. */
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation-duration:.01ms !important;animation-iteration-count:1 !important;animation-delay:0ms !important;transition-duration:.01ms !important}
+  .cal-day.today,button[data-quick="note"]{animation:none !important}
 }

@@ -37,6 +37,7 @@ class DatabaseManager:
         self._entries: dict[str, dict] = {}
         self._media: dict[str, dict] = {}
         self._moods: list[dict] = []
+        self._settings: dict[str, str] = {}
 
     @property
     def using_postgres(self) -> bool:
@@ -199,6 +200,37 @@ class DatabaseManager:
         else:
             self._media.pop(media_id, None)
         return media
+
+    # -- owner settings (key/value, e.g. the password hash) --------------
+    def get_setting(self, key: str) -> str | None:
+        """Return the value for *key* from ``auth_settings``, else ``None``."""
+        if self.using_postgres:
+            with self._connect() as conn, conn.cursor() as cur:
+                cur.execute("SELECT value FROM auth_settings WHERE key = %s", (key,))
+                row = cur.fetchone()
+            return row[0] if row else None
+        return self._settings.get(key)
+
+    def set_setting(self, key: str, value: str) -> None:
+        """Upsert *key* in ``auth_settings`` (PostgreSQL or dev fallback)."""
+        if self.using_postgres:
+            with self._connect() as conn, conn.cursor() as cur:
+                cur.execute(
+                    "INSERT INTO auth_settings (key, value, updated_at)"
+                    " VALUES (%s, %s, now())"
+                    " ON CONFLICT (key) DO UPDATE"
+                    " SET value = EXCLUDED.value, updated_at = now()",
+                    (key, value),
+                )
+        else:
+            self._settings[key] = value
+
+    def get_password_hash(self) -> str | None:
+        """The stored password hash, or ``None`` if no password is set."""
+        return self.get_setting("password_hash")
+
+    def set_password_hash(self, password_hash: str) -> None:
+        self.set_setting("password_hash", password_hash)
 
     # -- moods -----------------------------------------------------------
     def record_mood(self, mood: str, entry_id: str | None = None) -> dict:

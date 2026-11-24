@@ -84,7 +84,7 @@
     if (!box) return items;
     if (!items.length) {
       var label = tab === 'all' ? 'No media yet.' : tab === 'files' ? 'No files yet.' : 'No ' + tab + 's yet.';
-      box.innerHTML = '<div class="empty"><p>' + label + '</p><p class="small">Use the Upload button above — photos and audio go to your private Google Drive.</p></div>';
+      box.innerHTML = '<div class="empty"><img class="empty-illus" src="assets/empty-media.svg" alt="" width="240" height="120"><p>' + label + '</p><p class="small">Use the Upload button above — photos and audio go to your private Google Drive.</p></div>';
       return items;
     }
     if (tab === 'files') { box.classList.remove('gallery'); box.innerHTML = items.map(fileItemHtml).join(''); }

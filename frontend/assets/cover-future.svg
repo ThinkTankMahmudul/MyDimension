@@ -1,0 +1,82 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="480" viewBox="0 0 800 480" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Mosque at dawn">
+  <defs>
+    <linearGradient id="futureSky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#EDE9FE"/>
+      <stop offset=".55" stop-color="#A7F3D0"/>
+      <stop offset="1" stop-color="#E4FAF5"/>
+    </linearGradient>
+    <pattern id="futureGeo" width="56" height="56" patternUnits="userSpaceOnUse">
+      <path d="M28 7 L34 22 L49 28 L34 34 L28 49 L22 34 L7 28 L22 22 Z" fill="none" stroke="#0F766E" stroke-opacity=".5" stroke-width="1.5"/>
+      <circle cx="28" cy="28" r="5" fill="none" stroke="#0F766E" stroke-opacity=".4" stroke-width="1.5"/>
+    </pattern>
+  </defs>
+
+  <rect width="800" height="480" fill="url(#futureSky)"/>
+  <rect width="800" height="480" fill="url(#futureGeo)" opacity=".12"/>
+
+  <!-- dawn sun -->
+  <circle cx="400" cy="140" r="95" fill="#FFFFFF" opacity=".5"/>
+  <g stroke="#14B8A6" stroke-width="4" stroke-linecap="round" opacity=".55">
+    <line x1="400" y1="58" x2="400" y2="38"/><line x1="400" y1="222" x2="400" y2="242"/>
+    <line x1="318" y1="140" x2="298" y2="140"/><line x1="482" y1="140" x2="502" y2="140"/>
+    <line x1="342" y1="82" x2="328" y2="68"/><line x1="458" y1="82" x2="472" y2="68"/>
+    <line x1="342" y1="198" x2="328" y2="212"/><line x1="458" y1="198" x2="472" y2="212"/>
+  </g>
+  <circle cx="400" cy="140" r="56" fill="#A7F3D0"/>
+  <circle cx="400" cy="140" r="56" fill="none" stroke="#14B8A6" stroke-width="3" opacity=".6"/>
+
+  <!-- clouds -->
+  <g fill="#FFFFFF" opacity=".9">
+    <ellipse cx="140" cy="110" rx="64" ry="14"/><ellipse cx="180" cy="100" rx="40" ry="12"/>
+    <ellipse cx="640" cy="90" rx="70" ry="14"/><ellipse cx="600" cy="80" rx="38" ry="11"/>
+    <ellipse cx="330" cy="210" rx="56" ry="11" opacity=".7"/>
+  </g>
+  <!-- birds -->
+  <g fill="none" stroke="#245C49" stroke-width="2.5" stroke-linecap="round">
+    <path d="M250 90 q7 -7 14 0 q7 -7 14 0"/>
+    <path d="M520 70 q6 -6 12 0 q6 -6 12 0"/>
+    <path d="M580 120 q5 -5 10 0 q5 -5 10 0"/>
+  </g>
+
+  <!-- desert dunes -->
+  <path d="M0 360 Q200 300 400 350 T800 340 V480 H0 Z" fill="#EDE9FE"/>
+  <path d="M0 410 Q250 360 500 400 T800 390 V480 H0 Z" fill="#AFA0E8" opacity=".45"/>
+
+  <!-- mosque -->
+  <g>
+    <rect x="190" y="330" width="420" height="60" fill="#245C49"/>
+    <rect x="340" y="310" width="120" height="20" fill="#245C49"/>
+    <path d="M310 330 C310 255 350 220 400 220 C450 220 490 255 490 330 Z" fill="#0F766E"/>
+    <line x1="400" y1="220" x2="400" y2="198" stroke="#0F766E" stroke-width="3"/>
+    <path transform="translate(400 190)" d="M0 -8 A8 8 0 1 0 0 8 A6.5 6.5 0 1 1 0 -8 Z" fill="#14B8A6"/>
+    <path d="M230 330 C230 292 248 274 266 274 C284 274 302 292 302 330 Z" fill="#0F766E"/>
+    <path d="M498 330 C498 292 516 274 534 274 C552 274 570 292 570 330 Z" fill="#0F766E"/>
+    <rect x="160" y="215" width="20" height="175" fill="#245C49"/>
+    <rect x="152" y="292" width="36" height="10" fill="#245C49"/>
+    <path d="M160 215 Q170 185 180 215 Z" fill="#0F766E"/>
+    <line x1="170" y1="185" x2="170" y2="168" stroke="#0F766E" stroke-width="2.5"/>
+    <rect x="620" y="215" width="20" height="175" fill="#245C49"/>
+    <rect x="612" y="292" width="36" height="10" fill="#245C49"/>
+    <path d="M620 215 Q630 185 640 215 Z" fill="#0F766E"/>
+    <line x1="630" y1="185" x2="630" y2="168" stroke="#0F766E" stroke-width="2.5"/>
+    <g fill="#A7F3D0" opacity=".95">
+      <path d="M225 390 L225 362 A9 11 0 0 1 243 362 L243 390 Z"/>
+      <path d="M300 390 L300 362 A9 11 0 0 1 318 362 L318 390 Z"/>
+      <path d="M482 390 L482 362 A9 11 0 0 1 500 362 L500 390 Z"/>
+      <path d="M557 390 L557 362 A9 11 0 0 1 575 362 L575 390 Z"/>
+      <path d="M385 390 L385 348 A15 18 0 0 1 415 348 L415 390 Z"/>
+    </g>
+  </g>
+
+  <!-- lanterns on the dunes -->
+  <g>
+    <circle cx="90" cy="420" r="26" fill="#A7F3D0" opacity=".35"/>
+    <path d="M82 408 h16 l-3 24 h-10 Z" fill="#245C49"/>
+    <path d="M84 408 Q90 398 96 408 Z" fill="#245C49"/>
+    <rect x="88" y="404" width="4" height="5" fill="#245C49"/>
+    <circle cx="710" cy="412" r="26" fill="#A7F3D0" opacity=".35"/>
+    <path d="M702 400 h16 l-3 24 h-10 Z" fill="#245C49"/>
+    <path d="M704 400 Q710 390 716 400 Z" fill="#245C49"/>
+    <rect x="708" y="396" width="4" height="5" fill="#245C49"/>
+  </g>
+</svg>

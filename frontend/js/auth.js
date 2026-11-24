@@ -1,8 +1,10 @@
 /* MyDimension — js/auth.js
- * Google OAuth via the backend only. The frontend never checks an email
- * allowlist and never stores a token: the backend verifies the Google
- * identity and enforces the configured owner email, and the session
- * lives in a cookie.
+ * Two sign-in methods, both verified by the backend only:
+ *   1. User ID + Password (POST /api/auth/login) — the primary form.
+ *   2. Google OAuth (GET /auth/google/login) — alternative below it.
+ * The frontend never checks an email allowlist and never stores a
+ * token: the backend verifies the identity and enforces the configured
+ * owner, and the session lives in a cookie.
  * /api/me returns only { email, is_owner } — the display name is derived
  * from the owner email for the greeting/sidebar, and service status
  * (Drive / Gemini / database) comes from the public /health endpoint.
@@ -26,6 +28,66 @@
     document.getElementById('appView').classList.add('hidden');
     var err = document.getElementById('loginError');
     if (err) err.classList.add('hidden');
+    refreshPasswordHint();
+  }
+
+  // If no password is set up yet, tell the owner to use Google first
+  // and set a password in Settings. (Boolean only — no secret leaks.)
+  async function refreshPasswordHint() {
+    var hint = document.getElementById('passwordHint');
+    if (!hint) return;
+    try {
+      var st = await window.MyDimensionApi.getPasswordStatus();
+      if (st && st.password_set === false) {
+        hint.textContent = 'No password set yet — sign in with Google below, then set a password in Settings.';
+        hint.classList.remove('hidden');
+      } else {
+        hint.classList.add('hidden');
+      }
+    } catch (e) { /* hint stays hidden; login still works */ }
+  }
+
+  function showLoginError(message) {
+    var err = document.getElementById('loginError');
+    if (!err) return;
+    err.textContent = message;
+    err.classList.remove('hidden');
+  }
+
+  // User ID + Password sign-in. On success the session cookie is set
+  // by the server; re-check /api/me to enter the app.
+  async function loginPassword(username, password) {
+    if (!username || !password) {
+      showLoginError('Please enter your User ID and password.');
+      return false;
+    }
+    try {
+      await window.MyDimensionApi.loginPassword(username, password);
+      var user = await checkAuth();
+      return !!user;
+    } catch (err) {
+      // Generic message only — never says whether the ID or the
+      // password was wrong (the server does not either).
+      showLoginError(err && err.message ? err.message : 'User ID or password is incorrect. Please try again.');
+      return false;
+    }
+  }
+
+  // Set / change the password from Settings (signed-in admin only).
+  // Returns true on success; the password is never logged or displayed.
+  async function setPassword(newPassword, confirmPassword) {
+    if (!newPassword || newPassword.length < 8) {
+      return { ok: false, message: 'Password must be at least 8 characters.' };
+    }
+    if (newPassword !== confirmPassword) {
+      return { ok: false, message: 'The two passwords do not match.' };
+    }
+    try {
+      await window.MyDimensionApi.setPassword(newPassword);
+      return { ok: true, message: 'Password saved. You can now sign in with your User ID and password.' };
+    } catch (err) {
+      return { ok: false, message: err && err.message ? err.message : 'Could not save the password. Please try again.' };
+    }
   }
 
   function showApp(user) {
@@ -93,6 +155,8 @@
   window.MyDimensionAuth = {
     checkAuth: checkAuth, login: login, logout: logout,
     showLogin: showLogin, showApp: showApp,
+    loginPassword: loginPassword, setPassword: setPassword,
+    refreshPasswordHint: refreshPasswordHint,
     getUser: function () { return currentUser; },
     displayName: displayName, refreshServiceStatus: refreshServiceStatus
   };

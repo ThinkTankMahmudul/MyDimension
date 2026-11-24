@@ -47,6 +47,17 @@ CREATE TABLE IF NOT EXISTS user_settings (
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
+-- Owner credentials, as generic key/value pairs. Only the password
+-- *hash* is stored here (key 'password_hash', value 'salt$hash' from
+-- PBKDF2-HMAC-SHA256); a plain-text password is never stored anywhere.
+-- user_settings has no key/value columns, so this dedicated table holds
+-- the login credential instead of overloading that table.
+CREATE TABLE IF NOT EXISTS auth_settings (
+    key TEXT PRIMARY KEY,
+    value TEXT NOT NULL,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
 CREATE INDEX IF NOT EXISTS idx_entries_created_at ON diary_entries (created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_entries_mood ON diary_entries (mood);
 CREATE INDEX IF NOT EXISTS idx_entries_search ON diary_entries USING gin (to_tsvector('english', title || ' ' || content));

@@ -84,6 +84,14 @@
 
   function coverClass(e, i) { return 'cover-' + ((i || 0) % 6); }
 
+  // Dashboard cover illustrations (local SVG, no external images).
+  // Islamic styling only: mosque dome + minarets, crescent moon, stars,
+  // arabesque geometry — drawn in the design-board palette.
+  var COVER_ART = ['assets/cover-diary.svg', 'assets/cover-future.svg', 'assets/cover-sunset.svg'];
+  var COVER_ALT = ['Night mosque under a crescent moon', 'Mosque at dawn', 'Mosque arch at sunset'];
+  function coverArt(i) { return COVER_ART[((i || 0) % 3 + 3) % 3]; }
+  function coverArtAlt(i) { return COVER_ALT[((i || 0) % 3 + 3) % 3]; }
+
   function entryCard(e, i) {
     var excerpt = e.body.length > 180 ? e.body.slice(0, 180) + '…' : e.body;
     return '<article class="entry"><div class="entry-row">' +
@@ -266,7 +274,7 @@
   window.MyDimensionJournal = {
     MOODS: MOODS, MOOD_EMOJI: MOOD_EMOJI, POSITIVE_MOODS: POSITIVE_MOODS,
     todayLocal: todayLocal, fmtDate: fmtDate, fmtTime: fmtTime, relTime: relTime, esc: esc,
-    entryDate: entryDate, coverClass: coverClass,
+    entryDate: entryDate, coverClass: coverClass, coverArt: coverArt, coverArtAlt: coverArtAlt, COVER_ART: COVER_ART,
     loadEntries: loadEntries, getCached: getCached, findCached: findCached,
     sortedEntries: sortedEntries, renderList: renderList, refreshJournalList: refreshJournalList,
     saveCurrent: saveCurrent, fillForm: fillForm, resetForm: resetForm,

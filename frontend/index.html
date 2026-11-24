@@ -21,10 +21,59 @@
     <div class="logo-mark" aria-hidden="true">
       <svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.24 12.24a6 6 0 0 0-8.49-8.49L5 10.5V19h8.5z"/><line x1="16" y1="8" x2="2" y2="22"/><line x1="17.5" y1="15" x2="9" y2="15"/></svg>
     </div>
+    <div class="login-illus" aria-hidden="true">
+      <svg viewBox="0 0 460 120" role="img" aria-label="Mosque under a crescent moon">
+        <defs>
+          <linearGradient id="loginSky" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#E4FAF5"/><stop offset=".6" stop-color="#EDE9FE"/><stop offset="1" stop-color="#D8EFE6"/>
+          </linearGradient>
+        </defs>
+        <rect width="460" height="120" fill="url(#loginSky)"/>
+        <circle cx="66" cy="42" r="30" fill="#A7F3D0" opacity=".35"/>
+        <circle cx="66" cy="42" r="20" fill="#14B8A6"/>
+        <circle cx="74" cy="35" r="17" fill="#D8EFE6"/>
+        <g class="star s1" fill="#0F766E"><circle cx="130" cy="24" r="2"/><circle cx="330" cy="20" r="1.8"/><circle cx="300" cy="42" r="2"/></g>
+        <g class="star s2" fill="#AFA0E8"><circle cx="180" cy="30" r="1.8"/><circle cx="360" cy="48" r="2"/><circle cx="30" cy="70" r="1.8"/></g>
+        <g class="cloud-a" fill="#FFFFFF" opacity=".9"><ellipse cx="150" cy="36" rx="26" ry="9"/><ellipse cx="168" cy="31" rx="17" ry="8"/></g>
+        <g class="cloud-b" fill="#FFFFFF" opacity=".85"><ellipse cx="330" cy="66" rx="24" ry="8"/><ellipse cx="346" cy="61" rx="15" ry="7"/></g>
+        <g fill="none" stroke="#245C49" stroke-width="2" stroke-linecap="round"><path d="M250 26 q6 -6 12 0 q6 -6 12 0"/></g>
+        <g>
+          <rect x="160" y="80" width="140" height="28" fill="#0F766E"/>
+          <path d="M205 80 C205 60 218 50 230 50 C242 50 255 60 255 80 Z" fill="#245C49"/>
+          <line x1="230" y1="50" x2="230" y2="40" stroke="#245C49" stroke-width="2.5"/>
+          <path transform="translate(230 34)" d="M0 -6 A6 6 0 1 0 0 6 A5 5 0 1 1 0 -6 Z" fill="#14B8A6"/>
+          <rect x="168" y="56" width="8" height="52" fill="#0F766E"/>
+          <path d="M168 56 Q172 46 176 56 Z" fill="#245C49"/>
+          <rect x="284" y="56" width="8" height="52" fill="#0F766E"/>
+          <path d="M284 56 Q288 46 292 56 Z" fill="#245C49"/>
+          <g fill="#A7F3D0">
+            <path d="M185 108 L185 94 A6 7 0 0 1 197 94 L197 108 Z"/>
+            <path d="M224 108 L224 94 A6 7 0 0 1 236 94 L236 108 Z"/>
+            <path d="M263 108 L263 94 A6 7 0 0 1 275 94 L275 108 Z"/>
+          </g>
+        </g>
+        <g class="lantern">
+          <line x1="410" y1="0" x2="410" y2="18" stroke="#245C49" stroke-width="2"/>
+          <circle cx="410" cy="34" r="15" fill="#A7F3D0" opacity=".4"/>
+          <path d="M402 20 h16 l-3 22 h-10 Z" fill="#245C49"/>
+          <path d="M404 20 Q410 12 416 20 Z" fill="#245C49"/>
+        </g>
+        <path d="M0 108 Q115 96 230 106 T460 104 V120 H0 Z" fill="#AFA0E8" opacity=".35"/>
+      </svg>
+    </div>
     <h1>MyDimension</h1>
     <p class="muted">A private diary &amp; memory vault — for one owner only.</p>
     <p class="tagline">“You are nothing but a number of days; whenever a day passes, a part of you is gone.”<cite>— Imam Hasan al-Basri</cite></p>
     <div id="loginError" class="error-box hidden" role="alert"></div>
+    <form id="passwordLoginForm">
+      <div class="field"><label for="loginUsername">User ID</label>
+        <input id="loginUsername" type="text" placeholder="Your User ID" autocomplete="username" required></div>
+      <div class="field"><label for="loginPassword">Password</label>
+        <input id="loginPassword" type="password" placeholder="Your password" autocomplete="current-password" required></div>
+      <button class="btn btn-block" type="submit">Sign In</button>
+    </form>
+    <p id="passwordHint" class="small muted hidden"></p>
+    <p class="login-divider" aria-hidden="true"><span>or</span></p>
     <button id="loginBtn" class="btn btn-block" type="button">
       <span class="g-badge" aria-hidden="true"><svg viewBox="0 0 24 24" width="16" height="16"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg></span>
       Continue with Google
@@ -299,6 +348,14 @@
         <div class="card"><h3>Profile</h3>
           <div class="profile-row"><span class="avatar lg" data-profile-initial>?</span>
           <div><strong data-profile-name>Owner</strong><br><span class="muted" data-profile-email></span><br><span class="muted small">Admin — the only account that can sign in.</span></div></div></div>
+        <div class="card"><h3>Set / Change Password</h3>
+          <p class="small muted">Sign in with your User ID and password instead of Google. Your password is stored only as a secure hash — never in plain text, and never shown here.</p>
+          <div class="field"><label for="newPassword">New password</label>
+            <input id="newPassword" type="password" placeholder="At least 8 characters" autocomplete="new-password"></div>
+          <div class="field"><label for="confirmPassword">Confirm new password</label>
+            <input id="confirmPassword" type="password" placeholder="Type the password again" autocomplete="new-password"></div>
+          <p><button id="savePasswordBtn" class="btn secondary" type="button">Save Password</button></p>
+          <p id="passwordMsg" class="small hidden" role="status"></p></div>
         <div class="card"><h3>Appearance</h3>
           <p><button id="themeToggle" class="btn secondary" type="button" aria-pressed="false">Switch to dark theme</button>
           <span class="small muted">Saved on this device only.</span></p></div>

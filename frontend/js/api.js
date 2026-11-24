@@ -17,6 +17,9 @@
  *   POST /api/ai/mood|summary|improve { text, entry_id? } -> { result, model?, note? }
  *   POST /api/ai/transcribe  FormData: file (audio/*)     -> { result, ... }
  *   GET  /auth/google/login (redirect), POST /auth/logout
+ *   POST /api/auth/login { username, password } -> session cookie
+ *   GET  /api/auth/password-status -> { password_set }
+ *   POST /api/auth/set-password { new_password } (signed-in admin only)
  */
 (function () {
   'use strict';
@@ -41,8 +44,10 @@
       // Network / offline — do not invent data.
       throw new Error('Could not reach the server. Check your connection and try again.');
     }
-    if (res.status === 401) {
+    if (res.status === 401 && !path.startsWith('/api/auth/login')) {
       // Session expired or not signed in: hand control to auth.js.
+      // The password-login endpoint is excluded: its 401 means "wrong
+      // User ID or password" and its server detail must reach the form.
       if (window.MyDimensionAuth && window.MyDimensionAuth.showLogin) {
         window.MyDimensionAuth.showLogin();
       }
@@ -79,6 +84,18 @@
     // Auth / profile. Response shape (backend): { email, is_owner }
     getMe: function () { return request('/api/me'); },
     logout: function () { return json('/auth/logout', 'POST', {}); },
+
+    // Password login (alternative to Google). POST /api/auth/login
+    // { username, password } -> { email, is_owner } + session cookie.
+    // 409 = no password set yet; 401 = wrong User ID or password (the
+    // server never says which one); 429 = too many failed attempts.
+    loginPassword: function (username, password) {
+      return json('/api/auth/login', 'POST', { username: username, password: password });
+    },
+    getPasswordStatus: function () { return request('/api/auth/password-status'); },
+    setPassword: function (newPassword) {
+      return json('/api/auth/set-password', 'POST', { new_password: newPassword });
+    },
 
     // Entries. Entry fields: id, title, content, mood, tags, summary,
     // created_at, updated_at. The entry "date" is created_at's date —

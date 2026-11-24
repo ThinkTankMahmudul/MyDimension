@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="440" height="220" viewBox="0 0 440 220" role="img" aria-label="Empty media vault illustration">
+  <defs>
+    <linearGradient id="emptySky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#E4FAF5"/>
+      <stop offset="1" stop-color="#EDE9FE"/>
+    </linearGradient>
+  </defs>
+  <rect width="440" height="220" rx="16" fill="url(#emptySky)"/>
+
+  <!-- crescent moon and stars -->
+  <circle cx="330" cy="62" r="20" fill="#14B8A6" opacity=".3"/>
+  <circle cx="330" cy="62" r="15" fill="#14B8A6"/>
+  <circle cx="337" cy="56" r="12" fill="#DCE9F2"/>
+  <g fill="#0F766E">
+    <circle cx="90" cy="48" r="2"/><circle cx="140" cy="34" r="1.6"/><circle cx="380" cy="40" r="2"/>
+    <circle cx="60" cy="90" r="1.6"/><circle cx="395" cy="100" r="1.8"/>
+  </g>
+  <g fill="#FFFFFF" opacity=".9">
+    <ellipse cx="120" cy="70" rx="34" ry="8"/><ellipse cx="250" cy="52" rx="28" ry="7"/>
+  </g>
+
+  <!-- mosque -->
+  <g>
+    <rect x="150" y="140" width="140" height="40" fill="#0F766E"/>
+    <path d="M185 140 C185 115 200 105 220 105 C240 105 255 115 255 140 Z" fill="#245C49"/>
+    <line x1="220" y1="105" x2="220" y2="94" stroke="#245C49" stroke-width="2.5"/>
+    <path transform="translate(220 88)" d="M0 -6 A6 6 0 1 0 0 6 A5 5 0 1 1 0 -6 Z" fill="#14B8A6"/>
+    <rect x="140" y="112" width="8" height="68" fill="#0F766E"/>
+    <path d="M140 112 Q144 100 148 112 Z" fill="#245C49"/>
+    <rect x="292" y="112" width="8" height="68" fill="#0F766E"/>
+    <path d="M292 112 Q296 100 300 112 Z" fill="#245C49"/>
+    <g fill="#A7F3D0">
+      <path d="M168 180 L168 162 A7 8 0 0 1 182 162 L182 180 Z"/>
+      <path d="M213 180 L213 162 A7 8 0 0 1 227 162 L227 180 Z"/>
+      <path d="M258 180 L258 162 A7 8 0 0 1 272 162 L272 180 Z"/>
+    </g>
+  </g>
+
+  <!-- dunes -->
+  <path d="M0 180 Q110 160 220 175 T440 170 V220 H0 Z" fill="#AFA0E8" opacity=".5"/>
+  <path d="M0 196 Q150 180 300 192 T440 190 V220 H0 Z" fill="#EDE9FE"/>
+
+  <!-- photo frame and music note -->
+  <g>
+    <rect x="36" y="148" width="56" height="44" rx="8" fill="#FFFFFF" stroke="#0F766E" stroke-width="2.5"/>
+    <circle cx="76" cy="162" r="5" fill="#A7F3D0"/>
+    <path d="M40 188 L60 168 L74 180 L84 170 L88 174 V188 Z" fill="#14B8A6"/>
+  </g>
+  <g fill="#0F766E">
+    <ellipse cx="352" cy="168" rx="9" ry="6.5" transform="rotate(-15 352 168)"/>
+    <rect x="359" y="126" width="4.5" height="42"/>
+    <path d="M363 126 q16 4 13 18 q-2 -9 -13 -11 Z"/>
+  </g>
+
+  <!-- arch frame -->
+  <path d="M40 200 V90 Q40 30 220 30 Q400 30 400 90 V200" fill="none" stroke="#0F766E" stroke-width="6"/>
+  <path d="M54 200 V90 Q54 44 220 44 Q386 44 386 90 V200" fill="none" stroke="#14B8A6" stroke-width="2.5" opacity=".7"/>
+</svg>
