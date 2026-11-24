@@ -16,9 +16,14 @@
 
   // Display name for the known owner account; any other owner email is
   // prettified from its local part. Display only — never an auth check.
+  // The owner's name follows the app language: English in English mode,
+  // Bengali in Bengali mode.
   function displayName(email) {
     if (!email) return 'Owner';
-    if (email.toLowerCase() === 'technicalmahmudull@gmail.com') return 'মাহমুদুল হাসান ওয়ালিদ';
+    if (email.toLowerCase() === 'technicalmahmudull@gmail.com') {
+      return (window.MyDimensionI18n && window.MyDimensionI18n.getLanguage() === 'bn')
+        ? 'মাহমুদুল হাসান ওয়ালিদ' : 'Mahmudul Hasan Walid';
+    }
     var local = email.split('@')[0].replace(/[._-]+/g, ' ').trim();
     return local ? local.replace(/\b\w/g, function (c) { return c.toUpperCase(); }) : 'Owner';
   }
@@ -191,6 +196,13 @@
     showLogin();
     window.location.hash = '#/dashboard';
   }
+
+  // When the app language changes, refresh the displayed name so it
+  // follows the new language too (English name in English mode, Bengali
+  // name in Bengali mode).
+  document.addEventListener('mydimension:language', function () {
+    if (currentUser) renderProfile(currentUser);
+  });
 
   window.MyDimensionAuth = {
     checkAuth: checkAuth, login: login, logout: logout,
