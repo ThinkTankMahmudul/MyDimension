@@ -125,6 +125,15 @@
     document.getElementById('loginView').classList.add('hidden');
     document.getElementById('appView').classList.remove('hidden');
     renderProfile(user);
+    // After a fresh login the router does not run on its own (it only
+    // runs on page load and on hash changes), so render the current
+    // route now — otherwise the dashboard stays empty until the user
+    // clicks a menu item.
+    if (window.MyDimensionApp && window.MyDimensionApp.showRoute) {
+      window.MyDimensionApp.showRoute();
+    } else if (!window.location.hash) {
+      window.location.hash = '#/dashboard';
+    }
   }
 
   function renderProfile(user) {
