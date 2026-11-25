@@ -22,7 +22,7 @@
 
   // Shell version: the live re-test reads this to confirm the browser
   // is running the fixed JS, not a stale service-worker copy.
-  var SHELL_VERSION = '2026-11-25-art-polish';
+  var SHELL_VERSION = '2026-11-26-dashboard';
   window.addEventListener('error', function (e) {
     try { showError(e.message || 'Something went wrong.'); } catch (err) { /* ignore */ }
   });
@@ -187,6 +187,41 @@
 
     renderMiniCalendar(entries);
     renderTodayActivity(entries);
+
+    // The mood filter lives on the dashboard now (with the All entries list),
+    // so its options are filled here, not only when the journal page loads.
+    populateMoodFilter();
+    // Full "All entries" list (search / mood / date filters) now lives here.
+    await window.MyDimensionJournal.refreshJournalList().catch(function (err) { showError(err.message); });
+    refreshDriveBanner();
+  }
+
+  // Mood filter options ("All moods" + one per mood), filled once.
+  function populateMoodFilter() {
+    var sel = document.getElementById('journalMoodFilter');
+    if (!sel) return;
+    if (sel.options.length <= 1) {
+      window.MyDimensionJournal.MOODS.forEach(function (m) { var o = document.createElement('option'); o.value = m; o.textContent = window.MyDimensionI18n ? window.MyDimensionI18n.moodLabel(m) : m; sel.appendChild(o); });
+    }
+    // First option ("All moods") re-translates on every language switch.
+    if (sel.options.length) sel.options[0].textContent = t('journal.allMoods');
+  }
+
+  // Drive banner on the dashboard (next to the welcome message): one line
+  // explaining that photos/voice/files live in the user's own Drive, plus
+  // the Connect button — or a "connected" state when already linked.
+  async function refreshDriveBanner() {
+    var banner = document.getElementById('driveBanner');
+    if (!banner) return;
+    banner.classList.remove('hidden');
+    var connectBtn = document.getElementById('driveBannerConnectBtn');
+    var connectedEl = document.getElementById('driveBannerConnected');
+    try {
+      var d = await window.MyDimensionApi.driveStatus();
+      var connected = !!(d && d.connected);
+      if (connectBtn) connectBtn.classList.toggle('hidden', connected);
+      if (connectedEl) connectedEl.classList.toggle('hidden', !connected);
+    } catch (e) { /* keep the Connect button visible; the app still works */ }
   }
 
   function renderTodayActivity(entries) {
@@ -286,16 +321,10 @@
   /* ---------- journal page / detail ---------- */
   async function loadJournalPage() {
     hideError();
-    var sel = document.getElementById('journalMoodFilter');
-    if (sel.options.length <= 1) {
-      window.MyDimensionJournal.MOODS.forEach(function (m) { var o = document.createElement('option'); o.value = m; o.textContent = window.MyDimensionI18n ? window.MyDimensionI18n.moodLabel(m) : m; sel.appendChild(o); });
-    }
-    // First option ("All moods") re-translates on every language switch.
-    if (sel.options.length) sel.options[0].textContent = t('journal.allMoods');
+    populateMoodFilter();
     window.MyDimensionJournal.renderMoodPicker();
     window.MyDimensionJournal.renderThemePicker();
     window.MyDimensionJournal.restoreDraftIfAny();
-    await window.MyDimensionJournal.refreshJournalList();
   }
   // Sharing: the note currently on the detail page (kept so the PNG/PDF
   // buttons can render it without re-fetching).
@@ -427,7 +456,7 @@
           img.onerror = rej;
           img.src = theme.art;
         });
-        var artH = H * 0.70, artW = artH * 0.5;
+        var artH = H * 0.85, artW = artH * 0.5;
         ctx.save();
         roundRectPath(ctx, 0, 0, W, H, 48);
         ctx.clip();
@@ -728,8 +757,9 @@
     delegatedBound = true;
     // Delegated clicks for dynamically rendered lists.
     document.addEventListener('click', async function (e) {
-        var el = e.target.closest('[data-edit-entry],[data-delete-entry],[data-ai-entry],[data-delete-media],[data-transcribe-media],[data-goto-new-entry],[data-open-entry],[data-theme-dot],[data-share-png],[data-share-pdf]');
+        var el = e.target.closest('[data-edit-entry],[data-delete-entry],[data-ai-entry],[data-delete-media],[data-transcribe-media],[data-goto-new-entry],[data-open-entry],[data-theme-dot],[data-share-png],[data-share-pdf],[data-scroll-all-entries]');
         if (!el) return;
+        if (el.hasAttribute('data-scroll-all-entries')) { e.preventDefault(); var card = document.getElementById('allEntriesCard'); if (card) card.scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
         if (el.hasAttribute('data-theme-dot')) {
           var themeId = el.getAttribute('data-theme-dot');
           var themeEntryId = el.getAttribute('data-entry-id');
@@ -879,19 +909,30 @@
     document.getElementById('bellBtn').addEventListener('click', goToTodayActivity);
     document.getElementById('bellBtnMobile').addEventListener('click', function () { goToTodayActivity(); toast(t('toast.todayActivity')); });
 
-    // Dashboard search: filter recent entries live; Enter jumps to My Journal.
+    // Dashboard search: filter recent entries live and keep the full
+    // "All entries" list below in sync with the same query; Enter scrolls
+    // down to that list.
     document.getElementById('dashboardSearch').addEventListener('input', function (e) {
       var q = e.target.value.toLowerCase();
       var entries = window.MyDimensionJournal.getCached();
       var filtered = q ? entries.filter(function (en) { return (en.title + ' ' + en.body).toLowerCase().includes(q); }) : window.MyDimensionJournal.sortedEntries(entries).slice(0, 5);
       window.MyDimensionJournal.renderList(document.getElementById('recentEntries'), window.MyDimensionJournal.sortedEntries(filtered).slice(0, 5));
+      var js = document.getElementById('journalSearch');
+      if (js && js.value !== e.target.value) js.value = e.target.value;
+      window.MyDimensionJournal.refreshJournalList().catch(function () {});
     });
     document.getElementById('dashboardSearch').addEventListener('keydown', function (e) {
       if (e.key === 'Enter') {
         document.getElementById('journalSearch').value = e.target.value;
-        window.location.hash = '#/journal';
+        window.MyDimensionJournal.refreshJournalList().catch(function () {});
+        var c = document.getElementById('allEntriesCard');
+        if (c) c.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }
     });
+
+    // Drive banner on the dashboard: same connect flow as in Settings.
+    var driveBannerBtn = document.getElementById('driveBannerConnectBtn');
+    if (driveBannerBtn) driveBannerBtn.addEventListener('click', function () { window.location.href = '/api/drive/connect'; });
 
     // Mini calendar month navigation.
     document.getElementById('miniPrevBtn').addEventListener('click', function () { miniCursor.setMonth(miniCursor.getMonth() - 1); loadDashboard(); });

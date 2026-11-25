@@ -175,6 +175,18 @@
           </div>
         </div>
 
+        <div id="driveBanner" class="card drive-banner hidden">
+          <div class="drive-banner-text">
+            <span class="drive-banner-icon" aria-hidden="true">☁</span>
+            <div>
+              <strong data-i18n="dash.driveTitle">Keep your photos, voice and files safe</strong>
+              <p class="small muted" data-i18n="dash.driveHint">Your photos, voice notes and files are saved to your own Google Drive — connect it once, and everything you add stays safe.</p>
+            </div>
+          </div>
+          <button id="driveBannerConnectBtn" class="btn" type="button" data-i18n="dash.driveConnect">Connect Google Drive</button>
+          <span id="driveBannerConnected" class="drive-connected small hidden">✓ <span data-i18n="dash.driveConnected">Google Drive connected</span></span>
+        </div>
+
         <div class="layout-dashboard">
           <div class="dash-main">
             <div class="section-head">
@@ -185,7 +197,7 @@
 
             <div class="dash-grid">
               <div class="card">
-                <div class="section-head"><h3 data-i18n="dash.recentEntries">Recent Entries</h3><a href="#/journal" data-i18n="dash.seeAll">See all →</a></div>
+                <div class="section-head"><h3 data-i18n="dash.recentEntries">Recent Entries</h3><a href="#/dashboard" data-scroll-all-entries data-i18n="dash.seeAll">See all →</a></div>
                 <div id="recentEntries"></div>
               </div>
               <div class="card">
@@ -217,6 +229,16 @@
               <div class="stat"><span class="muted small" data-i18n="dash.statMedia">Photos &amp; voice</span><b id="statMedia">0</b></div>
             </div>
           </aside>
+        </div>
+
+        <div class="card" id="allEntriesCard"><h3 data-i18n="journal.allEntries">All entries</h3>
+          <div class="toolbar">
+            <input id="journalSearch" type="search" data-i18n-placeholder="journal.searchPlaceholder" placeholder="Search title or text…" data-i18n-aria-label="journal.searchPlaceholder" aria-label="Search entries">
+            <select id="journalMoodFilter" aria-label="Filter by mood"><option value="" data-i18n="journal.allMoods">All moods</option></select>
+            <input id="journalDateFilter" type="date" aria-label="Filter by date">
+            <button id="clearJournalFilters" class="btn ghost small" type="button" data-i18n="journal.clearFilters">Clear filters</button>
+          </div>
+          <div id="journalList"></div>
         </div>
       </section>
 
@@ -304,16 +326,6 @@
           </form>
           </div>
         </div>
-        </div>
-
-        <div class="card"><h3 data-i18n="journal.allEntries">All entries</h3>
-          <div class="toolbar">
-            <input id="journalSearch" type="search" data-i18n-placeholder="journal.searchPlaceholder" placeholder="Search title or text…" data-i18n-aria-label="journal.searchPlaceholder" aria-label="Search entries">
-            <select id="journalMoodFilter" aria-label="Filter by mood"><option value="" data-i18n="journal.allMoods">All moods</option></select>
-            <input id="journalDateFilter" type="date" aria-label="Filter by date">
-            <button id="clearJournalFilters" class="btn ghost small" type="button" data-i18n="journal.clearFilters">Clear filters</button>
-          </div>
-          <div id="journalList"></div>
         </div>
       </section>
 
