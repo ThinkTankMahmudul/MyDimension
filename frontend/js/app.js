@@ -22,7 +22,7 @@
 
   // Shell version: the live re-test reads this to confirm the browser
   // is running the fixed JS, not a stale service-worker copy.
-  var SHELL_VERSION = '2026-11-25-drive-oauth';
+  var SHELL_VERSION = '2026-11-25-rte-clear';
   window.addEventListener('error', function (e) {
     try { showError(e.message || 'Something went wrong.'); } catch (err) { /* ignore */ }
   });
@@ -727,9 +727,33 @@
       b.addEventListener('click', function () { setEntryTab(b.getAttribute('data-entry-tab')); });
     });
     document.querySelectorAll('[data-rte]').forEach(function (b) {
+      // Keep the editor's text selection: a mousedown on a toolbar
+      // button would blur the editor and lose the selected text, so
+      // Clear (removeFormat) then ran on a collapsed caret and silently
+      // did nothing — while Bold only *seemed* to work (it toggles the
+      // typing state at the caret). Preventing the mousedown default
+      // keeps focus and the selection inside the editor.
+      b.addEventListener('mousedown', function (e) { e.preventDefault(); });
       b.addEventListener('click', function () {
-        document.getElementById('entryBody').focus();
-        document.execCommand(b.getAttribute('data-rte'), false, null);
+        var body = document.getElementById('entryBody');
+        body.focus();
+        var cmd = b.getAttribute('data-rte');
+        if (cmd === 'removeFormat') {
+          // Nothing selected? Clear formatting on the whole entry
+          // instead of silently doing nothing.
+          var sel = window.getSelection();
+          if (!sel || sel.isCollapsed || !sel.rangeCount) {
+            var range = document.createRange();
+            range.selectNodeContents(body);
+            sel.removeAllRanges(); sel.addRange(range);
+          }
+          document.execCommand('removeFormat', false, null);
+          // removeFormat does not reliably clear background highlight
+          // in every browser — reset it explicitly.
+          document.execCommand('hiliteColor', false, 'transparent');
+        } else {
+          document.execCommand(cmd, false, null);
+        }
       });
     });
     document.getElementById('entryRecBtn').addEventListener('click', async function () {
