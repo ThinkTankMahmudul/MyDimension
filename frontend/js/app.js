@@ -22,7 +22,7 @@
 
   // Shell version: the live re-test reads this to confirm the browser
   // is running the fixed JS, not a stale service-worker copy.
-  var SHELL_VERSION = '2026-11-26-dashboard';
+  var SHELL_VERSION = '2026-11-26-searchfix';
   window.addEventListener('error', function (e) {
     try { showError(e.message || 'Something went wrong.'); } catch (err) { /* ignore */ }
   });
@@ -912,19 +912,28 @@
     // Dashboard search: filter recent entries live and keep the full
     // "All entries" list below in sync with the same query; Enter scrolls
     // down to that list.
-    document.getElementById('dashboardSearch').addEventListener('input', function (e) {
-      var q = e.target.value.toLowerCase();
+    function refreshDashboardSearch() {
+      var q = document.getElementById('dashboardSearch').value.toLowerCase();
       var entries = window.MyDimensionJournal.getCached();
       var filtered = q ? entries.filter(function (en) { return (en.title + ' ' + en.body).toLowerCase().includes(q); }) : window.MyDimensionJournal.sortedEntries(entries).slice(0, 5);
       window.MyDimensionJournal.renderList(document.getElementById('recentEntries'), window.MyDimensionJournal.sortedEntries(filtered).slice(0, 5));
       var js = document.getElementById('journalSearch');
-      if (js && js.value !== e.target.value) js.value = e.target.value;
-      window.MyDimensionJournal.refreshJournalList().catch(function () {});
-    });
+      if (js && js.value !== document.getElementById('dashboardSearch').value) js.value = document.getElementById('dashboardSearch').value;
+      // The list fetch replaces the shared entry cache with the filtered
+      // list, so Recent Entries (rendered from that cache) is re-rendered
+      // from the fresh cache once it resolves — otherwise clearing a search
+      // would leave it showing "No entries yet." until a reload.
+      window.MyDimensionJournal.refreshJournalList().catch(function () {}).then(function () {
+        var cached = window.MyDimensionJournal.getCached();
+        var q2 = document.getElementById('dashboardSearch').value.toLowerCase();
+        var f2 = q2 ? cached.filter(function (en) { return (en.title + ' ' + en.body).toLowerCase().includes(q2); }) : window.MyDimensionJournal.sortedEntries(cached).slice(0, 5);
+        window.MyDimensionJournal.renderList(document.getElementById('recentEntries'), window.MyDimensionJournal.sortedEntries(f2).slice(0, 5));
+      });
+    }
+    document.getElementById('dashboardSearch').addEventListener('input', refreshDashboardSearch);
     document.getElementById('dashboardSearch').addEventListener('keydown', function (e) {
       if (e.key === 'Enter') {
-        document.getElementById('journalSearch').value = e.target.value;
-        window.MyDimensionJournal.refreshJournalList().catch(function () {});
+        refreshDashboardSearch();
         var c = document.getElementById('allEntriesCard');
         if (c) c.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }
