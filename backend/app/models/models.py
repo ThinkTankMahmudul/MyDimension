@@ -32,8 +32,11 @@ class DiaryEntry:
                  updated_at: datetime | None = None,
                  summary: str | None = None,
                  user_id: str | None = None) -> None:
-        self.id: str = entry_id or str(uuid.uuid4())
-        self.user_id: str | None = user_id  # owner of this entry (multi-user scoping)
+        # IDs coming back from PostgreSQL are uuid.UUID objects; Pydantic v2
+        # rejects them for `str` fields, so coerce to str here (and again in
+        # to_dict) — otherwise the entry list 500s as soon as one row exists.
+        self.id: str = str(entry_id) if entry_id is not None else str(uuid.uuid4())
+        self.user_id: str | None = str(user_id) if user_id is not None else None
         self.__title = ""      # private: set through the property below
         self.__content = ""    # private: set through the property below
         self.title = title     # goes through the validating setter
@@ -77,9 +80,9 @@ class DiaryEntry:
 
     def to_dict(self) -> dict:
         return {
-            "id": self.id, "title": self.title, "content": self.content,
+            "id": str(self.id), "title": self.title, "content": self.content,
             "mood": self.mood, "tags": self.tags, "summary": self.summary,
-            "user_id": self.user_id,
+            "user_id": str(self.user_id) if self.user_id is not None else None,
             "created_at": self.created_at.isoformat(),
             "updated_at": self.updated_at.isoformat(),
         }
@@ -108,12 +111,14 @@ class MoodRecord:
         if mood not in VALID_MOODS:
             raise ValueError(f"Unknown mood: {mood!r}. Choose one of {sorted(VALID_MOODS)}.")
         self.mood = mood
-        self.entry_id = entry_id
+        self.entry_id = str(entry_id) if entry_id is not None else None
         self.note = note
         self.recorded_at: datetime = recorded_at or _utcnow()
 
     def to_dict(self) -> dict:
-        return {"mood": self.mood, "entry_id": self.entry_id, "note": self.note,
+        return {"mood": self.mood,
+                "entry_id": str(self.entry_id) if self.entry_id is not None else None,
+                "note": self.note,
                 "recorded_at": self.recorded_at.isoformat()}
 
 
@@ -134,14 +139,14 @@ class MediaFile:
                  user_id: str | None = None) -> None:
         if media_type not in ("photo", "audio"):
             raise ValueError("media_type must be 'photo' or 'audio'.")
-        self.id: str = media_id or str(uuid.uuid4())
-        self.user_id: str | None = user_id  # owner of this file (multi-user scoping)
+        self.id: str = str(media_id) if media_id is not None else str(uuid.uuid4())
+        self.user_id: str | None = str(user_id) if user_id is not None else None
         self.__drive_file_id = drive_file_id  # private, read-only
         self.file_name = file_name
         self.mime_type = mime_type
         self.media_type = media_type
         self.file_size = file_size
-        self.entry_id = entry_id
+        self.entry_id = str(entry_id) if entry_id is not None else None
         self.caption = caption
         self.transcript = transcript
         self.created_at: datetime = created_at or _utcnow()
@@ -153,10 +158,12 @@ class MediaFile:
 
     def to_dict(self) -> dict:
         return {
-            "id": self.id, "drive_file_id": self.__drive_file_id,
+            "id": str(self.id), "drive_file_id": self.__drive_file_id,
             "file_name": self.file_name, "mime_type": self.mime_type,
             "media_type": self.media_type, "file_size": self.file_size,
-            "entry_id": self.entry_id, "caption": self.caption,
-            "transcript": self.transcript, "user_id": self.user_id,
+            "entry_id": str(self.entry_id) if self.entry_id is not None else None,
+            "caption": self.caption,
+            "transcript": self.transcript,
+            "user_id": str(self.user_id) if self.user_id is not None else None,
             "created_at": self.created_at.isoformat(),
         }

@@ -98,3 +98,35 @@ def test_media_file_route_requires_auth_and_returns_404_for_unknown_id():
     resp = client.get("/api/media/00000000-0000-0000-0000-000000000000/file",
                       cookies=AUTH_COOKIES)
     assert resp.status_code == 404, resp.text
+
+def test_uuid_ids_from_postgres_serialize_as_strings():
+    """Regression: PostgreSQL returns uuid.UUID objects for id/user_id.
+
+    Pydantic v2 rejects a UUID where a response model declares `str`, so
+    listing entries 500d live as soon as one row existed (the save itself
+    succeeded — only the list crashed). Models must coerce UUIDs to str.
+    """
+    import uuid
+
+    from app.models.models import DiaryEntry, MediaFile, MoodRecord
+    from app.schemas.schemas import EntryResponse, MediaResponse
+
+    entry_id, user_id = uuid.uuid4(), uuid.uuid4()
+    entry = DiaryEntry.from_dict({
+        "id": entry_id, "title": "From Postgres", "content": "x",
+        "mood": "happy", "tags": [], "user_id": user_id,
+    })
+    assert isinstance(entry.id, str) and entry.id == str(entry_id)
+    assert isinstance(entry.user_id, str) and entry.user_id == str(user_id)
+    resp = EntryResponse(**entry.to_dict())
+    assert resp.id == str(entry_id)
+    assert isinstance(entry.to_dict()["user_id"], str)
+
+    media = MediaFile("drive-1", "a.jpg", "image/jpeg", "photo",
+                      media_id=uuid.uuid4(), entry_id=entry_id, user_id=user_id)
+    mresp = MediaResponse(**media.to_dict())
+    assert mresp.id and mresp.entry_id == str(entry_id)
+    assert mresp.user_id == str(user_id)
+
+    mood = MoodRecord("calm", entry_id=entry_id)
+    assert mood.to_dict()["entry_id"] == str(entry_id)
