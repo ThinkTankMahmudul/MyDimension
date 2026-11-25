@@ -22,7 +22,7 @@
 
   // Shell version: the live re-test reads this to confirm the browser
   // is running the fixed JS, not a stale service-worker copy.
-  var SHELL_VERSION = '2026-11-25-art-themes';
+  var SHELL_VERSION = '2026-11-25-art-polish';
   window.addEventListener('error', function (e) {
     try { showError(e.message || 'Something went wrong.'); } catch (err) { /* ignore */ }
   });
@@ -418,6 +418,7 @@
     roundRectPath(ctx, 0, 0, W, H, 48);
     ctx.fillStyle = grad; ctx.fill();
     // Illustrated theme: draw the SVG scene on the right edge, as on the card.
+    // Clip to the card's rounded corners so the art never sticks out past them.
     if (theme.art) {
       try {
         var artImg = await new Promise(function (res, rej) {
@@ -426,8 +427,12 @@
           img.onerror = rej;
           img.src = theme.art;
         });
-        var artH = H * 0.62, artW = artH * 0.5;
+        var artH = H * 0.70, artW = artH * 0.5;
+        ctx.save();
+        roundRectPath(ctx, 0, 0, W, H, 48);
+        ctx.clip();
         ctx.drawImage(artImg, W - artW, H - artH, artW, artH);
+        ctx.restore();
       } catch (e) { /* art is decorative; the note still shares without it */ }
     }
     // Avatar: the attached photo, clipped to a circle; mood emoji if none.

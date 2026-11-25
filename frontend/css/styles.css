@@ -551,7 +551,7 @@ button[data-quick="note"]{animation:softPulse 2.8s ease-in-out infinite}
 }
 
 /* Illustrated themes: SVG scene on the right edge, solid gradient beneath. */
-.theme-pencil{background:url('../assets/theme-pencil.svg') right bottom/auto 62% no-repeat,linear-gradient(160deg,#fef3c7,#fde68a);color:#78350f}
-.theme-river{background:url('../assets/theme-river.svg') right bottom/auto 62% no-repeat,linear-gradient(160deg,#dbeafe,#a7f3d0);color:#134e4a}
-.theme-garden{background:url('../assets/theme-garden.svg') right bottom/auto 62% no-repeat,linear-gradient(160deg,#ede9fe,#fce7f3);color:#4c1d95}
-.theme-space{background:url('../assets/theme-space.svg') right bottom/auto 62% no-repeat,linear-gradient(160deg,#d1fae5,#a7f3d0);color:#134e4a}
+.theme-pencil{background:url('../assets/theme-pencil.svg') right bottom/auto 70% no-repeat,linear-gradient(160deg,#fef3c7,#fde68a);color:#78350f}
+.theme-river{background:url('../assets/theme-river.svg') right bottom/auto 70% no-repeat,linear-gradient(160deg,#dbeafe,#a7f3d0);color:#134e4a}
+.theme-garden{background:url('../assets/theme-garden.svg') right bottom/auto 70% no-repeat,linear-gradient(160deg,#ede9fe,#fce7f3);color:#4c1d95}
+.theme-space{background:url('../assets/theme-space.svg') right bottom/auto 70% no-repeat,linear-gradient(160deg,#d1fae5,#a7f3d0);color:#134e4a}
