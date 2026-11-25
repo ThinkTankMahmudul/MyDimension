@@ -22,7 +22,7 @@
 
   // Shell version: the live re-test reads this to confirm the browser
   // is running the fixed JS, not a stale service-worker copy.
-  var SHELL_VERSION = '2026-11-25-detail-loading';
+  var SHELL_VERSION = '2026-11-25-art-themes';
   window.addEventListener('error', function (e) {
     try { showError(e.message || 'Something went wrong.'); } catch (err) { /* ignore */ }
   });
@@ -417,6 +417,19 @@
     grad.addColorStop(0, theme.bg[0]); grad.addColorStop(1, theme.bg[1]);
     roundRectPath(ctx, 0, 0, W, H, 48);
     ctx.fillStyle = grad; ctx.fill();
+    // Illustrated theme: draw the SVG scene on the right edge, as on the card.
+    if (theme.art) {
+      try {
+        var artImg = await new Promise(function (res, rej) {
+          var img = new Image();
+          img.onload = function () { res(img); };
+          img.onerror = rej;
+          img.src = theme.art;
+        });
+        var artH = H * 0.62, artW = artH * 0.5;
+        ctx.drawImage(artImg, W - artW, H - artH, artW, artH);
+      } catch (e) { /* art is decorative; the note still shares without it */ }
+    }
     // Avatar: the attached photo, clipped to a circle; mood emoji if none.
     var ax = PAD, ay = PAD, avatarImg = null;
     if (detailShare.photo) {
@@ -471,7 +484,9 @@
     var box = document.getElementById('printNote');
     var photoHtml = detailShare.photo
       ? '<img class="print-avatar" src="' + window.MyDimensionApi.getMediaUrl(detailShare.photo.id) + '" alt="">' : '';
+    var artHtml = theme.art ? '<img class="print-art" src="' + theme.art + '" alt="">' : '';
     box.innerHTML = '<div class="print-card" style="background:linear-gradient(160deg,' + theme.bg[0] + ',' + theme.bg[1] + ');color:' + theme.ink + '">' +
+      artHtml +
       '<div class="print-head">' + photoHtml + '<div><h2>' + J.esc(entry.title) + '</h2><p>' +
       J.esc(J.fmtDate(entry.date)) + (entry.mood ? ' · ' + J.esc(entry.mood) : '') +
       (entry.tags.length ? ' · ' + entry.tags.map(J.esc).join(', ') : '') + '</p></div></div>' +

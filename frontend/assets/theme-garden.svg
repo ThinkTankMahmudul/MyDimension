@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="320" height="640" viewBox="0 0 320 640" preserveAspectRatio="xMidYMax meet" role="img" aria-label="Tall garden plants and flowers under a crescent moon">
+  <!-- MyDimension palette only: lavender, rose, mint, teal, sand. -->
+  <defs>
+    <mask id="gardenMoonCut">
+      <rect width="320" height="640" fill="#fff"/>
+      <circle cx="252" cy="92" r="30" fill="#000"/>
+    </mask>
+  </defs>
+  <!-- Crescent moon -->
+  <circle cx="236" cy="76" r="34" fill="#FDE68A" mask="url(#gardenMoonCut)"/>
+  <!-- Stars / fireflies -->
+  <g fill="#FDE68A">
+    <circle cx="60" cy="60" r="3"/><circle cx="120" cy="110" r="2.5"/><circle cx="180" cy="50" r="2"/>
+    <circle cx="90" cy="200" r="3"/><circle cx="270" cy="210" r="2.5"/><circle cx="40" cy="330" r="2.5"/>
+  </g>
+  <g fill="#AFA0E8">
+    <path d="M150 150l4 10 10 4-10 4-4 10-4-10-10-4 10-4z"/>
+    <path d="M290 330l3 8 8 3-8 3-3 8-3-8-8-3 8-3z"/>
+  </g>
+  <!-- Tall plant 1 (left) -->
+  <g>
+    <path d="M70 640 C 66 520, 74 420, 68 320" fill="none" stroke="#0F766E" stroke-width="6" stroke-linecap="round"/>
+    <ellipse cx="48" cy="430" rx="26" ry="12" fill="#14B8A6" transform="rotate(-32 48 430)"/>
+    <ellipse cx="94" cy="480" rx="26" ry="12" fill="#A7F3D0" transform="rotate(28 94 480)"/>
+    <ellipse cx="46" cy="540" rx="24" ry="11" fill="#14B8A6" transform="rotate(-24 46 540)"/>
+    <g>
+      <circle cx="68" cy="300" r="16" fill="#F9A8D4"/>
+      <circle cx="52" cy="312" r="12" fill="#FBCFE8"/>
+      <circle cx="84" cy="312" r="12" fill="#FBCFE8"/>
+      <circle cx="68" cy="322" r="12" fill="#F9A8D4"/>
+      <circle cx="68" cy="310" r="8" fill="#FDE68A"/>
+    </g>
+  </g>
+  <!-- Tall plant 2 (right) -->
+  <g>
+    <path d="M250 640 C 254 540, 246 460, 252 380" fill="none" stroke="#0F766E" stroke-width="6" stroke-linecap="round"/>
+    <ellipse cx="226" cy="470" rx="26" ry="12" fill="#A7F3D0" transform="rotate(-28 226 470)"/>
+    <ellipse cx="276" cy="520" rx="26" ry="12" fill="#14B8A6" transform="rotate(30 276 520)"/>
+    <g>
+      <circle cx="252" cy="360" r="15" fill="#AFA0E8"/>
+      <circle cx="237" cy="372" r="11" fill="#DDD6FE"/>
+      <circle cx="267" cy="372" r="11" fill="#DDD6FE"/>
+      <circle cx="252" cy="381" r="11" fill="#AFA0E8"/>
+      <circle cx="252" cy="370" r="7" fill="#FDE68A"/>
+    </g>
+  </g>
+  <!-- Small plant (centre) -->
+  <g>
+    <path d="M160 640 C 158 580, 162 540, 160 500" fill="none" stroke="#0F766E" stroke-width="5" stroke-linecap="round"/>
+    <ellipse cx="140" cy="560" rx="20" ry="10" fill="#14B8A6" transform="rotate(-30 140 560)"/>
+    <ellipse cx="182" cy="590" rx="20" ry="10" fill="#A7F3D0" transform="rotate(28 182 590)"/>
+    <circle cx="160" cy="486" r="12" fill="#F9A8D4"/>
+    <circle cx="160" cy="486" r="5" fill="#FDE68A"/>
+  </g>
+  <!-- Layered hill at the bottom -->
+  <path d="M0 586 Q 80 552 160 586 T 320 586 V 640 H 0 Z" fill="#DDD6FE"/>
+  <path d="M0 612 Q 90 584 180 612 T 320 612 V 640 H 0 Z" fill="#AFA0E8" opacity=".7"/>
+</svg>

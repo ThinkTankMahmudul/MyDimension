@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="320" height="640" viewBox="0 0 320 640" preserveAspectRatio="xMidYMax meet" role="img" aria-label="A river winding between trees and hills">
+  <!-- MyDimension palette only: sky, mint, teal, sand. -->
+  <!-- Sun -->
+  <circle cx="252" cy="76" r="30" fill="#FDE68A"/>
+  <!-- Birds -->
+  <g stroke="#134E4A" stroke-width="3" stroke-linecap="round" fill="none">
+    <path d="M60 90q8-8 16 0q8-8 16 0"/>
+    <path d="M110 130q6-6 12 0q6-6 12 0"/>
+  </g>
+  <!-- River winding down the strip -->
+  <path d="M170 0 C 130 110, 230 190, 175 300 S 110 470, 165 640 L 245 640 C 190 520, 285 430, 230 310 S 205 130, 245 0 Z" fill="#BFDBFE"/>
+  <path d="M185 40 C 160 130, 225 210, 185 300 S 150 470, 185 600" fill="none" stroke="#FFFFFF" stroke-width="7" stroke-linecap="round" opacity=".8"/>
+  <!-- Trees on the banks -->
+  <g>
+    <rect x="52" y="300" width="12" height="52" rx="5" fill="#78350F"/>
+    <circle cx="58" cy="282" r="34" fill="#0F766E"/>
+    <circle cx="34" cy="302" r="22" fill="#14B8A6"/>
+    <circle cx="82" cy="302" r="22" fill="#A7F3D0"/>
+  </g>
+  <g>
+    <rect x="238" y="420" width="12" height="52" rx="5" fill="#78350F"/>
+    <circle cx="244" cy="402" r="30" fill="#14B8A6"/>
+    <circle cx="224" cy="420" r="19" fill="#0F766E"/>
+    <circle cx="264" cy="420" r="19" fill="#A7F3D0"/>
+  </g>
+  <g>
+    <rect x="30" y="500" width="10" height="42" rx="5" fill="#78350F"/>
+    <circle cx="35" cy="486" r="26" fill="#0F766E"/>
+    <circle cx="55" cy="500" r="16" fill="#14B8A6"/>
+  </g>
+  <!-- Layered hills at the bottom -->
+  <path d="M0 566 Q 80 528 160 566 T 320 566 V 640 H 0 Z" fill="#A7F3D0" opacity=".9"/>
+  <path d="M0 600 Q 90 568 180 600 T 320 600 V 640 H 0 Z" fill="#6EE7B7"/>
+  <!-- Grass tufts -->
+  <g stroke="#0F766E" stroke-width="3" stroke-linecap="round" fill="none">
+    <path d="M120 612v-14M128 612l6-12M136 612v-10"/>
+    <path d="M250 626v-14M258 626l6-12M266 626v-10"/>
+  </g>
+</svg>

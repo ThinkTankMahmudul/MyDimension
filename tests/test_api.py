@@ -217,6 +217,8 @@ def test_entry_theme_round_trip_and_unknown_falls_back_to_default():
     from app.models.models import VALID_THEMES
 
     assert "lavender" in VALID_THEMES and "forest" in VALID_THEMES
+    # Illustrated themes (SVG art, right edge of the note).
+    assert {"pencil", "river", "garden", "space"} <= VALID_THEMES
     resp = client.post("/api/entries", json={
         "title": "Themed", "content": "x", "theme": "lavender",
     }, cookies=AUTH_COOKIES)

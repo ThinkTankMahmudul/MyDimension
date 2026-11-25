@@ -138,7 +138,14 @@
     { id: 'sky', bg: ['#dbeafe', '#bfdbfe'], ink: '#1e3a8a' },
     { id: 'rose', bg: ['#fce7f3', '#fbcfe8'], ink: '#831843' },
     { id: 'sand', bg: ['#fef3c7', '#fde68a'], ink: '#78350f' },
-    { id: 'forest', bg: ['#0f766e', '#14b8a6'], ink: '#ffffff' }
+    { id: 'forest', bg: ['#0f766e', '#14b8a6'], ink: '#ffffff' },
+    // Illustrated themes: an SVG scene (app palette) on the right edge of
+    // the note, like the pencil-and-path Keep note — the solid gradient
+    // stays underneath, so text stays readable.
+    { id: 'pencil', bg: ['#fef3c7', '#fde68a'], ink: '#78350f', art: 'assets/theme-pencil.svg' },
+    { id: 'river', bg: ['#dbeafe', '#a7f3d0'], ink: '#134e4a', art: 'assets/theme-river.svg' },
+    { id: 'garden', bg: ['#ede9fe', '#fce7f3'], ink: '#4c1d95', art: 'assets/theme-garden.svg' },
+    { id: 'space', bg: ['#d1fae5', '#a7f3d0'], ink: '#134e4a', art: 'assets/theme-space.svg' }
   ];
   var formTheme = 'default';
 

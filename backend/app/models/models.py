@@ -21,7 +21,10 @@ VALID_MOODS = {"happy", "calm", "grateful", "sad", "anxious", "tired", "excited"
 # Note themes (Google Keep-style): the entry's background in the detail
 # view and the entry form. Unknown values fall back to "default" so a
 # bad theme can never break rendering.
-VALID_THEMES = {"default", "mint", "lavender", "peach", "sky", "rose", "sand", "forest"}
+VALID_THEMES = {"default", "mint", "lavender", "peach", "sky", "rose", "sand", "forest",
+                # Illustrated themes (SVG art in the app palette, right edge
+                # of the note — pencil / river / garden / space).
+                "pencil", "river", "garden", "space"}
 
 
 def normalise_theme(value: str | None) -> str:

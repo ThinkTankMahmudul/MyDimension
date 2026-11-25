@@ -531,7 +531,8 @@ button[data-quick="note"]{animation:softPulse 2.8s ease-in-out infinite}
 @media print{
   body.printing-note .app{display:none !important}
   body.printing-note #printNote{display:block}
-  #printNote .print-card{-webkit-print-color-adjust:exact;print-color-adjust:exact;border-radius:24px;padding:48px;min-height:560px}
+  #printNote .print-card{-webkit-print-color-adjust:exact;print-color-adjust:exact;border-radius:24px;padding:48px;min-height:560px;position:relative;overflow:hidden}
+  #printNote .print-art{position:absolute;right:20px;bottom:16px;height:58%;opacity:.95}
   #printNote .print-head{display:flex;gap:20px;align-items:center;margin-bottom:24px}
   #printNote .print-avatar{width:96px;height:96px;border-radius:50%;object-fit:cover}
   #printNote .print-head h2{margin:0 0 6px;font-size:28px}
@@ -548,3 +549,9 @@ button[data-quick="note"]{animation:softPulse 2.8s ease-in-out infinite}
   .note-card{padding:20px}
   .note-avatar{flex-basis:60px;width:60px;height:60px;font-size:1.7rem}
 }
+
+/* Illustrated themes: SVG scene on the right edge, solid gradient beneath. */
+.theme-pencil{background:url('../assets/theme-pencil.svg') right bottom/auto 62% no-repeat,linear-gradient(160deg,#fef3c7,#fde68a);color:#78350f}
+.theme-river{background:url('../assets/theme-river.svg') right bottom/auto 62% no-repeat,linear-gradient(160deg,#dbeafe,#a7f3d0);color:#134e4a}
+.theme-garden{background:url('../assets/theme-garden.svg') right bottom/auto 62% no-repeat,linear-gradient(160deg,#ede9fe,#fce7f3);color:#4c1d95}
+.theme-space{background:url('../assets/theme-space.svg') right bottom/auto 62% no-repeat,linear-gradient(160deg,#d1fae5,#a7f3d0);color:#134e4a}
