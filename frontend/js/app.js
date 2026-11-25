@@ -527,41 +527,41 @@
     delegatedBound = true;
     // Delegated clicks for dynamically rendered lists.
     document.addEventListener('click', async function (e) {
-        var t = e.target.closest('[data-edit-entry],[data-delete-entry],[data-ai-entry],[data-delete-media],[data-transcribe-media],[data-goto-new-entry],[data-open-entry]');
-        if (!t) return;
-        if (t.hasAttribute('data-goto-new-entry')) { window.MyDimensionJournal.startNew(); return; }
-        if (t.hasAttribute('data-open-entry')) { window.location.hash = '#/entry/' + t.getAttribute('data-open-entry'); return; }
-        if (t.hasAttribute('data-edit-entry')) {
-          var entry = window.MyDimensionJournal.findCached(t.getAttribute('data-edit-entry'));
+        var el = e.target.closest('[data-edit-entry],[data-delete-entry],[data-ai-entry],[data-delete-media],[data-transcribe-media],[data-goto-new-entry],[data-open-entry]');
+        if (!el) return;
+        if (el.hasAttribute('data-goto-new-entry')) { window.MyDimensionJournal.startNew(); return; }
+        if (el.hasAttribute('data-open-entry')) { window.location.hash = '#/entry/' + el.getAttribute('data-open-entry'); return; }
+        if (el.hasAttribute('data-edit-entry')) {
+          var entry = window.MyDimensionJournal.findCached(el.getAttribute('data-edit-entry'));
           if (entry) { window.location.hash = '#/journal'; setTimeout(function () { window.MyDimensionJournal.fillForm(entry); }, 50); }
           return;
         }
-        if (t.hasAttribute('data-delete-entry')) {
-          var title = t.getAttribute('data-entry-title') || 'this entry';
+        if (el.hasAttribute('data-delete-entry')) {
+          var title = el.getAttribute('data-entry-title') || 'this entry';
           var ok = await confirmDialog({ title: t('confirm.deleteEntryTitle'), text: t('confirm.deleteEntryText', { title: title }), yes: t('confirm.delete') });
           if (!ok) return;
-          try { await window.MyDimensionApi.deleteEntry(t.getAttribute('data-delete-entry')); toast(t('toast.entryDeleted')); await window.MyDimensionJournal.refreshJournalList(); loadDashboard().catch(function () {}); }
+          try { await window.MyDimensionApi.deleteEntry(el.getAttribute('data-delete-entry')); toast(t('toast.entryDeleted')); await window.MyDimensionJournal.refreshJournalList(); loadDashboard().catch(function () {}); }
           catch (err) { showError(err.message); }
           return;
         }
-        if (t.hasAttribute('data-ai-entry')) {
+        if (el.hasAttribute('data-ai-entry')) {
           window.location.hash = '#/ai';
           setTimeout(function () {
               var sel = document.getElementById('aiEntrySelect');
-              if (sel) sel.value = t.getAttribute('data-ai-entry');
+              if (sel) sel.value = el.getAttribute('data-ai-entry');
             }, 100);
           return;
         }
-        if (t.hasAttribute('data-delete-media')) {
-          var name = t.getAttribute('data-media-name') || 'this file';
+        if (el.hasAttribute('data-delete-media')) {
+          var name = el.getAttribute('data-media-name') || 'this file';
           var okM = await confirmDialog({ title: t('confirm.deleteFileTitle'), text: t('confirm.deleteFileText', { name: name }), yes: t('confirm.delete') });
           if (!okM) return;
-          try { await window.MyDimensionApi.deleteMedia(t.getAttribute('data-delete-media')); toast(t('toast.fileDeleted')); loadMediaPage(); }
+          try { await window.MyDimensionApi.deleteMedia(el.getAttribute('data-delete-media')); toast(t('toast.fileDeleted')); loadMediaPage(); }
           catch (err) { showError(err.message); }
           return;
         }
-        if (t.hasAttribute('data-transcribe-media')) {
-          var id = t.getAttribute('data-transcribe-media');
+        if (el.hasAttribute('data-transcribe-media')) {
+          var id = el.getAttribute('data-transcribe-media');
           var out = document.querySelector('[data-transcript-for="' + id + '"]');
           if (out) out.textContent = t('media.transcribing');
           try {

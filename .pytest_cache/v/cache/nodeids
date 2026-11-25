@@ -1,7 +1,9 @@
 [
   "tests/test_api.py::test_ai_endpoints_friendly_error_without_gemini_key",
   "tests/test_api.py::test_calendar_and_mood_insights_require_auth_and_work",
+  "tests/test_api.py::test_drive_service_reads_key_json_from_env",
   "tests/test_api.py::test_entries_crud_with_dev_fallback",
+  "tests/test_api.py::test_gemini_model_default_is_supported_and_env_overridable",
   "tests/test_api.py::test_health_ok",
   "tests/test_api.py::test_invalid_uuid_returns_404_not_500",
   "tests/test_api.py::test_media_file_route_requires_auth_and_returns_404_for_unknown_id",

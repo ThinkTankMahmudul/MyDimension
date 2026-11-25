@@ -22,7 +22,11 @@ load_dotenv()
 logger = logging.getLogger("mydimension.config")
 
 # One place for the Gemini model name, so it is easy to change later.
-GEMINI_MODEL = "gemini-2.0-flash"
+# gemini-2.0-flash was retired by Google on 1 Jun 2026 (every call 404s,
+# which the API surfaced as 502 "AI service could not be reached").
+# Default is gemini-3.5-flash (GA, available until May 2027 or later);
+# override with the GEMINI_MODEL env var when Google retires it.
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-3.5-flash")
 
 
 class Settings:

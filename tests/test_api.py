@@ -130,3 +130,34 @@ def test_uuid_ids_from_postgres_serialize_as_strings():
 
     mood = MoodRecord("calm", entry_id=entry_id)
     assert mood.to_dict()["entry_id"] == str(entry_id)
+
+
+def test_drive_service_reads_key_json_from_env(monkeypatch):
+    """Service-account key JSON from GOOGLE_DRIVE_CREDENTIALS_JSON (Vercel)
+    configures Drive without a key file; invalid JSON does not."""
+    import json
+
+    from app.services.drive_service import GoogleDriveService
+
+    monkeypatch.delenv("GOOGLE_DRIVE_CREDENTIALS", raising=False)
+    monkeypatch.delenv("GOOGLE_APPLICATION_CREDENTIALS", raising=False)
+    monkeypatch.setenv("GOOGLE_DRIVE_CREDENTIALS_JSON",
+                       json.dumps({"type": "service_account", "project_id": "x"}))
+    assert GoogleDriveService().configured is True
+    monkeypatch.setenv("GOOGLE_DRIVE_CREDENTIALS_JSON", "not-json{")
+    assert GoogleDriveService().configured is False
+
+
+def test_gemini_model_default_is_supported_and_env_overridable(monkeypatch):
+    """gemini-2.0-flash was retired by Google on 1 Jun 2026; the default
+    must be a supported model, and GEMINI_MODEL must override it."""
+    import importlib
+
+    import app.core.config as config_module
+
+    monkeypatch.delenv("GEMINI_MODEL", raising=False)
+    importlib.reload(config_module)
+    assert config_module.GEMINI_MODEL == "gemini-3.5-flash"
+    monkeypatch.setenv("GEMINI_MODEL", "gemini-3.5-flash")
+    importlib.reload(config_module)
+    assert config_module.GEMINI_MODEL == "gemini-3.5-flash"
