@@ -67,6 +67,7 @@
         date: (e.created_at || '').slice(0, 10),
         mood: e.mood || '', tags: Array.isArray(e.tags) ? e.tags : (e.tags ? String(e.tags).split(',').map(function (t) { return t.trim(); }).filter(Boolean) : []),
         summary: e.summary || '',
+        theme: e.theme || 'default',
         created_at: e.created_at || '', updated_at: e.updated_at || ''
       };
     });
@@ -125,13 +126,93 @@
   }
 
   /* ---------- editor ---------- */
+
+  // Note themes (Google Keep-style). bg: two gradient stops; ink: text colour.
+  // Keep in sync with the .theme-* classes in styles.css and the canvas
+  // share renderer in app.js.
+  var THEMES = [
+    { id: 'default', bg: ['#ffffff', '#f2fbf8'], ink: '#26352f' },
+    { id: 'mint', bg: ['#d1fae5', '#a7f3d0'], ink: '#14532d' },
+    { id: 'lavender', bg: ['#ede9fe', '#ddd6fe'], ink: '#4c1d95' },
+    { id: 'peach', bg: ['#ffedd5', '#fed7aa'], ink: '#7c2d12' },
+    { id: 'sky', bg: ['#dbeafe', '#bfdbfe'], ink: '#1e3a8a' },
+    { id: 'rose', bg: ['#fce7f3', '#fbcfe8'], ink: '#831843' },
+    { id: 'sand', bg: ['#fef3c7', '#fde68a'], ink: '#78350f' },
+    { id: 'forest', bg: ['#0f766e', '#14b8a6'], ink: '#ffffff' }
+  ];
+  var formTheme = 'default';
+
+  function themeById(id) {
+    for (var i = 0; i < THEMES.length; i++) if (THEMES[i].id === id) return THEMES[i];
+    return THEMES[0];
+  }
+
+  function setFormTheme(id) {
+    formTheme = themeById(id).id;
+    var card = document.getElementById('entryFormCard');
+    if (card) {
+      THEMES.forEach(function (th) { card.classList.remove('theme-' + th.id); });
+      card.classList.add('theme-' + formTheme);
+    }
+    renderThemePicker();
+  }
+
+  function renderThemePicker() {
+    var box = document.getElementById('themePicker');
+    if (!box) return;
+    box.innerHTML = THEMES.map(function (th) {
+      var label = t('theme.' + th.id);
+      return '<button type="button" class="theme-dot' + (th.id === formTheme ? ' selected' : '') +
+        '" data-form-theme="' + th.id + '" title="' + esc(label) + '" aria-label="' + esc(label) +
+        '" aria-pressed="' + (th.id === formTheme) + '" style="background:linear-gradient(135deg,' +
+        th.bg[0] + ',' + th.bg[1] + ')"></button>';
+    }).join('');
+    box.querySelectorAll('[data-form-theme]').forEach(function (btn) {
+      btn.addEventListener('click', function () { setFormTheme(btn.getAttribute('data-form-theme')); });
+    });
+  }
+
+  // Attachments already saved on this entry (voice recordings, photos,
+  // files) — shown inside the edit form so the voice you recorded earlier
+  // is visible while editing, not only after saving.
+  function isAudioMedia(m) { return (m.mime_type || '').indexOf('audio/') === 0 || m.media_type === 'audio'; }
+  function isImageMedia(m) { return (m.mime_type || '').indexOf('image/') === 0 || m.media_type === 'photo'; }
+
+  async function loadEntryAttachments(entryId) {
+    var voiceBox = document.getElementById('entryVoiceList');
+    var photoBox = document.getElementById('entryPhotoList');
+    var fileBox = document.getElementById('entryFileList');
+    [voiceBox, photoBox, fileBox].forEach(function (b) { if (b) b.innerHTML = ''; });
+    if (!entryId) return;
+    var list;
+    try { list = await window.MyDimensionApi.listMedia(null, entryId); }
+    catch (e) { return; }
+    var voices = list.filter(isAudioMedia);
+    var photos = list.filter(isImageMedia);
+    var files = list.filter(function (m) { return !isAudioMedia(m) && !isImageMedia(m); });
+    if (voiceBox) voiceBox.innerHTML = voices.length ? voices.map(function (m) {
+      return '<div class="voice-item"><strong>' + esc(m.caption || m.file_name) + '</strong>' +
+        '<audio controls preload="none" src="' + window.MyDimensionApi.getMediaUrl(m.id) + '"></audio></div>';
+    }).join('') : '<p class="small muted">' + t('entry.noVoice') + '</p>';
+    if (photoBox) photoBox.innerHTML = photos.length ? photos.map(function (m) {
+      return '<figure class="thumb"><img loading="lazy" alt="' + esc(m.caption || m.file_name) +
+        '" src="' + window.MyDimensionApi.getMediaUrl(m.id) + '"><figcaption>' +
+        esc(m.caption || m.file_name) + '</figcaption></figure>';
+    }).join('') : '<p class="small muted">' + t('entry.noPhoto') + '</p>';
+    if (fileBox) fileBox.innerHTML = files.length ? files.map(function (m) {
+      return '<div class="file-chip"><a href="' + window.MyDimensionApi.getMediaUrl(m.id) +
+        '" download="' + esc(m.file_name) + '">' + esc(m.file_name) + '</a></div>';
+    }).join('') : '<p class="small muted">' + t('entry.noFile') + '</p>';
+  }
+
   function readForm() {
     var bodyEl = document.getElementById('entryBody');
     return {
       title: document.getElementById('entryTitle').value.trim() || t('journal.untitled'),
       content: bodyEl.innerText.trim(),
       mood: document.getElementById('entryMood').value || null,
-      tags: document.getElementById('entryTags').value.split(',').map(function (t) { return t.trim(); }).filter(Boolean)
+      tags: document.getElementById('entryTags').value.split(',').map(function (t) { return t.trim(); }).filter(Boolean),
+      theme: formTheme
     };
   }
 
@@ -146,6 +227,8 @@
     document.getElementById('entryFormTitle').textContent = t('journal.editEntry');
     document.getElementById('cancelEditBtn').classList.remove('hidden');
     editingId = e.id;
+    setFormTheme(e.theme || 'default');
+    loadEntryAttachments(e.id);
     var card = document.getElementById('entryFormCard');
     if (card && card.scrollIntoView) card.scrollIntoView({ behavior: 'smooth', block: 'start' });
     document.getElementById('entryTitle').focus();
@@ -158,6 +241,11 @@
     document.getElementById('entryMood').value = '';
     document.getElementById('entryTags').value = '';
     renderMoodPicker();
+    setFormTheme('default');
+    loadEntryAttachments(null);
+    if (window.MyDimensionApp && window.MyDimensionApp.clearEntryVoiceBlob) {
+      window.MyDimensionApp.clearEntryVoiceBlob();
+    }
     document.getElementById('entryFormTitle').textContent = t('journal.formTitle');
     document.getElementById('cancelEditBtn').classList.add('hidden');
     if (preset && preset.title) document.getElementById('entryTitle').value = preset.title;
@@ -220,6 +308,7 @@
     document.getElementById('entryMood').value = d.mood || '';
     document.getElementById('entryTags').value = (d.tags || []).join(', ');
     renderMoodPicker();
+    setFormTheme(d.theme || 'default');
     var note = document.getElementById('draftNote');
     if (note) note.classList.remove('hidden');
     var discard = document.getElementById('discardDraftBtn');
@@ -246,10 +335,24 @@
     var photo = document.getElementById('entryPhoto');
     var fileInput = document.getElementById('entryFile');
     var file = (photo && photo.files[0]) || (fileInput && fileInput.files[0]);
-    if (!file) return;
-    var kind = file.type.indexOf('audio/') === 0 ? 'audio' : 'photo';
-    try { await window.MyDimensionMedia.uploadFile(file, kind, '', entryId); }
-    catch (err) { window.MyDimensionApp.toast(t('toast.attachmentFailed') + ' ' + err.message); }
+    if (file) {
+      var kind = file.type.indexOf('audio/') === 0 ? 'audio' : 'photo';
+      try { await window.MyDimensionMedia.uploadFile(file, kind, '', entryId); }
+      catch (err) { window.MyDimensionApp.toast(t('toast.attachmentFailed') + ' ' + err.message); }
+    }
+    // A voice recording made on the Voice tab is an attachment too: until
+    // now it was only transcribed into text and the audio itself was lost
+    // on save, so the note never showed which voice belonged to it.
+    var voiceBlob = window.MyDimensionApp && window.MyDimensionApp.getEntryVoiceBlob
+      ? window.MyDimensionApp.getEntryVoiceBlob() : null;
+    if (voiceBlob) {
+      try {
+        await window.MyDimensionMedia.uploadFile(
+          new File([voiceBlob], 'voice-note.webm', { type: voiceBlob.type || 'audio/webm' }),
+          'audio', '', entryId);
+        window.MyDimensionApp.clearEntryVoiceBlob();
+      } catch (err) { window.MyDimensionApp.toast(t('toast.attachmentFailed') + ' ' + err.message); }
+    }
   }
 
   async function refreshJournalList() {
@@ -279,6 +382,9 @@
 
   window.MyDimensionJournal = {
     MOODS: MOODS, MOOD_EMOJI: MOOD_EMOJI, POSITIVE_MOODS: POSITIVE_MOODS,
+    THEMES: THEMES, themeById: themeById, setFormTheme: setFormTheme,
+    renderThemePicker: renderThemePicker, loadEntryAttachments: loadEntryAttachments,
+    isAudioMedia: isAudioMedia, isImageMedia: isImageMedia,
     todayLocal: todayLocal, fmtDate: fmtDate, fmtTime: fmtTime, relTime: relTime, esc: esc,
     entryDate: entryDate, coverClass: coverClass, coverArt: coverArt, coverArtAlt: coverArtAlt, COVER_ART: COVER_ART,
     loadEntries: loadEntries, getCached: getCached, findCached: findCached,

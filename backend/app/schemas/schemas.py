@@ -16,6 +16,7 @@ class EntryCreate(BaseModel):
     content: str = Field(default="", max_length=100_000)
     mood: str | None = None
     tags: list[str] = Field(default_factory=list)
+    theme: str = "default"
 
 
 class EntryUpdate(BaseModel):
@@ -24,6 +25,7 @@ class EntryUpdate(BaseModel):
     mood: str | None = None
     tags: list[str] | None = None
     summary: str | None = None
+    theme: str | None = None
 
 
 class EntryResponse(BaseModel):
@@ -33,6 +35,7 @@ class EntryResponse(BaseModel):
     mood: str | None = None
     tags: list[str] = []
     summary: str | None = None
+    theme: str = "default"
     created_at: datetime
     updated_at: datetime
 

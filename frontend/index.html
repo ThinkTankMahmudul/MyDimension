@@ -221,7 +221,7 @@
       </section>
 
       <!-- ======== MY JOURNAL (list + editor) ======== -->
-      <section id="page-journal" class="page" aria-label="My Journal">
+      <section id="page-journal" class="page narrow-page" aria-label="My Journal">
         <div class="page-head"><h2 data-i18n="journal.title">My Journal</h2>
           <button class="btn" type="button" data-quick="note" data-i18n="journal.newEntry">＋ New Entry</button></div>
 
@@ -229,6 +229,7 @@
           <div class="section-head"><h3 id="entryFormTitle" data-i18n="journal.formTitle">New Journal Entry</h3>
             <span id="draftNote" class="small muted hidden" data-i18n="journal.draftNote">Draft restored — saved on this device only.</span></div>
 
+          <div class="entry-form-layout">
           <div class="tabs" role="tablist" aria-label="Entry type">
             <button class="tab active" type="button" data-entry-tab="write" role="tab" aria-selected="true"><span data-i18n="journal.write">✎ Write</span></button>
             <button class="tab" type="button" data-entry-tab="voice" role="tab" aria-selected="false"><span data-i18n="journal.voice">♪ Voice</span></button>
@@ -236,9 +237,13 @@
             <button class="tab" type="button" data-entry-tab="file" role="tab" aria-selected="false"><span data-i18n="journal.file">▤ File</span></button>
           </div>
 
+          <div class="entry-form-body">
           <form id="entryForm">
             <div class="field"><label for="entryTitle" data-i18n="journal.titleLabel">Title (optional)</label>
               <input id="entryTitle" type="text" maxlength="200" data-i18n-placeholder="journal.titlePlaceholder" placeholder="Give today a title…"></div>
+
+            <div class="field"><label data-i18n="entry.theme">Theme</label>
+              <div id="themePicker" class="theme-dots" role="radiogroup" aria-label="Theme"></div></div>
 
             <div id="tab-write" class="tab-panel">
               <div class="field">
@@ -263,18 +268,24 @@
               <p><button id="entryTranscribeBtn" class="btn secondary hidden" type="button" data-i18n="journal.transcribeAI">Transcribe with AI</button>
               <span id="entryTranscribeStatus" class="small muted"></span></p>
               <p class="small muted" data-i18n="journal.micHint">Your browser will ask for microphone permission. You can also upload an audio file from the Media Vault.</p>
+              <p class="small muted" style="margin-top:14px" data-i18n="entry.attachedVoice">Voice attached to this entry</p>
+              <div id="entryVoiceList"></div>
             </div>
 
             <div id="tab-photo" class="tab-panel hidden">
               <p class="small" data-i18n="journal.photoHint">Attach a photo to this entry. It uploads to your private Google Drive when you save the entry.</p>
               <input id="entryPhoto" type="file" accept="image/*">
               <img id="entryPhotoPreview" class="hidden" alt="Photo preview" style="max-height:220px;border-radius:12px;margin-top:12px">
+              <p class="small muted" style="margin-top:14px" data-i18n="entry.attachedPhoto">Photos attached to this entry</p>
+              <div id="entryPhotoList"></div>
             </div>
 
             <div id="tab-file" class="tab-panel hidden">
               <p class="small" data-i18n="journal.fileHint">Attach a file to this entry. Photos and audio are supported (max 25 MB); other file types are not supported by the backend.</p>
               <input id="entryFile" type="file" accept="image/*,audio/*">
               <p id="entryFileName" class="small muted"></p>
+              <p class="small muted" style="margin-top:14px" data-i18n="entry.attachedFile">Files attached to this entry</p>
+              <div id="entryFileList"></div>
             </div>
 
             <div class="field"><label data-i18n="journal.moodLabel">Mood</label>
@@ -291,6 +302,8 @@
               <button id="cancelEditBtn" class="btn ghost hidden" type="button" data-i18n="journal.cancelEdit">Cancel edit</button>
             </div>
           </form>
+          </div>
+        </div>
         </div>
 
         <div class="card"><h3 data-i18n="journal.allEntries">All entries</h3>
@@ -305,10 +318,9 @@
       </section>
 
       <!-- ======== JOURNAL DETAIL ======== -->
-      <section id="page-entry" class="page" aria-label="Journal detail">
-        <div class="page-head"><h2 data-i18n="entry.title">Journal Detail</h2><a href="#/journal" data-i18n="entry.back">← Back to My Journal</a></div>
-        <div class="card" id="entryDetail"></div>
-        <div class="card" id="entryDetailMediaWrap"><h3 data-i18n="entry.attachedMedia">Attached media</h3><div id="entryDetailMedia"></div></div>
+      <section id="page-entry" class="page narrow-page" aria-label="Journal detail">
+        <div class="page-head"><h2 data-i18n="entry.title">Journal Details</h2><a href="#/journal" data-i18n="entry.back">← Back to My Journal</a></div>
+        <div id="entryDetail"></div>
       </section>
 
       <!-- ======== AI ASSISTANT ======== -->
@@ -433,6 +445,9 @@
     <a data-route-link href="#/ai"><span class="ico">✦</span><span data-i18n="bottom.ai">AI</span></a>
   </nav>
 </div>
+
+<!-- Print-only container: filled by the "Save as PDF" share action. -->
+<div id="printNote" aria-hidden="true"></div>
 
 <script src="js/i18n.js" defer></script>
 <script src="js/api.js" defer></script>

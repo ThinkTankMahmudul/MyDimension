@@ -43,9 +43,13 @@ CREATE TABLE IF NOT EXISTS diary_entries (
     mood TEXT,
     tags TEXT[] NOT NULL DEFAULT '{}',
     summary TEXT,
+    theme TEXT NOT NULL DEFAULT 'default',
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+-- Note themes (Google Keep-style backgrounds), added after launch.
+ALTER TABLE diary_entries ADD COLUMN IF NOT EXISTS theme TEXT NOT NULL DEFAULT 'default';
 
 CREATE TABLE IF NOT EXISTS mood_records (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

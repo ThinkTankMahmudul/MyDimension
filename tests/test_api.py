@@ -181,6 +181,57 @@ def test_drive_service_needs_user_oauth_token(monkeypatch):
     assert GoogleDriveService().configured is False
 
 
+def test_entry_theme_round_trip_and_unknown_falls_back_to_default():
+    """Note themes (Google Keep-style): create/update keep the theme,
+    and an unknown theme id never breaks anything — it becomes default."""
+    from app.models.models import VALID_THEMES
+
+    assert "lavender" in VALID_THEMES and "forest" in VALID_THEMES
+    resp = client.post("/api/entries", json={
+        "title": "Themed", "content": "x", "theme": "lavender",
+    }, cookies=AUTH_COOKIES)
+    assert resp.status_code == 201, resp.text
+    assert resp.json()["theme"] == "lavender"
+    entry_id = resp.json()["id"]
+    resp = client.put(f"/api/entries/{entry_id}", json={"theme": "rose"},
+                      cookies=AUTH_COOKIES)
+    assert resp.status_code == 200, resp.text
+    assert resp.json()["theme"] == "rose"
+    resp = client.post("/api/entries", json={
+        "title": "Bad theme", "content": "x", "theme": "not-a-theme",
+    }, cookies=AUTH_COOKIES)
+    assert resp.status_code == 201, resp.text
+    assert resp.json()["theme"] == "default"
+    assert client.get(f"/api/entries/{entry_id}",
+                      cookies=AUTH_COOKIES).json()["theme"] == "rose"
+
+
+def test_media_list_filters_by_entry_id():
+    """GET /api/media?entry_id=… returns only that entry's attachments
+    (used by the detail view and the edit form to show voice/files)."""
+    from app.models.models import MediaFile
+    from app.services.database_manager import db_manager
+
+    owner = db_manager.get_user_by_email(settings.admin_email)
+    entry_a = client.post("/api/entries", json={"title": "A", "content": "x"},
+                          cookies=AUTH_COOKIES).json()["id"]
+    entry_b = client.post("/api/entries", json={"title": "B", "content": "y"},
+                          cookies=AUTH_COOKIES).json()["id"]
+    db_manager.create_media(
+        MediaFile("drive-a", "a.jpg", "image/jpeg", "photo", entry_id=entry_a),
+        user_id=str(owner["id"]))
+    db_manager.create_media(
+        MediaFile("drive-b", "b.webm", "audio/webm", "audio", entry_id=entry_b),
+        user_id=str(owner["id"]))
+    got = client.get(f"/api/media?entry_id={entry_a}", cookies=AUTH_COOKIES)
+    assert got.status_code == 200, got.text
+    assert [m["file_name"] for m in got.json()] == ["a.jpg"]
+    assert client.get(f"/api/media?entry_id={entry_b}",
+                      cookies=AUTH_COOKIES).json()[0]["file_name"] == "b.webm"
+    assert client.get("/api/media?entry_id=no-such-entry",
+                      cookies=AUTH_COOKIES).json() == []
+
+
 def test_gemini_model_default_is_supported_and_env_overridable(monkeypatch):
     """gemini-2.0-flash was retired by Google on 1 Jun 2026; the default
     must be a supported model, and GEMINI_MODEL must override it."""

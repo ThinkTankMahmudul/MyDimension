@@ -352,9 +352,11 @@ class DatabaseManager:
             with self._connect() as conn, conn.cursor() as cur:
                 cur.execute(
                     "INSERT INTO diary_entries (id, title, content, mood, tags, summary,"
-                    " user_id, created_at, updated_at) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)",
+                    " theme, user_id, created_at, updated_at)"
+                    " VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
                     (entry.id, entry.title, entry.content, entry.mood, entry.tags,
-                     entry.summary, entry.user_id, entry.created_at, entry.updated_at),
+                     entry.summary, entry.theme, entry.user_id, entry.created_at,
+                     entry.updated_at),
                 )
         else:
             self._entries[entry.id] = entry.to_dict()
@@ -362,7 +364,7 @@ class DatabaseManager:
 
     def get_entry(self, entry_id: str, user_id: str | None = None) -> DiaryEntry | None:
         if self.using_postgres:
-            query = ("SELECT id, title, content, mood, tags, summary, user_id,"
+            query = ("SELECT id, title, content, mood, tags, summary, theme, user_id,"
                      " created_at, updated_at FROM diary_entries WHERE id = %s")
             params: list = [entry_id]
             if user_id is not None:
@@ -380,7 +382,7 @@ class DatabaseManager:
     def list_entries(self, search: str | None = None, mood: str | None = None,
                      limit: int = 100, user_id: str | None = None) -> list[DiaryEntry]:
         if self.using_postgres:
-            query = ("SELECT id, title, content, mood, tags, summary, user_id,"
+            query = ("SELECT id, title, content, mood, tags, summary, theme, user_id,"
                      " created_at, updated_at FROM diary_entries WHERE 1=1")
             params: list = []
             if user_id is not None:
@@ -415,17 +417,18 @@ class DatabaseManager:
                 if user_id is not None:
                     cur.execute(
                         "UPDATE diary_entries SET title=%s, content=%s, mood=%s, tags=%s,"
-                        " summary=%s, user_id=%s, updated_at=%s WHERE id=%s AND user_id=%s",
+                        " summary=%s, theme=%s, user_id=%s, updated_at=%s WHERE id=%s AND user_id=%s",
                         (entry.title, entry.content, entry.mood, entry.tags,
-                         entry.summary, entry.user_id or user_id, entry.updated_at,
-                         entry.id, user_id),
+                         entry.summary, entry.theme, entry.user_id or user_id,
+                         entry.updated_at, entry.id, user_id),
                     )
                 else:
                     cur.execute(
                         "UPDATE diary_entries SET title=%s, content=%s, mood=%s, tags=%s,"
-                        " summary=%s, user_id=%s, updated_at=%s WHERE id=%s",
+                        " summary=%s, theme=%s, user_id=%s, updated_at=%s WHERE id=%s",
                         (entry.title, entry.content, entry.mood, entry.tags,
-                         entry.summary, entry.user_id, entry.updated_at, entry.id),
+                         entry.summary, entry.theme, entry.user_id,
+                         entry.updated_at, entry.id),
                     )
                 if cur.rowcount == 0:
                     return None
@@ -472,7 +475,8 @@ class DatabaseManager:
         return media
 
     def list_media(self, media_type: str | None = None,
-                   user_id: str | None = None) -> list[MediaFile]:
+                   user_id: str | None = None,
+                   entry_id: str | None = None) -> list[MediaFile]:
         if self.using_postgres:
             query = ("SELECT id, entry_id, media_type, drive_file_id, file_name,"
                      " mime_type, file_size, caption, transcript, user_id, created_at"
@@ -485,6 +489,9 @@ class DatabaseManager:
             if user_id is not None:
                 clauses.append("user_id = %s")
                 params.append(user_id)
+            if entry_id:
+                clauses.append("entry_id = %s")
+                params.append(entry_id)
             if clauses:
                 query += " WHERE " + " AND ".join(clauses)
             query += " ORDER BY created_at DESC"
@@ -495,6 +502,8 @@ class DatabaseManager:
                  if self._matches_user(d.get("user_id"), user_id)]
         if media_type:
             items = [m for m in items if m.media_type == media_type]
+        if entry_id:
+            items = [m for m in items if str(m.entry_id or "") == str(entry_id)]
         items.sort(key=lambda m: m.created_at, reverse=True)
         return items
 
@@ -649,8 +658,8 @@ class DatabaseManager:
 
     @staticmethod
     def _row_to_entry(row) -> DiaryEntry:
-        keys = ("id", "title", "content", "mood", "tags", "summary", "user_id",
-                "created_at", "updated_at")
+        keys = ("id", "title", "content", "mood", "tags", "summary", "theme",
+                "user_id", "created_at", "updated_at")
         return DiaryEntry.from_dict(dict(zip(keys, row)))
 
     @staticmethod

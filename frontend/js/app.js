@@ -22,7 +22,7 @@
 
   // Shell version: the live re-test reads this to confirm the browser
   // is running the fixed JS, not a stale service-worker copy.
-  var SHELL_VERSION = '2026-11-25-clear-text';
+  var SHELL_VERSION = '2026-11-25-detail-redesign';
   window.addEventListener('error', function (e) {
     try { showError(e.message || 'Something went wrong.'); } catch (err) { /* ignore */ }
   });
@@ -293,9 +293,14 @@
     // First option ("All moods") re-translates on every language switch.
     if (sel.options.length) sel.options[0].textContent = t('journal.allMoods');
     window.MyDimensionJournal.renderMoodPicker();
+    window.MyDimensionJournal.renderThemePicker();
     window.MyDimensionJournal.restoreDraftIfAny();
     await window.MyDimensionJournal.refreshJournalList();
   }
+  // Sharing: the note currently on the detail page (kept so the PNG/PDF
+  // buttons can render it without re-fetching).
+  var detailShare = null;
+
   async function loadEntryDetail(id) {
     hideError();
     var box = document.getElementById('entryDetail');
@@ -307,30 +312,176 @@
     }
     if (!entry) { box.innerHTML = '<div class="empty"><p>' + t('entry.notFound') + '</p><a class="btn" href="#/journal">' + t('entry.back') + '</a></div>'; return; }
     var J = window.MyDimensionJournal;
-    box.innerHTML =
-      '<div class="entry-row"><span class="entry-thumb ' + J.coverClass(entry, 0) + '" aria-hidden="true">' + (J.MOOD_EMOJI[entry.mood] || '✎') + '</span>' +
-      '<div class="entry-body"><h3>' + J.esc(entry.title) + '</h3>' +
-      '<p class="muted small">' + J.esc(J.fmtDate(entry.date)) + (entry.created_at ? ' · ' + J.esc(J.fmtTime(entry.created_at)) : '') +
+    var theme = J.themeById(entry.theme || 'default');
+    // Attachments linked to this entry (photo / voice / file).
+    var linked = [];
+    try { linked = await window.MyDimensionApi.listMedia(null, entry.id); } catch (e) { /* media is optional */ }
+    var photo = linked.filter(J.isImageMedia)[0];
+    var voices = linked.filter(J.isAudioMedia);
+    var files = linked.filter(function (m) { return !J.isAudioMedia(m) && !J.isImageMedia(m); });
+    // The attached photo sits next to the title like a profile icon, so the
+    // note reads in the context of its picture — no separate media section.
+    var avatar = photo
+      ? '<img class="note-avatar-img" src="' + window.MyDimensionApi.getMediaUrl(photo.id) + '" alt="' + J.esc(photo.caption || photo.file_name) + '">'
+      : '<span class="note-avatar-emoji">' + (J.MOOD_EMOJI[entry.mood] || '✎') + '</span>';
+    var meta = J.esc(J.fmtDate(entry.date)) + (entry.created_at ? ' · ' + J.esc(J.fmtTime(entry.created_at)) : '') +
       (entry.mood ? ' · <span class="mood-pill">' + J.esc(J.MOOD_EMOJI[entry.mood] || '') + ' ' + J.esc(window.MyDimensionI18n ? window.MyDimensionI18n.moodLabel(entry.mood) : entry.mood) + '</span>' : '') +
-      entry.tags.map(function (t) { return ' <span class="tag-pill">' + J.esc(t) + '</span>'; }).join('') + '</p></div></div>' +
+      entry.tags.map(function (tg) { return ' <span class="tag-pill">' + J.esc(tg) + '</span>'; }).join('');
+    var themeDots = J.THEMES.map(function (th) {
+      return '<button type="button" class="theme-dot' + (th.id === theme.id ? ' selected' : '') +
+        '" data-theme-dot="' + th.id + '" data-entry-id="' + J.esc(entry.id) + '" title="' + J.esc(t('theme.' + th.id)) +
+        '" aria-label="' + J.esc(t('theme.' + th.id)) + '" aria-pressed="' + (th.id === theme.id) +
+        '" style="background:linear-gradient(135deg,' + th.bg[0] + ',' + th.bg[1] + ')"></button>';
+    }).join('');
+    var attachments = '';
+    if (voices.length || files.length) {
+      attachments = '<div class="note-attachments">' +
+        voices.map(function (m) {
+          return '<div class="voice-item"><strong>♪ ' + J.esc(m.caption || m.file_name) + '</strong>' +
+            '<audio controls preload="none" src="' + window.MyDimensionApi.getMediaUrl(m.id) + '"></audio></div>';
+        }).join('') +
+        files.map(function (m) {
+          return '<div class="file-chip"><a href="' + window.MyDimensionApi.getMediaUrl(m.id) + '" download="' + J.esc(m.file_name) + '">' + J.esc(m.file_name) + '</a></div>';
+        }).join('') + '</div>';
+    }
+    box.innerHTML =
+      '<div class="detail-wrap">' +
+      '<aside class="detail-side" aria-label="' + J.esc(t('entry.options')) + '">' +
+      '<button class="btn small" type="button" data-share-png="' + J.esc(entry.id) + '">⬇ ' + t('entry.saveImage') + '</button>' +
+      '<button class="btn small secondary" type="button" data-share-pdf="' + J.esc(entry.id) + '">⬇ ' + t('entry.savePdf') + '</button>' +
+      '<button class="btn small secondary" type="button" data-edit-entry="' + J.esc(entry.id) + '">' + t('journal.edit') + '</button>' +
+      '<button class="btn small ghost" type="button" data-ai-entry="' + J.esc(entry.id) + '">' + t('journal.aiReflection') + '</button>' +
+      '<button class="btn small ghost" type="button" data-delete-entry="' + J.esc(entry.id) + '" data-entry-title="' + J.esc(entry.title) + '">' + t('journal.delete') + '</button>' +
+      '</aside>' +
+      '<article class="note-card theme-' + theme.id + '" id="noteCard">' +
+      '<div class="note-head"><span class="note-avatar">' + avatar + '</span>' +
+      '<div class="note-head-text"><h3>' + J.esc(entry.title) + '</h3>' +
+      '<p class="muted small note-meta">' + meta + '</p></div></div>' +
+      '<div class="note-theme-row"><span class="small muted">' + t('entry.theme') + '</span><span class="theme-dots">' + themeDots + '</span></div>' +
       '<div class="detail-content">' + J.esc(entry.body) + '</div>' +
-      (entry.summary ? '<h4>' + t('entry.aiSummary') + '</h4><p class="muted">' + J.esc(entry.summary) + '</p>' : '') +
-      '<div class="entry-actions">' +
-      '<button class="btn secondary" data-edit-entry="' + J.esc(entry.id) + '">' + t('journal.edit') + '</button>' +
-      '<button class="btn ghost" data-delete-entry="' + J.esc(entry.id) + '" data-entry-title="' + J.esc(entry.title) + '">' + t('journal.delete') + '</button>' +
-      '<button class="btn ghost" data-ai-entry="' + J.esc(entry.id) + '">' + t('journal.aiReflection') + '</button></div>';
-    // Media linked to this entry (media rows carry entry_id).
-    var mediaBox = document.getElementById('entryDetailMedia');
-    try {
-      var all = await window.MyDimensionMedia.loadAllMedia();
-      var linked = all.filter(function (m) { return String(m.entry_id || '') === String(entry.id); });
-      mediaBox.innerHTML = linked.length ? linked.map(function (m) {
-        return m.kind === 'audio'
-          ? '<div class="voice-item"><strong>' + J.esc(m.caption || m.name) + '</strong><audio class="detail-audio" controls preload="none" src="' + window.MyDimensionApi.getMediaUrl(m.id) + '"></audio></div>'
-          : '<figure class="thumb"><img loading="lazy" alt="' + J.esc(m.caption || m.name) + '" src="' + window.MyDimensionApi.getMediaUrl(m.id) + '"><figcaption>' + J.esc(m.caption || m.name) + '</figcaption></figure>';
-      }).join('') : '<p class="small muted">' + t('entry.noMedia') + '</p>';
-    } catch (e) { mediaBox.innerHTML = '<p class="small muted">' + t('entry.mediaFailed') + '</p>'; }
+      (entry.summary ? '<h4>' + t('entry.aiSummary') + '</h4><p class="muted note-summary">' + J.esc(entry.summary) + '</p>' : '') +
+      attachments +
+      '</article></div>';
+    detailShare = { entry: entry, theme: theme, photo: photo || null };
   }
+
+  /* ---------- share: themed note as a PNG image or a PDF ---------- */
+  function wrapTextLines(ctx, text, maxWidth) {
+    var lines = [];
+    String(text || '').split('\n').forEach(function (para) {
+      var words = para.split(/\s+/).filter(Boolean);
+      var line = '';
+      words.forEach(function (w) {
+        var test = line ? line + ' ' + w : w;
+        if (line && ctx.measureText(test).width > maxWidth) { lines.push(line); line = w; }
+        else line = test;
+      });
+      lines.push(line);
+    });
+    return lines;
+  }
+
+  function roundRectPath(ctx, x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+  }
+
+  async function shareNoteAsImage() {
+    if (!detailShare) return;
+    var entry = detailShare.entry, theme = detailShare.theme;
+    var J = window.MyDimensionJournal;
+    var W = 900, PAD = 56, AV = 96;
+    var canvas = document.createElement('canvas');
+    var ctx = canvas.getContext('2d');
+    var titleFont = 'bold 44px Poppins, Inter, system-ui, sans-serif';
+    var metaFont = '24px Inter, system-ui, sans-serif';
+    var bodyFont = '28px Inter, system-ui, sans-serif';
+    ctx.font = titleFont;
+    var titleLines = wrapTextLines(ctx, entry.title || '', W - PAD - (AV + 24) - PAD).slice(0, 2);
+    ctx.font = bodyFont;
+    var bodyLines = wrapTextLines(ctx, entry.body || '', W - PAD * 2);
+    var titleBlock = titleLines.length * 52;
+    var headH = Math.max(AV, titleBlock + 8 + 30);
+    var bodyH = bodyLines.length * 44;
+    var H = PAD + headH + 28 + bodyH + 36 + 40;
+    canvas.width = W; canvas.height = H;
+    var grad = ctx.createLinearGradient(0, 0, W, H);
+    grad.addColorStop(0, theme.bg[0]); grad.addColorStop(1, theme.bg[1]);
+    roundRectPath(ctx, 0, 0, W, H, 48);
+    ctx.fillStyle = grad; ctx.fill();
+    // Avatar: the attached photo, clipped to a circle; mood emoji if none.
+    var ax = PAD, ay = PAD, avatarImg = null;
+    if (detailShare.photo) {
+      try {
+        avatarImg = await new Promise(function (res, rej) {
+          var img = new Image();
+          img.onload = function () { res(img); };
+          img.onerror = rej;
+          img.src = window.MyDimensionApi.getMediaUrl(detailShare.photo.id);
+        });
+      } catch (e) { avatarImg = null; }
+    }
+    if (avatarImg) {
+      ctx.save();
+      ctx.beginPath(); ctx.arc(ax + AV / 2, ay + AV / 2, AV / 2, 0, Math.PI * 2); ctx.clip();
+      ctx.drawImage(avatarImg, ax, ay, AV, AV);
+      ctx.restore();
+    } else {
+      ctx.font = '56px serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillStyle = theme.ink;
+      ctx.fillText(J.MOOD_EMOJI[entry.mood] || '✎', ax + AV / 2, ay + AV / 2 + 2);
+      ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+    }
+    // Title + meta, to the right of the avatar.
+    var tx = ax + AV + 24;
+    ctx.fillStyle = theme.ink; ctx.font = titleFont; ctx.textBaseline = 'top';
+    titleLines.forEach(function (ln, i) { ctx.fillText(ln, tx, ay + i * 52); });
+    ctx.font = metaFont;
+    var metaText = J.fmtDate(entry.date) + (entry.mood ? ' · ' + entry.mood : '') +
+      (entry.tags.length ? ' · ' + entry.tags.join(', ') : '');
+    ctx.fillText(metaText, tx, ay + titleBlock + 8);
+    // Body.
+    ctx.font = bodyFont;
+    var by = PAD + headH + 28;
+    bodyLines.forEach(function (ln, i) { ctx.fillText(ln, PAD, by + i * 44); });
+    // Footer.
+    ctx.font = '22px Inter, system-ui, sans-serif';
+    ctx.globalAlpha = 0.7;
+    ctx.fillText('MyDimension', PAD, H - PAD + 4);
+    ctx.globalAlpha = 1;
+    var a = document.createElement('a');
+    a.href = canvas.toDataURL('image/png');
+    a.download = (entry.title || 'note').replace(/[^\w\-]+/g, '-').slice(0, 60) + '.png';
+    a.click();
+    toast(t('toast.imageSaved'));
+  }
+
+  function shareNoteAsPdf() {
+    if (!detailShare) return;
+    var entry = detailShare.entry, theme = detailShare.theme;
+    var J = window.MyDimensionJournal;
+    var box = document.getElementById('printNote');
+    var photoHtml = detailShare.photo
+      ? '<img class="print-avatar" src="' + window.MyDimensionApi.getMediaUrl(detailShare.photo.id) + '" alt="">' : '';
+    box.innerHTML = '<div class="print-card" style="background:linear-gradient(160deg,' + theme.bg[0] + ',' + theme.bg[1] + ');color:' + theme.ink + '">' +
+      '<div class="print-head">' + photoHtml + '<div><h2>' + J.esc(entry.title) + '</h2><p>' +
+      J.esc(J.fmtDate(entry.date)) + (entry.mood ? ' · ' + J.esc(entry.mood) : '') +
+      (entry.tags.length ? ' · ' + entry.tags.map(J.esc).join(', ') : '') + '</p></div></div>' +
+      '<div class="print-body">' + J.esc(entry.body || '') + '</div>' +
+      '<p class="print-foot">MyDimension</p></div>';
+    document.body.classList.add('printing-note');
+    toast(t('toast.printPdfHint'));
+    setTimeout(function () { window.print(); }, 60);
+  }
+
+  window.addEventListener('afterprint', function () {
+    document.body.classList.remove('printing-note');
+  });
 
   /* ---------- insights ---------- */
   async function loadInsights() {
@@ -554,8 +705,22 @@
     delegatedBound = true;
     // Delegated clicks for dynamically rendered lists.
     document.addEventListener('click', async function (e) {
-        var el = e.target.closest('[data-edit-entry],[data-delete-entry],[data-ai-entry],[data-delete-media],[data-transcribe-media],[data-goto-new-entry],[data-open-entry]');
+        var el = e.target.closest('[data-edit-entry],[data-delete-entry],[data-ai-entry],[data-delete-media],[data-transcribe-media],[data-goto-new-entry],[data-open-entry],[data-theme-dot],[data-share-png],[data-share-pdf]');
         if (!el) return;
+        if (el.hasAttribute('data-theme-dot')) {
+          var themeId = el.getAttribute('data-theme-dot');
+          var themeEntryId = el.getAttribute('data-entry-id');
+          try {
+            await window.MyDimensionApi.updateEntry(themeEntryId, { theme: themeId });
+            var cached = window.MyDimensionJournal.findCached(themeEntryId);
+            if (cached) cached.theme = themeId;
+            toast(t('toast.themeSaved'));
+            loadEntryDetail(themeEntryId);
+          } catch (err) { showError(err.message); }
+          return;
+        }
+        if (el.hasAttribute('data-share-png')) { shareNoteAsImage(); return; }
+        if (el.hasAttribute('data-share-pdf')) { shareNoteAsPdf(); return; }
         if (el.hasAttribute('data-goto-new-entry')) { window.MyDimensionJournal.startNew(); return; }
         if (el.hasAttribute('data-open-entry')) { window.location.hash = '#/entry/' + el.getAttribute('data-open-entry'); return; }
         if (el.hasAttribute('data-edit-entry')) {
@@ -865,6 +1030,17 @@
     }
   }
 
-  window.MyDimensionApp = { toast: toast, showError: showError, confirmDialog: confirmDialog, showRoute: showRoute, version: SHELL_VERSION };
+  window.MyDimensionApp = {
+    toast: toast, showError: showError, confirmDialog: confirmDialog, showRoute: showRoute,
+    version: SHELL_VERSION,
+    // The journal's recorded voice blob lives here (app.js owns the recorder);
+    // journal.js uploads it as an attachment when the entry is saved.
+    getEntryVoiceBlob: function () { return entryRec.blob; },
+    clearEntryVoiceBlob: function () {
+      entryRec.blob = null; entryRec.chunks = [];
+      var preview = document.getElementById('entryRecPreview');
+      if (preview) { preview.removeAttribute('src'); preview.classList.add('hidden'); }
+    }
+  };
   document.addEventListener('DOMContentLoaded', init);
 })();

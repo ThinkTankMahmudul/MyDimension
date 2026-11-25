@@ -18,6 +18,16 @@ MAX_CONTENT_LENGTH = 100_000
 VALID_MOODS = {"happy", "calm", "grateful", "sad", "anxious", "tired", "excited", "angry",
                "stressed", "thoughtful"}  # spec §6.3 mood set (plus grateful/tired/anxious)
 
+# Note themes (Google Keep-style): the entry's background in the detail
+# view and the entry form. Unknown values fall back to "default" so a
+# bad theme can never break rendering.
+VALID_THEMES = {"default", "mint", "lavender", "peach", "sky", "rose", "sand", "forest"}
+
+
+def normalise_theme(value: str | None) -> str:
+    """Return a valid theme id, defaulting to "default"."""
+    return value if value in VALID_THEMES else "default"
+
 
 def _utcnow() -> datetime:
     return datetime.now(timezone.utc)
@@ -31,7 +41,8 @@ class DiaryEntry:
                  created_at: datetime | None = None,
                  updated_at: datetime | None = None,
                  summary: str | None = None,
-                 user_id: str | None = None) -> None:
+                 user_id: str | None = None,
+                 theme: str | None = None) -> None:
         # IDs coming back from PostgreSQL are uuid.UUID objects; Pydantic v2
         # rejects them for `str` fields, so coerce to str here (and again in
         # to_dict) — otherwise the entry list 500s as soon as one row exists.
@@ -44,6 +55,7 @@ class DiaryEntry:
         self.mood = mood
         self.tags: list[str] = list(tags or [])
         self.summary = summary
+        self.theme: str = normalise_theme(theme)
         now = _utcnow()
         self.created_at: datetime = created_at or now
         self.updated_at: datetime = updated_at or now
@@ -82,6 +94,7 @@ class DiaryEntry:
         return {
             "id": str(self.id), "title": self.title, "content": self.content,
             "mood": self.mood, "tags": self.tags, "summary": self.summary,
+            "theme": self.theme,
             "user_id": str(self.user_id) if self.user_id is not None else None,
             "created_at": self.created_at.isoformat(),
             "updated_at": self.updated_at.isoformat(),
@@ -99,6 +112,7 @@ class DiaryEntry:
             updated_at=_parse(data.get("updated_at")),
             summary=data.get("summary"),
             user_id=data.get("user_id"),
+            theme=normalise_theme(data.get("theme")),
         )
 
 

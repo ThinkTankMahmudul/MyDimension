@@ -58,8 +58,11 @@ async def upload_media(file: UploadFile = File(...),
 
 
 @router.get("", response_model=list[MediaResponse])
-def list_media(media_type: str | None = None, _user: dict = Depends(require_user)):
-    return [MediaResponse(**m.to_dict()) for m in db_manager.list_media(media_type, user_id=_user["id"])]
+def list_media(media_type: str | None = None, entry_id: str | None = None,
+               _user: dict = Depends(require_user)):
+    return [MediaResponse(**m.to_dict())
+            for m in db_manager.list_media(media_type, user_id=_user["id"],
+                                           entry_id=entry_id)]
 
 
 @router.get("/{media_id}/file")

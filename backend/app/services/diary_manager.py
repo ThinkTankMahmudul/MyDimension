@@ -39,9 +39,10 @@ class DiaryManager:
 
     def create_entry(self, title: str, content: str, mood: str | None = None,
                      tags: list[str] | None = None,
-                     user_id: str | None = None) -> DiaryEntry:
+                     user_id: str | None = None,
+                     theme: str | None = None) -> DiaryEntry:
         entry = DiaryEntry(title=title, content=content, mood=mood, tags=tags,
-                           user_id=self._scope(user_id))
+                           user_id=self._scope(user_id), theme=theme)
         return self.db.create_entry(entry, user_id=self._scope(user_id))
 
     def get_entry(self, entry_id: str, user_id: str | None = None) -> DiaryEntry | None:
@@ -73,6 +74,10 @@ class DiaryManager:
             entry.tags = list(changes["tags"])
         if "summary" in changes:
             entry.summary = changes["summary"]
+        if "theme" in changes and changes["theme"] is not None:
+            from ..models.models import normalise_theme
+
+            entry.theme = normalise_theme(changes["theme"])
         return self.db.update_entry(entry, user_id=self._scope(user_id))
 
     def delete_entry(self, entry_id: str, user_id: str | None = None) -> bool:

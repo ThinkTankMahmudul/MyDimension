@@ -32,7 +32,8 @@ def list_entries(search: str | None = Query(default=None),
 def create_entry(payload: EntryCreate, _user: dict = Depends(require_user),
                  manager: DiaryManager = Depends(get_manager)):
     try:
-        entry = manager.create_entry(payload.title, payload.content, payload.mood, payload.tags)
+        entry = manager.create_entry(payload.title, payload.content, payload.mood,
+                                     payload.tags, theme=payload.theme)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     return EntryResponse(**entry.to_dict())

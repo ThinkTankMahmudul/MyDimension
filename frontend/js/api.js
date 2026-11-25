@@ -174,8 +174,11 @@
     getMoodInsights: function () { return request('/api/insights/moods'); },
 
     // Media (photos + voice). Upload uses FormData — never set Content-Type manually.
-    listMedia: function (kind) {
-      return request('/api/media' + (kind ? '?media_type=' + encodeURIComponent(kind) : ''));
+    listMedia: function (kind, entryId) {
+      var q = [];
+      if (kind) q.push('media_type=' + encodeURIComponent(kind));
+      if (entryId) q.push('entry_id=' + encodeURIComponent(entryId));
+      return request('/api/media' + (q.length ? '?' + q.join('&') : ''));
     },
     // File bytes for <img>/<audio> tags — the metadata route returns JSON, not bytes.
     getMediaUrl: function (id) { return '/api/media/' + encodeURIComponent(id) + '/file'; },
