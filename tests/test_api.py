@@ -76,6 +76,36 @@ def test_ai_endpoints_friendly_error_without_gemini_key():
         assert "Gemini" in resp.json()["detail"] or "AI" in resp.json()["detail"]
 
 
+def test_transcribe_prompt_detects_bangla_and_english():
+    # Auto-detect must cover Bengali + English (including mixed speech),
+    # and Bengali must come back in Bengali script, never Romanised.
+    from app.services.ai_service import transcribe_prompt
+    auto = transcribe_prompt("auto")
+    assert "Bengali" in auto and "English" in auto
+    assert "detect the language automatically" in auto
+    assert "Bengali script" in auto and "never Romanised" in auto
+    assert "mix" in auto
+    assert "Bengali" in transcribe_prompt("bn")
+    assert "English" in transcribe_prompt("en")
+    # An unknown language falls back to auto-detect.
+    assert "detect the language automatically" in transcribe_prompt("xx")
+
+
+def test_transcribe_rejects_unknown_language():
+    resp = client.post("/api/ai/transcribe",
+                       files={"file": ("t.mp3", b"fake", "audio/mpeg")},
+                       data={"language": "xx"}, cookies=AUTH_COOKIES)
+    assert resp.status_code == 400
+
+
+def test_transcribe_language_defaults_to_auto_and_needs_gemini():
+    # No language sent: auto-detect; no Gemini key in tests: friendly 503.
+    resp = client.post("/api/ai/transcribe",
+                       files={"file": ("t.mp3", b"fake", "audio/mpeg")},
+                       cookies=AUTH_COOKIES)
+    assert resp.status_code == 503
+
+
 def test_calendar_and_mood_insights_require_auth_and_work():
     assert client.get("/api/calendar").status_code == 401
     resp = client.get("/api/calendar", cookies=AUTH_COOKIES)

@@ -106,6 +106,8 @@
         if (!file) { showResult('<p>' + t('ai.chooseAudio') + '</p>'); setBusy(false); return; }
         showLoading(t('ai.loadingTranscribe'));
         var fd = new FormData(); fd.append('file', file);
+        var langSel = document.getElementById('aiTranscribeLang');
+        fd.append('language', langSel ? langSel.value : 'auto');
         var tr = await window.MyDimensionApi.aiTranscribe(fd);
         var transcript = resultText(tr);
         showResult('<p><strong>' + t('ai.transcriptTitle') + '</strong></p><p>' + esc(transcript || t('ai.noTranscript')) + '</p>' +

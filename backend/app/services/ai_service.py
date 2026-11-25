@@ -28,6 +28,39 @@ class AINotConfiguredError(Exception):
     """Gemini is not configured (no API key); the API returns a friendly 503."""
 
 
+# Transcription languages: "auto" detects the spoken language, "bn" is
+# Bengali, "en" is English. The frontend sends one of these with the audio.
+TRANSCRIBE_LANGUAGES = ("auto", "bn", "en")
+
+
+def transcribe_prompt(language: str = "auto") -> str:
+    """Prompt that makes Gemini detect Bengali and/or English and
+    transcribe verbatim in the speaker's own script.
+
+    Bengali must come back in Bengali script (বাংলা লিপি) — never
+    Romanised — and mixed Bengali/English speech keeps each part in
+    its own script, so a diary note in either language (or both)
+    transcribes faithfully.
+    """
+    if language == "bn":
+        lang_line = "The speech is in Bengali (Bangla)."
+    elif language == "en":
+        lang_line = "The speech is in English."
+    else:
+        lang_line = ("The speech may be in Bengali (Bangla), English, or a mix of "
+                     "both in one recording — detect the language automatically, "
+                     "sentence by sentence.")
+    return (
+        "Transcribe this voice memory exactly, word for word. " + lang_line +
+        " Write Bengali speech in Bengali script (বাংলা লিপি) — never Romanised "
+        "or transliterated Bengali. Write English speech in English. If the "
+        "speaker switches between Bengali and English, keep each part in its "
+        "own script. Do not translate, summarise, correct, or add anything. "
+        "Return only the transcript — no explanation, no timestamps, "
+        "no speaker labels."
+    )
+
+
 class BaseAIService(ABC):
     """Abstract AI interface. Subclasses decide *how* each task is done."""
 
@@ -36,8 +69,12 @@ class BaseAIService(ABC):
         """Run a text task (``mood`` / ``summary`` / ``improve`` / ``prompt``)."""
 
     @abstractmethod
-    def transcribe_audio(self, audio_bytes: bytes, mime_type: str) -> str:
-        """Transcribe audio bytes to text."""
+    def transcribe_audio(self, audio_bytes: bytes, mime_type: str,
+                         language: str = "auto") -> str:
+        """Transcribe audio bytes to text.
+
+        ``language`` is "auto" (detect Bengali/English), "bn" or "en".
+        """
 
 
 class GeminiAIService(BaseAIService):
@@ -70,12 +107,13 @@ class GeminiAIService(BaseAIService):
             model=self.model, contents=f"{prompt}\n\n{text}")
         return (response.text or "").strip() or "Gemini returned an empty response."
 
-    def transcribe_audio(self, audio_bytes: bytes, mime_type: str) -> str:
+    def transcribe_audio(self, audio_bytes: bytes, mime_type: str,
+                         language: str = "auto") -> str:
         from google.genai import types
         response = self._client().models.generate_content(
             model=self.model,
             contents=[
-                "Transcribe this voice memory exactly, word for word.",
+                transcribe_prompt(language),
                 types.Part.from_bytes(data=audio_bytes, mime_type=mime_type),
             ],
         )
@@ -95,7 +133,8 @@ class OfflineAIService(BaseAIService):
             "Add GEMINI_API_KEY to enable summaries, mood suggestions and "
             "writing help. Your original text was not changed.")
 
-    def transcribe_audio(self, audio_bytes: bytes, mime_type: str) -> str:
+    def transcribe_audio(self, audio_bytes: bytes, mime_type: str,
+                         language: str = "auto") -> str:
         raise AINotConfiguredError(
             "Voice transcription is unavailable because Gemini is not "
             "configured. Add GEMINI_API_KEY to enable it.")

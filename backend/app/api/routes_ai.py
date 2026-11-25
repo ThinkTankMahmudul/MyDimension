@@ -10,11 +10,15 @@ from __future__ import annotations
 
 import logging
 
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
+from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
 
 from ..core.security import require_user
 from ..schemas.schemas import AIRequest, AIResponse
-from ..services.ai_service import AINotConfiguredError, get_ai_service
+from ..services.ai_service import (
+    AINotConfiguredError,
+    TRANSCRIBE_LANGUAGES,
+    get_ai_service,
+)
 
 logger = logging.getLogger("mydimension.ai.routes")
 
@@ -54,14 +58,19 @@ def ai_improve(payload: AIRequest, _user: dict = Depends(require_user)):
 
 @router.post("/transcribe", response_model=AIResponse)
 async def ai_transcribe(file: UploadFile = File(...),
+                        language: str = Form("auto"),
                         _user: dict = Depends(require_user)):
     if not (file.content_type or "").startswith("audio/"):
         raise HTTPException(status_code=400, detail="Please upload an audio file.")
+    if language not in TRANSCRIBE_LANGUAGES:
+        raise HTTPException(status_code=400,
+                            detail="language must be auto, bn or en.")
     data = await file.read()
     if len(data) > 25 * 1024 * 1024:
         raise HTTPException(status_code=400, detail="Audio file is too large (max 25 MB).")
     try:
-        result = get_ai_service().transcribe_audio(data, file.content_type or "audio/mpeg")
+        result = get_ai_service().transcribe_audio(
+            data, file.content_type or "audio/mpeg", language)
     except AINotConfiguredError as exc:
         raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
                             detail=str(exc)) from exc
