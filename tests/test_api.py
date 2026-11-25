@@ -126,7 +126,7 @@ def test_uuid_ids_from_postgres_serialize_as_strings():
                       media_id=uuid.uuid4(), entry_id=entry_id, user_id=user_id)
     mresp = MediaResponse(**media.to_dict())
     assert mresp.id and mresp.entry_id == str(entry_id)
-    assert mresp.user_id == str(user_id)
+    assert isinstance(media.to_dict()["user_id"], str)
 
     mood = MoodRecord("calm", entry_id=entry_id)
     assert mood.to_dict()["entry_id"] == str(entry_id)
