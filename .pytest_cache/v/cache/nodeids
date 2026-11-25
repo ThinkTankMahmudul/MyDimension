@@ -1,4 +1,11 @@
 [
+  "tests/test_ai_service.py::test_ai_status_reachable_with_working_client",
+  "tests/test_ai_service.py::test_ai_status_requires_auth",
+  "tests/test_ai_service.py::test_ai_status_without_key_reports_not_configured",
+  "tests/test_ai_service.py::test_check_connection_uses_live_client",
+  "tests/test_ai_service.py::test_old_temporary_client_pattern_fails",
+  "tests/test_ai_service.py::test_process_text_keeps_client_alive_until_call_returns",
+  "tests/test_ai_service.py::test_transcribe_keeps_client_alive_until_call_returns",
   "tests/test_api.py::test_ai_endpoints_friendly_error_without_gemini_key",
   "tests/test_api.py::test_calendar_and_mood_insights_require_auth_and_work",
   "tests/test_api.py::test_drive_service_reads_key_json_from_env",

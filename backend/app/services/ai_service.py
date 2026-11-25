@@ -76,6 +76,14 @@ class BaseAIService(ABC):
         ``language`` is "auto" (detect Bengali/English), "bn" or "en".
         """
 
+    @abstractmethod
+    def check_connection(self) -> bool:
+        """True when the AI backend answers a cheap metadata call.
+
+        Used by the AI status line so it reports a real connection,
+        not just "a key is configured".
+        """
+
 
 class GeminiAIService(BaseAIService):
     """Real AI via Google Gemini (``google-genai``), backend only."""
@@ -87,9 +95,39 @@ class GeminiAIService(BaseAIService):
                 "Gemini is not configured yet. Add GEMINI_API_KEY to use AI features.")
         self.model = model
 
-    def _client(self):
+    def _client(self, timeout_ms: int | None = None):
         from google import genai
-        return genai.Client(api_key=self.api_key)
+        if timeout_ms is None:
+            return genai.Client(api_key=self.api_key)
+        from google.genai import types
+        return genai.Client(api_key=self.api_key,
+                            http_options=types.HttpOptions(timeout=timeout_ms))
+
+    def _generate(self, contents):
+        """Run one generate_content call.
+
+        The genai Client MUST stay alive for the whole call: its
+        ``__del__`` closes the underlying HTTP client, and a temporary
+        such as ``self._client().models.generate_content(...)`` is
+        garbage-collected (refcount 0) the moment ``.models`` is read —
+        so the request dies with "Cannot send a request, as the client
+        has been closed" before it ever reaches Google. Holding the
+        client in a local keeps it open until the call returns.
+        (Reproduced locally with a dummy key: the temporary pattern
+        raises that RuntimeError with no network traffic; the held
+        client reaches Google and fails only on the bad key.)
+        """
+        client = self._client()
+        return client.models.generate_content(model=self.model, contents=contents)
+
+    def check_connection(self) -> bool:
+        """True when Gemini answers a model-metadata call (no generation)."""
+        try:
+            client = self._client(timeout_ms=8000)
+            client.models.get(model=self.model)
+        except Exception:
+            return False
+        return True
 
     def process_text(self, text: str, task: str) -> str:
         prompts = {
@@ -103,20 +141,16 @@ class GeminiAIService(BaseAIService):
             "prompt": "Write one short, thoughtful reflection prompt inspired by this diary text.",
         }
         prompt = prompts.get(task, prompts["summary"])
-        response = self._client().models.generate_content(
-            model=self.model, contents=f"{prompt}\n\n{text}")
+        response = self._generate(f"{prompt}\n\n{text}")
         return (response.text or "").strip() or "Gemini returned an empty response."
 
     def transcribe_audio(self, audio_bytes: bytes, mime_type: str,
                          language: str = "auto") -> str:
         from google.genai import types
-        response = self._client().models.generate_content(
-            model=self.model,
-            contents=[
-                transcribe_prompt(language),
-                types.Part.from_bytes(data=audio_bytes, mime_type=mime_type),
-            ],
-        )
+        response = self._generate([
+            transcribe_prompt(language),
+            types.Part.from_bytes(data=audio_bytes, mime_type=mime_type),
+        ])
         return (response.text or "").strip() or "Could not transcribe this recording."
 
 
@@ -138,6 +172,9 @@ class OfflineAIService(BaseAIService):
         raise AINotConfiguredError(
             "Voice transcription is unavailable because Gemini is not "
             "configured. Add GEMINI_API_KEY to enable it.")
+
+    def check_connection(self) -> bool:
+        return False
 
 
 def get_ai_service() -> BaseAIService:

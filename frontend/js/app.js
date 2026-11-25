@@ -407,13 +407,14 @@
     hideError();
     if (!window.MyDimensionJournal.getCached().length) { try { await window.MyDimensionJournal.loadEntries({}); } catch (e) { /* entry list is optional here */ } }
     window.MyDimensionAI.populateEntrySelect();
-    // AI status line: /health reports whether Gemini is configured, so a
-    // dead key shows here instead of failing silently on first use.
+    // AI status line: ask /api/ai/status, which makes a real (cheap)
+    // Gemini call — "ready" only when Gemini actually answers.
     var dot = document.getElementById('aiStatusDot'), txt = document.getElementById('aiStatusText');
     if (dot && txt) {
       try {
-        var h = await (await fetch('/health')).json();
-        if (h.ai_configured) { txt.textContent = t('ai.statusReady'); dot.classList.remove('off'); }
+        var s = await (await fetch('/api/ai/status')).json();
+        if (s.reachable) { txt.textContent = t('ai.statusReady'); dot.classList.remove('off'); }
+        else if (s.configured) { txt.textContent = t('ai.statusUnreachable'); dot.classList.add('off'); }
         else { txt.textContent = t('ai.statusOff'); dot.classList.add('off'); }
       } catch (e) { txt.textContent = t('ai.statusUnknown'); dot.classList.add('off'); }
     }

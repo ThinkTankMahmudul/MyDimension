@@ -12,10 +12,12 @@ import logging
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
 
+from ..core.config import GEMINI_MODEL
 from ..core.security import require_user
 from ..schemas.schemas import AIRequest, AIResponse
 from ..services.ai_service import (
     AINotConfiguredError,
+    OfflineAIService,
     TRANSCRIBE_LANGUAGES,
     get_ai_service,
 )
@@ -23,6 +25,21 @@ from ..services.ai_service import (
 logger = logging.getLogger("mydimension.ai.routes")
 
 router = APIRouter(prefix="/api/ai", tags=["ai"])
+
+
+@router.get("/status")
+def ai_status(_user: dict = Depends(require_user)):
+    """Real AI status: configured AND reachable.
+
+    The old status line only checked that a key exists, so it said
+    "ready" while every call failed. This makes one cheap model-metadata
+    call (no generation, no tokens) and reports the truth.
+    """
+    service = get_ai_service()
+    if isinstance(service, OfflineAIService):
+        return {"configured": False, "reachable": False, "model": GEMINI_MODEL}
+    return {"configured": True, "reachable": service.check_connection(),
+            "model": GEMINI_MODEL}
 
 
 def _run(task: str, payload: AIRequest) -> AIResponse:
