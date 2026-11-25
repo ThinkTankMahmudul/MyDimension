@@ -208,8 +208,6 @@
           '<p class="small muted">' + t('dash.newEntryActivity') + ' · ' + window.MyDimensionJournal.esc(window.MyDimensionJournal.relTime(e.created_at)) + '</p></div></div>';
       }).join('');
     }
-    var panel = document.getElementById('bellPanel');
-    if (panel) panel.innerHTML = '<h4>' + t('bell.today') + '</h4>' + box.innerHTML;
   }
 
   /* ---------- calendar (Monday-first, as on the design board) ---------- */
@@ -646,19 +644,23 @@
       toast(aiPref.checked ? t('toast.aiOn') : t('toast.aiOff'));
     });
 
-    // Bell: today's activity panel.
-    function toggleBell() {
-      var panel = document.getElementById('bellPanel');
-      var btn = document.getElementById('bellBtn');
-      var open = panel.classList.toggle('hidden');
-      btn.setAttribute('aria-expanded', String(!open));
+    // Bell: no dropdown anymore — it used to open a panel that covered the
+    // Today's Activity section below it. Now it scrolls to that section
+    // and highlights it, so nothing is ever covered.
+    function goToTodayActivity() {
+      window.location.hash = '#/dashboard';
+      setTimeout(function () {
+        var box = document.getElementById('todayActivity');
+        var card = box ? box.closest('.card') : null;
+        if (!card) return;
+        if (card.scrollIntoView) card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        card.classList.remove('flash');
+        void card.offsetWidth; // restart the highlight if clicked twice
+        card.classList.add('flash');
+      }, 80);
     }
-    document.getElementById('bellBtn').addEventListener('click', function (e) { e.stopPropagation(); toggleBell(); });
-    document.getElementById('bellBtnMobile').addEventListener('click', function () { window.location.hash = '#/dashboard'; toast(t('toast.todayActivity')); });
-    document.addEventListener('click', function (e) {
-      var panel = document.getElementById('bellPanel');
-      if (panel && !panel.classList.contains('hidden') && !e.target.closest('.bell-wrap')) panel.classList.add('hidden');
-    });
+    document.getElementById('bellBtn').addEventListener('click', goToTodayActivity);
+    document.getElementById('bellBtnMobile').addEventListener('click', function () { goToTodayActivity(); toast(t('toast.todayActivity')); });
 
     // Dashboard search: filter recent entries live; Enter jumps to My Journal.
     document.getElementById('dashboardSearch').addEventListener('input', function (e) {

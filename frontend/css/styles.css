@@ -148,8 +148,6 @@ img{max-width:100%} .hidden{display:none!important}
 .icon-btn.small{width:32px;height:32px;font-size:1rem}
 .bell-badge{position:absolute;top:-6px;right:-6px;background:#C0392B;color:#fff;border-radius:999px;font-size:.68rem;font-weight:700;min-width:18px;height:18px;display:inline-flex;align-items:center;justify-content:center;padding:0 4px}
 .bell-wrap{position:relative}
-.bell-panel{position:absolute;right:0;top:50px;width:300px;max-width:86vw;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:14px;z-index:80;text-align:left}
-.bell-panel h4{margin:0 0 8px}
 .field{margin-bottom:14px;text-align:left}
 .field label{display:block;font-weight:600;margin-bottom:6px;font-size:.92rem}
 .field input,.field select,.field textarea{width:100%;border:1px solid var(--border);border-radius:var(--radius-sm);padding:11px 12px}
@@ -461,11 +459,13 @@ button[data-quick="note"]{animation:softPulse 2.8s ease-in-out infinite}
 /* Mood donut: segments draw themselves (JS sets the final dash values). */
 .donut-wrap circle{transition:stroke-dasharray .9s ease,stroke-dashoffset .9s ease}
 
-/* Toast / modal / bell panel entrances. */
+/* Toast / modal entrances. */
 .toast{animation:toastIn .3s ease both}
 .modal{animation:modalIn .25s ease both}
 .modal-backdrop{animation:fadeIn .2s ease both}
-.bell-panel:not(.hidden){animation:fadeUp .22s ease both}
+/* Bell highlight: the activity card pulses once when the bell scrolls to it. */
+.card.flash{animation:cardFlash 1.4s ease both}
+@keyframes cardFlash{0%{box-shadow:0 0 0 0 rgba(20,184,166,.55)}70%{box-shadow:0 0 0 8px rgba(20,184,166,0)}100%{box-shadow:var(--shadow)}}
 
 /* Reduced motion: everything appears at once, no looping motion. */
 @media (prefers-reduced-motion: reduce){
