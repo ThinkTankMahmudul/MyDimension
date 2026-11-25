@@ -22,7 +22,7 @@
 
   // Shell version: the live re-test reads this to confirm the browser
   // is running the fixed JS, not a stale service-worker copy.
-  var SHELL_VERSION = '2026-11-25-rte-clear';
+  var SHELL_VERSION = '2026-11-25-clear-text';
   window.addEventListener('error', function (e) {
     try { showError(e.message || 'Something went wrong.'); } catch (err) { /* ignore */ }
   });
@@ -739,18 +739,22 @@
         body.focus();
         var cmd = b.getAttribute('data-rte');
         if (cmd === 'removeFormat') {
-          // Nothing selected? Clear formatting on the whole entry
-          // instead of silently doing nothing.
+          // "Clear" means clear the TEXT, not just its formatting.
+          // The earlier fix only removed formatting (bold/italic), so
+          // the words stayed — which the user reported as still broken.
+          // Now: delete the selected text, or the whole entry when
+          // nothing is selected. Nothing is saved until Save Entry is
+          // pressed, so clearing here never wipes the stored entry.
           var sel = window.getSelection();
-          if (!sel || sel.isCollapsed || !sel.rangeCount) {
+          if (sel && sel.rangeCount && !sel.isCollapsed) {
+            document.execCommand('delete', false, null);
+          } else {
             var range = document.createRange();
             range.selectNodeContents(body);
             sel.removeAllRanges(); sel.addRange(range);
+            document.execCommand('delete', false, null);
           }
-          document.execCommand('removeFormat', false, null);
-          // removeFormat does not reliably clear background highlight
-          // in every browser — reset it explicitly.
-          document.execCommand('hiliteColor', false, 'transparent');
+          body.focus();
         } else {
           document.execCommand(cmd, false, null);
         }
