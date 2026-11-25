@@ -122,6 +122,36 @@ def test_media_upload_without_drive_returns_503():
     assert resp.status_code == 503, resp.text
 
 
+def test_media_upload_accepts_recorder_mime_with_codec_parameter(monkeypatch):
+    """Regression (25 Nov 2026, live): Chrome's MediaRecorder reports
+    'audio/webm;codecs=opus'. The exact-string allowlist rejected it with
+    400, so a recorded voice note was never saved with its entry — the
+    detail view showed no voice player even though the recording worked
+    in the form. Content types are normalised (parameters stripped)
+    before the allowlist check."""
+    import app.api.routes_media as routes_media
+
+    class FakeDrive:
+        def upload(self, name, content_type, data, media_type):
+            assert content_type == "audio/webm"  # normalised, no ;codecs=…
+            return "drive-test-1"
+
+    monkeypatch.setattr(routes_media, "get_drive_service_for_user",
+                        lambda *a, **k: FakeDrive())
+    entry_id = client.post("/api/entries", json={"title": "Voice", "content": "x"},
+                           cookies=AUTH_COOKIES).json()["id"]
+    resp = client.post("/api/media/upload",
+                       files={"file": ("voice-note.webm", b"fake-audio",
+                                       "audio/webm;codecs=opus")},
+                       data={"media_type": "audio", "entry_id": entry_id},
+                       cookies=AUTH_COOKIES)
+    assert resp.status_code == 201, resp.text
+    assert resp.json()["mime_type"] == "audio/webm"
+    assert resp.json()["entry_id"] == entry_id
+    assert client.get(f"/api/media?entry_id={entry_id}",
+                      cookies=AUTH_COOKIES).json()[0]["file_name"] == "voice-note.webm"
+
+
 def test_media_file_route_requires_auth_and_returns_404_for_unknown_id():
     # The /file route streams bytes for <img>/<audio>; the plain /{id} route
     # returns JSON metadata only. Unknown id -> 404, no auth -> 401.

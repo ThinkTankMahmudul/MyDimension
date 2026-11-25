@@ -17,6 +17,7 @@
   "tests/test_api.py::test_invalid_uuid_returns_404_not_500",
   "tests/test_api.py::test_media_file_route_requires_auth_and_returns_404_for_unknown_id",
   "tests/test_api.py::test_media_list_filters_by_entry_id",
+  "tests/test_api.py::test_media_upload_accepts_recorder_mime_with_codec_parameter",
   "tests/test_api.py::test_media_upload_without_drive_returns_503",
   "tests/test_api.py::test_transcribe_language_defaults_to_auto_and_needs_gemini",
   "tests/test_api.py::test_transcribe_prompt_detects_bangla_and_english",

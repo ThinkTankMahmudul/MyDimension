@@ -3,7 +3,7 @@
  * NEVER cached: /api/* responses, /auth/*, media (/api/media/*),
  * tokens, or any private diary data. Those always go to the network.
  */
-var CACHE = 'mydimension-shell-v15';
+var CACHE = 'mydimension-shell-v16';
 var SHELL = [
   './', 'index.html',
   'css/styles.css',

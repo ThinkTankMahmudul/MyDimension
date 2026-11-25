@@ -32,7 +32,13 @@ async def upload_media(file: UploadFile = File(...),
     if media_type not in ("photo", "audio"):
         raise HTTPException(status_code=400, detail="media_type must be 'photo' or 'audio'.")
     allowed = ALLOWED_IMAGE if media_type == "photo" else ALLOWED_AUDIO
-    if (file.content_type or "") not in allowed:
+    # Browsers report recorder audio with parameters, e.g.
+    # "audio/webm;codecs=opus" (Chrome MediaRecorder). The exact-string
+    # allowlist used to reject that with 400, so a recorded voice note was
+    # never saved with its entry — the detail view showed no voice player
+    # even though the recording worked in the form. Strip parameters first.
+    content_type = (file.content_type or "").split(";")[0].strip().lower()
+    if content_type not in allowed:
         raise HTTPException(status_code=400,
                             detail=f"That file type is not allowed for {media_type} uploads.")
     data = await file.read()
@@ -44,13 +50,13 @@ async def upload_media(file: UploadFile = File(...),
         service = get_drive_service_for_user(_user["id"],
                                              is_owner=_user.get("is_owner", False))
         drive_file_id = service.upload(file.filename or "upload",
-                                       file.content_type or "application/octet-stream",
+                                       content_type or "application/octet-stream",
                                        data, media_type)
     except DriveNotConfiguredError as exc:
         raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
                             detail=str(exc)) from exc
     media = MediaFile(drive_file_id=drive_file_id, file_name=file.filename or "upload",
-                      mime_type=file.content_type or "application/octet-stream",
+                      mime_type=content_type or "application/octet-stream",
                       media_type=media_type, file_size=len(data),
                       entry_id=entry_id, caption=caption)
     db_manager.create_media(media, user_id=_user["id"])
