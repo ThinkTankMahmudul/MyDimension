@@ -516,14 +516,22 @@
     else { el.innerHTML = '<span class="status-dot"></span>Unknown — sign in again if this persists'; }
   }
 
-  // Service status lives on /health: { ai_configured, drive_configured, storage }.
+  // Service status lives on /health: { ai_configured, storage }.
+  // Drive status is per user (/api/drive/status): each user connects
+  // their own Google Drive in Settings.
   async function refreshServiceStatus() {
     try {
       var h = await window.MyDimensionApi.getHealth();
-      setStatus('driveStatus', !!h.drive_configured, 'Connected', 'Not connected');
       setStatus('geminiStatus', !!h.ai_configured, 'Configured', 'Not configured');
       setStatus('dbStatus', h.storage === 'postgresql', 'PostgreSQL connected', 'Not using PostgreSQL');
     } catch (e) { /* status stays Unknown; the app still works */ }
+    try {
+      var d = await window.MyDimensionApi.driveStatus();
+      setStatus('driveStatus', !!d.connected, 'Connected', 'Not connected');
+      var dc = document.getElementById('driveConnectBtn'), dd = document.getElementById('driveDisconnectBtn');
+      if (dc) dc.classList.toggle('hidden', !!d.connected);
+      if (dd) dd.classList.toggle('hidden', !d.connected);
+    } catch (e) { /* drive status stays Unknown */ }
   }
 
   async function checkAuth() {

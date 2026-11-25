@@ -88,6 +88,18 @@ CREATE TABLE IF NOT EXISTS auth_settings (
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
+-- Per-user Google Drive OAuth: one encrypted refresh token per user.
+-- The token itself is encrypted (Fernet, key derived from
+-- SESSION_SECRET) before it is stored; the access token is never
+-- stored. A service account cannot be used here: it has no Drive
+-- storage quota, so uploads it creates fail with storageQuotaExceeded.
+CREATE TABLE IF NOT EXISTS drive_tokens (
+    user_id UUID PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+    refresh_token_enc TEXT NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
 CREATE INDEX IF NOT EXISTS idx_entries_created_at ON diary_entries (created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_entries_mood ON diary_entries (mood);
 CREATE INDEX IF NOT EXISTS idx_entries_search ON diary_entries USING gin (to_tsvector('english', title || ' ' || content));

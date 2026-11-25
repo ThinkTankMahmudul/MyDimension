@@ -89,6 +89,11 @@
     // (/api/me returns only email + is_owner).
     getHealth: function () { return request('/health'); },
 
+    // Per-user Google Drive connect (Settings). Status tells whether
+    // this user has connected their own Drive.
+    driveStatus: function () { return request('/api/drive/status'); },
+    driveDisconnect: function () { return json('/api/drive/disconnect', 'POST', {}); },
+
     // Auth / profile. Response shape (backend): { email, is_owner, name? }
     getMe: function () { return request('/api/me'); },
     logout: function () { return json('/auth/logout', 'POST', {}); },

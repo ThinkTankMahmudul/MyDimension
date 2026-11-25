@@ -1,8 +1,9 @@
 """Photo / voice-memory routes.
 
-Uploads go to the owner's Google Drive via GoogleDriveService; only the
-Drive file id + metadata are stored in PostgreSQL. If Drive is not
-connected, upload returns a friendly 503 (never a crash).
+Uploads go to the *uploading user's own* Google Drive (each user
+connects their Drive in Settings); only the Drive file id + metadata
+are stored in PostgreSQL. If that user has not connected Drive,
+upload returns a friendly 503 (never a crash).
 Allowed types: images and audio only, max ~25 MB per file.
 """
 from __future__ import annotations
@@ -13,7 +14,7 @@ from ..core.security import require_user
 from ..models.models import MediaFile
 from ..schemas.schemas import MediaResponse
 from ..services.database_manager import db_manager
-from ..services.drive_service import DriveNotConfiguredError, drive_service
+from ..services.drive_service import DriveNotConfiguredError, get_drive_service_for_user
 
 router = APIRouter(prefix="/api/media", tags=["media"])
 
@@ -40,9 +41,11 @@ async def upload_media(file: UploadFile = File(...),
     if not data:
         raise HTTPException(status_code=400, detail="Uploaded file is empty.")
     try:
-        drive_file_id = drive_service.upload(file.filename or "upload",
-                                             file.content_type or "application/octet-stream",
-                                             data, media_type)
+        service = get_drive_service_for_user(_user["id"],
+                                             is_owner=_user.get("is_owner", False))
+        drive_file_id = service.upload(file.filename or "upload",
+                                       file.content_type or "application/octet-stream",
+                                       data, media_type)
     except DriveNotConfiguredError as exc:
         raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
                             detail=str(exc)) from exc
@@ -70,7 +73,9 @@ def download_media_file(media_id: str, _user: dict = Depends(require_user)):
     if media is None:
         raise HTTPException(status_code=404, detail="Media not found.")
     try:
-        data = drive_service.download(media.drive_file_id)
+        service = get_drive_service_for_user(_user["id"],
+                                             is_owner=_user.get("is_owner", False))
+        data = service.download(media.drive_file_id)
     except DriveNotConfiguredError as exc:
         raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
                             detail=str(exc)) from exc
@@ -92,7 +97,9 @@ def delete_media(media_id: str, _user: dict = Depends(require_user)):
     if media is None:
         raise HTTPException(status_code=404, detail="Media not found.")
     try:
-        drive_service.delete(media.drive_file_id)
+        service = get_drive_service_for_user(_user["id"],
+                                             is_owner=_user.get("is_owner", False))
+        service.delete(media.drive_file_id)
     except DriveNotConfiguredError:
         pass  # file record is gone; Drive was never connected
     except Exception:

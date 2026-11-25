@@ -406,10 +406,12 @@
           <label class="check"><input id="aiPrefEnabled" type="checkbox" checked> <span data-i18n="set.aiAllow">Allow AI features (summaries, mood suggestions, transcription)</span></label>
           <p class="small muted" data-i18n="set.aiHint">AI is only used when you press an AI button, and only on the entry or audio you choose. Turning this off hides the AI buttons.</p></div>
         <div class="card"><h3 data-i18n="set.services">Connected services</h3>
-          <p><span data-i18n="set.drive">Google Drive:</span> <span id="driveStatus"><span class="status-dot"></span>Unknown</span></p>
+          <p><span data-i18n="set.drive">Google Drive:</span> <span id="driveStatus"><span class="status-dot"></span>Unknown</span>
+            <button id="driveConnectBtn" class="btn small secondary hidden" type="button" data-i18n="set.driveConnect">Connect Google Drive</button>
+            <button id="driveDisconnectBtn" class="btn small ghost hidden" type="button" data-i18n="set.driveDisconnect">Disconnect</button></p>
           <p><span data-i18n="set.gemini">Gemini AI:</span> <span id="geminiStatus"><span class="status-dot"></span>Unknown</span> <span class="muted small" data-i18n="set.geminiNote">(status only — no API key is ever shown here)</span></p>
           <p><span data-i18n="set.database">Database:</span> <span id="dbStatus"><span class="status-dot"></span>Unknown</span></p>
-          <p class="small muted" data-i18n="set.driveHint">If Drive is not connected, photo and voice uploads will fail. Reconnect from the Google sign-in flow; if the problem persists, sign out and sign in again.</p></div>
+          <p class="small muted" data-i18n="set.driveHint">Your photos and voice memories are stored in your own Google Drive, in a "MyDimension Memories" folder. Connect once — uploads then go to your Drive, and only you can see them. If Drive is not connected, photo and voice uploads will fail.</p></div>
         <div class="card"><h3 data-i18n="set.privacy">Privacy</h3>
           <p class="small" data-i18n="set.privacyText">Your diary is private by default. Entries and media are visible only to the signed-in owner. AI features send only the entry or audio you explicitly choose to Google’s Gemini service when you press an AI button.</p></div>
         <div class="card"><h3 data-i18n="set.yourData">Your data</h3>

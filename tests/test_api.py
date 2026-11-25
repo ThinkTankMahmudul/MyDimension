@@ -14,6 +14,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "backend"))
 
+import pytest  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402
 
 from app.core.config import settings  # noqa: E402
@@ -162,19 +163,21 @@ def test_uuid_ids_from_postgres_serialize_as_strings():
     assert mood.to_dict()["entry_id"] == str(entry_id)
 
 
-def test_drive_service_reads_key_json_from_env(monkeypatch):
-    """Service-account key JSON from GOOGLE_DRIVE_CREDENTIALS_JSON (Vercel)
-    configures Drive without a key file; invalid JSON does not."""
-    import json
+def test_drive_service_needs_user_oauth_token(monkeypatch):
+    """No service account anymore: Drive works only with the user's own
+    OAuth refresh token. Without one, the per-user factory refuses with
+    DriveNotConfiguredError (the old service-account path failed live
+    with Google's 403 storageQuotaExceeded — a service account has no
+    Drive storage quota of its own)."""
+    from app.services.drive_service import (
+        DriveNotConfiguredError,
+        GoogleDriveService,
+        get_drive_service_for_user,
+    )
 
-    from app.services.drive_service import GoogleDriveService
-
-    monkeypatch.delenv("GOOGLE_DRIVE_CREDENTIALS", raising=False)
-    monkeypatch.delenv("GOOGLE_APPLICATION_CREDENTIALS", raising=False)
-    monkeypatch.setenv("GOOGLE_DRIVE_CREDENTIALS_JSON",
-                       json.dumps({"type": "service_account", "project_id": "x"}))
-    assert GoogleDriveService().configured is True
-    monkeypatch.setenv("GOOGLE_DRIVE_CREDENTIALS_JSON", "not-json{")
+    monkeypatch.delenv("GOOGLE_DRIVE_CREDENTIALS_JSON", raising=False)
+    with pytest.raises(DriveNotConfiguredError):
+        get_drive_service_for_user("no-such-user")
     assert GoogleDriveService().configured is False
 
 

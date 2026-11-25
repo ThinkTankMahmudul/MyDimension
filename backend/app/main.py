@@ -31,7 +31,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 
-from .api import routes_ai, routes_auth, routes_calendar, routes_entries, routes_media
+from .api import routes_ai, routes_auth, routes_calendar, routes_drive, routes_entries, routes_media
 from .core.config import settings
 from .services.database_manager import db_manager
 
@@ -90,6 +90,7 @@ async def friendly_error_handler(_request, exc: Exception):  # noqa: ANN001
 
 
 app.include_router(routes_auth.router)
+app.include_router(routes_drive.router)
 app.include_router(routes_entries.router)
 app.include_router(routes_media.router)
 app.include_router(routes_ai.router)

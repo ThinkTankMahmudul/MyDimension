@@ -22,7 +22,7 @@
 
   // Shell version: the live re-test reads this to confirm the browser
   // is running the fixed JS, not a stale service-worker copy.
-  var SHELL_VERSION = '2026-11-25-bellfix';
+  var SHELL_VERSION = '2026-11-25-drive-oauth';
   window.addEventListener('error', function (e) {
     try { showError(e.message || 'Something went wrong.'); } catch (err) { /* ignore */ }
   });
@@ -430,6 +430,34 @@
     hideError();
     applyTheme();
     window.MyDimensionAuth.refreshServiceStatus();
+    // Google Drive connect / disconnect (each user links their own Drive).
+    var dc = document.getElementById('driveConnectBtn');
+    if (dc && !dc.dataset.bound) {
+      dc.dataset.bound = '1';
+      dc.addEventListener('click', function () { window.location.href = '/api/drive/connect'; });
+    }
+    var dd = document.getElementById('driveDisconnectBtn');
+    if (dd && !dd.dataset.bound) {
+      dd.dataset.bound = '1';
+      dd.addEventListener('click', async function () {
+        try {
+          await window.MyDimensionApi.driveDisconnect();
+          toast(t('toast.driveDisconnected'));
+          window.MyDimensionAuth.refreshServiceStatus();
+        } catch (err) { showError(err.message || err); }
+      });
+    }
+    // Result of the Drive connect redirect (?drive=connected|error).
+    try {
+      var res = new URLSearchParams(window.location.search).get('drive');
+      if (res === 'connected') toast(t('toast.driveConnected'));
+      else if (res === 'error') showError(t('toast.driveConnectError'));
+      if (res) {
+        var u = new URL(window.location.href);
+        u.searchParams.delete('drive');
+        window.history.replaceState(null, '', u.toString());
+      }
+    } catch (e) { /* ignore */ }
   }
   function applyTheme() {
     var saved = null;

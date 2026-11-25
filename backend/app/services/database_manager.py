@@ -51,6 +51,7 @@ class DatabaseManager:
         self._settings: dict[str, str] = {}
         self._users: dict[str, dict] = {}  # keyed by lower-cased email
         self._codes: dict[str, dict] = {}  # keyed by code id
+        self._drive_tokens: dict[str, str] = {}  # user_id -> encrypted refresh token
 
     @property
     def using_postgres(self) -> bool:
@@ -560,6 +561,41 @@ class DatabaseManager:
 
     def set_password_hash(self, password_hash: str) -> None:
         self.set_setting("password_hash", password_hash)
+
+    # -- per-user Drive tokens --------------------------------------------
+    def save_drive_token(self, user_id: str, refresh_token_enc: str) -> None:
+        """Upsert one user's encrypted Drive refresh token."""
+        if self.using_postgres:
+            with self._connect() as conn, conn.cursor() as cur:
+                cur.execute(
+                    "INSERT INTO drive_tokens (user_id, refresh_token_enc, updated_at)"
+                    " VALUES (%s, %s, now())"
+                    " ON CONFLICT (user_id) DO UPDATE"
+                    " SET refresh_token_enc = EXCLUDED.refresh_token_enc,"
+                    " updated_at = now()",
+                    (user_id, refresh_token_enc),
+                )
+        else:
+            self._drive_tokens[user_id] = refresh_token_enc
+
+    def get_drive_token(self, user_id: str) -> str | None:
+        """The user's encrypted Drive refresh token, or ``None``."""
+        if self.using_postgres:
+            with self._connect() as conn, conn.cursor() as cur:
+                cur.execute("SELECT refresh_token_enc FROM drive_tokens"
+                            " WHERE user_id = %s", (user_id,))
+                row = cur.fetchone()
+            return row[0] if row else None
+        return self._drive_tokens.get(user_id)
+
+    def delete_drive_token(self, user_id: str) -> None:
+        """Remove one user's Drive connection (disconnect)."""
+        if self.using_postgres:
+            with self._connect() as conn, conn.cursor() as cur:
+                cur.execute("DELETE FROM drive_tokens WHERE user_id = %s",
+                            (user_id,))
+        else:
+            self._drive_tokens.pop(user_id, None)
 
     # -- moods -----------------------------------------------------------
     def record_mood(self, mood: str, entry_id: str | None = None,
