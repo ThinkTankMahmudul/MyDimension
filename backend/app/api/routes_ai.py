@@ -8,11 +8,15 @@ text is never overwritten by AI output.
 """
 from __future__ import annotations
 
+import logging
+
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 
 from ..core.security import require_user
 from ..schemas.schemas import AIRequest, AIResponse
 from ..services.ai_service import AINotConfiguredError, get_ai_service
+
+logger = logging.getLogger("mydimension.ai.routes")
 
 router = APIRouter(prefix="/api/ai", tags=["ai"])
 
@@ -24,6 +28,9 @@ def _run(task: str, payload: AIRequest) -> AIResponse:
         raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
                             detail=str(exc)) from exc
     except Exception as exc:
+        # Log the real Gemini failure (key/model/network) — without this
+        # the 502 below hides the cause and Vercel logs show nothing.
+        logger.exception("Gemini %s failed: %s: %s", task, type(exc).__name__, exc)
         raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY,
                             detail="The AI service could not be reached. Please try again.") from exc
     note = "AI suggestion only -- not a fact or a diagnosis." if task == "mood" else None
@@ -59,6 +66,7 @@ async def ai_transcribe(file: UploadFile = File(...),
         raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
                             detail=str(exc)) from exc
     except Exception as exc:
+        logger.exception("Gemini transcribe failed: %s: %s", type(exc).__name__, exc)
         raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY,
                             detail="The AI service could not be reached. Please try again.") from exc
     return AIResponse(result=result, note="Please review the transcript before saving it.")

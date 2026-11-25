@@ -57,8 +57,11 @@
     }
     var entry = selectedEntry();
     var freeText = document.getElementById('aiFreeText').value.trim();
-    var text = entry ? entry.body : freeText;
-    var title = entry ? entry.title : '';
+    // Pasted text wins when present: the owner typed it for this exact task.
+    // Otherwise use the chosen entry (or the most recent one).
+    var text = freeText || (entry ? entry.body : '');
+    var title = freeText ? '' : (entry ? entry.title : '');
+    var source = freeText ? t('ai.sourceText') : (entry ? t('ai.sourceEntry', { title: entry.title }) : '');
     if (action !== 'transcribe' && !text) {
       showResult('<p>' + t('ai.chooseFirst') + '</p>');
       return;
@@ -70,17 +73,18 @@
         var mood = await window.MyDimensionApi.aiMood({ entry_id: entry ? entry.id : undefined, text: text });
         var label = resultText(mood) || t('ai.noSuggestion');
         showResult('<p><strong>' + t('ai.suggestedMood') + ' ' + esc(label) + '</strong></p>' +
+          (source ? '<p class="small muted">' + esc(source) + '</p>' : '') +
           '<p class="small muted">' + t('ai.suggestionNote') + '</p>' +
           (mood.note ? '<p class="small muted">' + esc(mood.note) + '</p>' : ''));
       } else if (action === 'summary') {
         showLoading(t('ai.loadingSummary'));
         var sum = await window.MyDimensionApi.aiSummary({ entry_id: entry ? entry.id : undefined, text: text });
-        showResult('<p><strong>' + t('ai.summaryTitle') + (title ? ' — ' + esc(title) : '') + '</strong></p><p>' + esc(resultText(sum) || t('ai.noSummary')) + '</p><p class="small muted">' + t('ai.originalUnchanged') + '</p>');
+        showResult('<p><strong>' + t('ai.summaryTitle') + (title ? ' — ' + esc(title) : '') + '</strong></p>' + (source ? '<p class="small muted">' + esc(source) + '</p>' : '') + '<p>' + esc(resultText(sum) || t('ai.noSummary')) + '</p><p class="small muted">' + t('ai.originalUnchanged') + '</p>');
       } else if (action === 'improve') {
         showLoading(t('ai.loadingImprove'));
         var imp = await window.MyDimensionApi.aiImprove({ entry_id: entry ? entry.id : undefined, text: text });
         var improved = resultText(imp);
-        showResult('<p><strong>' + t('ai.improvedTitle') + '</strong></p><p>' + esc(improved || t('ai.noImproved')) + '</p>' +
+        showResult('<p><strong>' + t('ai.improvedTitle') + '</strong></p>' + (source ? '<p class="small muted">' + esc(source) + '</p>' : '') + '<p>' + esc(improved || t('ai.noImproved')) + '</p>' +
           '<p class="small muted">' + t('ai.originalNotOverwritten') + '</p>' +
           (improved ? '<button class="btn secondary" id="useImprovedBtn">' + t('ai.useAsDraft') + '</button>' : ''));
         var btn = document.getElementById('useImprovedBtn');
@@ -90,12 +94,13 @@
         });
       } else if (action === 'reflect') {
         showLoading(t('ai.loadingReflect'));
-        var entryText = entry ? ('Diary entry "' + entry.title + '" (' + entry.date + '):\n' + entry.body) : text;
+        // Reflect on what the owner actually chose: pasted text, or the entry.
+        var entryText = freeText ? freeText : (entry ? ('Diary entry "' + entry.title + '" (' + entry.date + '):\n' + entry.body) : text);
         var ref = await window.MyDimensionApi.aiSummary({
           entry_id: entry ? entry.id : undefined,
           text: 'Give a short, kind daily reflection on this diary entry — one insight and one gentle question for tomorrow:\n\n' + entryText
         });
-        showResult('<p><strong>' + t('ai.reflectionTitle') + (entry ? ' — ' + esc(entry.title) : '') + '</strong></p><p>' + esc(resultText(ref) || t('ai.noReflection')) + '</p><p class="small muted">' + t('ai.reflectionNote') + '</p>');
+        showResult('<p><strong>' + t('ai.reflectionTitle') + (entry ? ' — ' + esc(entry.title) : '') + '</strong></p>' + (source ? '<p class="small muted">' + esc(source) + '</p>' : '') + '<p>' + esc(resultText(ref) || t('ai.noReflection')) + '</p><p class="small muted">' + t('ai.reflectionNote') + '</p>');
       } else if (action === 'transcribe') {
         var file = document.getElementById('aiAudioFile').files[0];
         if (!file) { showResult('<p>' + t('ai.chooseAudio') + '</p>'); setBusy(false); return; }

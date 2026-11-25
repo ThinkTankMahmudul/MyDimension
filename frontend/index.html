@@ -316,17 +316,19 @@
       <section id="page-ai" class="page" aria-label="AI Assistant">
         <div class="page-head"><h2 data-i18n="ai.title">AI Assistant</h2></div>
         <p class="muted" data-i18n="ai.subtitle">Your personal writing and reflection partner. Nothing is sent to Gemini until you press a button.</p>
+        <p class="small"><span class="ai-status-dot" id="aiStatusDot" aria-hidden="true">●</span> <span id="aiStatusText" data-i18n="ai.statusChecking">Checking AI status…</span></p>
+        <div class="card"><h3><span class="ai-step">1</span> <span data-i18n="ai.choose">Choose what to work on</span></h3>
+          <div class="field"><label for="aiEntrySelect" data-i18n="ai.entryLabel">Diary entry</label><select id="aiEntrySelect"><option value="">— Most recent entry —</option></select></div>
+          <div class="field"><label for="aiFreeText" data-i18n="ai.pasteLabel">Or paste text here</label><textarea id="aiFreeText" data-i18n-placeholder="ai.pastePlaceholder" placeholder="Paste the text you want help with…"></textarea></div>
+          <p class="small muted" data-i18n="ai.onlyChosen">Only the entry or text you choose is sent to Gemini, and only when you press an AI button below. Your original entry is never overwritten automatically.</p></div>
+        <div class="card"><h3><span class="ai-step">2</span> <span data-i18n="ai.pickAction">Pick what the AI should do</span></h3>
         <div class="ai-cards">
           <button class="ai-card" type="button" data-ai-action="summary"><span class="ai-ico">✎</span><strong data-i18n="ai.summarize">Summarize My Diary</strong><span class="small muted" data-i18n="ai.summarizeDesc">Get key insights from your entries</span></button>
           <button class="ai-card" type="button" data-ai-action="mood"><span class="ai-ico">◐</span><strong data-i18n="ai.mood">Analyze My Mood</strong><span class="small muted" data-i18n="ai.moodDesc">Understand your emotional patterns</span></button>
           <button class="ai-card" type="button" data-ai-action="improve"><span class="ai-ico">✦</span><strong data-i18n="ai.improve">Improve My Writing</strong><span class="small muted" data-i18n="ai.improveDesc">Make your thoughts clearer</span></button>
           <button class="ai-card" type="button" data-ai-action="reflect"><span class="ai-ico">☀</span><strong data-i18n="ai.reflect">Daily Reflection</strong><span class="small muted" data-i18n="ai.reflectDesc">Ask anything about your day</span></button>
-        </div>
-        <div class="card"><h3 data-i18n="ai.choose">Choose what to work on</h3>
-          <div class="field"><label for="aiEntrySelect" data-i18n="ai.entryLabel">Diary entry</label><select id="aiEntrySelect"><option value="">— Most recent entry —</option></select></div>
-          <div class="field"><label for="aiFreeText" data-i18n="ai.pasteLabel">Or paste text here</label><textarea id="aiFreeText" data-i18n-placeholder="ai.pastePlaceholder" placeholder="Paste the text you want help with…"></textarea></div>
-          <p class="small muted" data-i18n="ai.onlyChosen">Only the entry or text you choose is sent to Gemini, and only when you press an AI button above. Your original entry is never overwritten automatically.</p></div>
-        <div class="card"><h3 data-i18n="ai.transcribeTitle">Transcribe audio</h3>
+        </div></div>
+        <div class="card"><h3><span class="ai-step">3</span> <span data-i18n="ai.transcribeTitle">Transcribe audio</span></h3>
           <div class="field"><label for="aiAudioFile" data-i18n="ai.audioLabel">Audio file</label><input id="aiAudioFile" type="file" accept="audio/*"></div>
           <button class="btn secondary" type="button" data-ai-action="transcribe" data-i18n="ai.transcribeBtn">Transcribe</button>
           <p class="small muted" data-i18n="ai.reviewNote">Review the transcript before saving it — you can save it as a journal draft from the result below.</p></div>
@@ -344,7 +346,7 @@
       <section id="page-media" class="page" aria-label="Media Vault">
         <div class="page-head"><h2 data-i18n="media.title">Media Vault</h2>
           <button class="btn" type="button" id="mediaUploadBtn" data-i18n="media.upload">＋ Upload</button></div>
-        <input id="mediaUploadInput" type="file" accept="image/*,audio/*" class="hidden">
+        <input id="mediaUploadInput" type="file" accept="image/*,audio/*" class="file-input-hidden">
         <div class="tabs" role="tablist" aria-label="Media type">
           <button class="tab active" type="button" data-media-tab="all" role="tab" aria-selected="true"><span data-i18n="media.all">All</span></button>
           <button class="tab" type="button" data-media-tab="photo" role="tab" aria-selected="false"><span data-i18n="media.photos">Photos</span></button>

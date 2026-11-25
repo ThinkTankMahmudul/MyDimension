@@ -20,6 +20,13 @@
   var mediaTab = 'all';
   var entryRec = { recorder: null, chunks: [], timer: null, blob: null };
 
+  // Shell version: the live re-test reads this to confirm the browser
+  // is running the fixed JS, not a stale service-worker copy.
+  var SHELL_VERSION = '2026-11-25-fix1';
+  window.addEventListener('error', function (e) {
+    try { showError(e.message || 'Something went wrong.'); } catch (err) { /* ignore */ }
+  });
+
   /* ---------- helpers ---------- */
   function toast(msg) {
     var old = document.querySelector('.toast'); if (old) old.remove();
@@ -402,6 +409,16 @@
     hideError();
     if (!window.MyDimensionJournal.getCached().length) { try { await window.MyDimensionJournal.loadEntries({}); } catch (e) { /* entry list is optional here */ } }
     window.MyDimensionAI.populateEntrySelect();
+    // AI status line: /health reports whether Gemini is configured, so a
+    // dead key shows here instead of failing silently on first use.
+    var dot = document.getElementById('aiStatusDot'), txt = document.getElementById('aiStatusText');
+    if (dot && txt) {
+      try {
+        var h = await (await fetch('/health')).json();
+        if (h.ai_configured) { txt.textContent = t('ai.statusReady'); dot.classList.remove('off'); }
+        else { txt.textContent = t('ai.statusOff'); dot.classList.add('off'); }
+      } catch (e) { txt.textContent = t('ai.statusUnknown'); dot.classList.add('off'); }
+    }
   }
   async function loadMediaPage() {
     hideError();
@@ -497,6 +514,68 @@
         setEntryTab('write');
       }
     } catch (err) { status.textContent = t('toast.transcriptFailed') + ' ' + err.message; }
+  }
+
+  // Delegated clicks for dynamically rendered lists (journal / media /
+  // entry-detail buttons are rendered after load, so one document-level
+  // listener owns them). Registered from init() directly — never inside
+  // bindEvents() — so a failure in any other binding can never silently
+  // kill Delete / Edit / AI buttons.
+  var delegatedBound = false;
+  function bindDelegatedClicks() {
+    if (delegatedBound) return;
+    delegatedBound = true;
+    // Delegated clicks for dynamically rendered lists.
+    document.addEventListener('click', async function (e) {
+        var t = e.target.closest('[data-edit-entry],[data-delete-entry],[data-ai-entry],[data-delete-media],[data-transcribe-media],[data-goto-new-entry],[data-open-entry]');
+        if (!t) return;
+        if (t.hasAttribute('data-goto-new-entry')) { window.MyDimensionJournal.startNew(); return; }
+        if (t.hasAttribute('data-open-entry')) { window.location.hash = '#/entry/' + t.getAttribute('data-open-entry'); return; }
+        if (t.hasAttribute('data-edit-entry')) {
+          var entry = window.MyDimensionJournal.findCached(t.getAttribute('data-edit-entry'));
+          if (entry) { window.location.hash = '#/journal'; setTimeout(function () { window.MyDimensionJournal.fillForm(entry); }, 50); }
+          return;
+        }
+        if (t.hasAttribute('data-delete-entry')) {
+          var title = t.getAttribute('data-entry-title') || 'this entry';
+          var ok = await confirmDialog({ title: t('confirm.deleteEntryTitle'), text: t('confirm.deleteEntryText', { title: title }), yes: t('confirm.delete') });
+          if (!ok) return;
+          try { await window.MyDimensionApi.deleteEntry(t.getAttribute('data-delete-entry')); toast(t('toast.entryDeleted')); await window.MyDimensionJournal.refreshJournalList(); loadDashboard().catch(function () {}); }
+          catch (err) { showError(err.message); }
+          return;
+        }
+        if (t.hasAttribute('data-ai-entry')) {
+          window.location.hash = '#/ai';
+          setTimeout(function () {
+              var sel = document.getElementById('aiEntrySelect');
+              if (sel) sel.value = t.getAttribute('data-ai-entry');
+            }, 100);
+          return;
+        }
+        if (t.hasAttribute('data-delete-media')) {
+          var name = t.getAttribute('data-media-name') || 'this file';
+          var okM = await confirmDialog({ title: t('confirm.deleteFileTitle'), text: t('confirm.deleteFileText', { name: name }), yes: t('confirm.delete') });
+          if (!okM) return;
+          try { await window.MyDimensionApi.deleteMedia(t.getAttribute('data-delete-media')); toast(t('toast.fileDeleted')); loadMediaPage(); }
+          catch (err) { showError(err.message); }
+          return;
+        }
+        if (t.hasAttribute('data-transcribe-media')) {
+          var id = t.getAttribute('data-transcribe-media');
+          var out = document.querySelector('[data-transcript-for="' + id + '"]');
+          if (out) out.textContent = t('media.transcribing');
+          try {
+            // Transcription needs the audio file; fetch it back through the API and re-send it.
+            var res = await fetch(window.MyDimensionApi.getMediaUrl(id), { credentials: 'include' });
+            if (!res.ok) throw new Error(t('media.loadFailed'));
+            var blob = await res.blob();
+            var fd = new FormData(); fd.append('file', blob, 'voice-memory.webm');
+            var tr = await window.MyDimensionApi.aiTranscribe(fd);
+            var text = tr.result || tr.text || '';
+            if (out) out.innerHTML = text ? '<strong>' + t('media.transcript') + '</strong> ' + window.MyDimensionJournal.esc(text) : t('media.noTranscript');
+          } catch (err) { if (out) out.textContent = t('media.transcriptFailed') + ' ' + err.message; }
+        }
+    });
   }
 
   /* ---------- events ---------- */
@@ -693,57 +772,7 @@
       } catch (err) { showError(err.message || err); }
     });
 
-    // Delegated clicks for dynamically rendered lists.
-    document.addEventListener('click', async function (e) {
-      var t = e.target.closest('[data-edit-entry],[data-delete-entry],[data-ai-entry],[data-delete-media],[data-transcribe-media],[data-goto-new-entry],[data-open-entry]');
-      if (!t) return;
-      if (t.hasAttribute('data-goto-new-entry')) { window.MyDimensionJournal.startNew(); return; }
-      if (t.hasAttribute('data-open-entry')) { window.location.hash = '#/entry/' + t.getAttribute('data-open-entry'); return; }
-      if (t.hasAttribute('data-edit-entry')) {
-        var entry = window.MyDimensionJournal.findCached(t.getAttribute('data-edit-entry'));
-        if (entry) { window.location.hash = '#/journal'; setTimeout(function () { window.MyDimensionJournal.fillForm(entry); }, 50); }
-        return;
-      }
-      if (t.hasAttribute('data-delete-entry')) {
-        var title = t.getAttribute('data-entry-title') || 'this entry';
-        var ok = await confirmDialog({ title: t('confirm.deleteEntryTitle'), text: t('confirm.deleteEntryText', { title: title }), yes: t('confirm.delete') });
-        if (!ok) return;
-        try { await window.MyDimensionApi.deleteEntry(t.getAttribute('data-delete-entry')); toast(t('toast.entryDeleted')); await window.MyDimensionJournal.refreshJournalList(); loadDashboard().catch(function () {}); }
-        catch (err) { showError(err.message); }
-        return;
-      }
-      if (t.hasAttribute('data-ai-entry')) {
-        window.location.hash = '#/ai';
-        setTimeout(function () {
-          var sel = document.getElementById('aiEntrySelect');
-          if (sel) sel.value = t.getAttribute('data-ai-entry');
-        }, 100);
-        return;
-      }
-      if (t.hasAttribute('data-delete-media')) {
-        var name = t.getAttribute('data-media-name') || 'this file';
-        var okM = await confirmDialog({ title: t('confirm.deleteFileTitle'), text: t('confirm.deleteFileText', { name: name }), yes: t('confirm.delete') });
-        if (!okM) return;
-        try { await window.MyDimensionApi.deleteMedia(t.getAttribute('data-delete-media')); toast(t('toast.fileDeleted')); loadMediaPage(); }
-        catch (err) { showError(err.message); }
-        return;
-      }
-      if (t.hasAttribute('data-transcribe-media')) {
-        var id = t.getAttribute('data-transcribe-media');
-        var out = document.querySelector('[data-transcript-for="' + id + '"]');
-        if (out) out.textContent = t('media.transcribing');
-        try {
-          // Transcription needs the audio file; fetch it back through the API and re-send it.
-          var res = await fetch(window.MyDimensionApi.getMediaUrl(id), { credentials: 'include' });
-          if (!res.ok) throw new Error(t('media.loadFailed'));
-          var blob = await res.blob();
-          var fd = new FormData(); fd.append('file', blob, 'voice-memory.webm');
-          var tr = await window.MyDimensionApi.aiTranscribe(fd);
-          var text = tr.result || tr.text || '';
-          if (out) out.innerHTML = text ? '<strong>' + t('media.transcript') + '</strong> ' + window.MyDimensionJournal.esc(text) : t('media.noTranscript');
-        } catch (err) { if (out) out.textContent = t('media.transcriptFailed') + ' ' + err.message; }
-      }
-    });
+    bindDelegatedClicks();
 
     document.querySelectorAll('[data-quick]').forEach(function (btn) {
       btn.addEventListener('click', function () {
@@ -764,7 +793,11 @@
     if (initialized) return;
     initialized = true;
     applyTheme();
-    bindEvents();
+    // One bad binding must never kill the rest of the UI: bindEvents is
+    // guarded, and the delegated list buttons are bound separately.
+    try { bindEvents(); } catch (err) { showError(err.message || err); }
+    try { bindDelegatedClicks(); } catch (err) { showError(err.message || err); }
+    window.addEventListener('hashchange', showRoute);
     var user = await window.MyDimensionAuth.checkAuth();
     if (user) showRoute();
     if ('serviceWorker' in navigator) {
@@ -773,6 +806,6 @@
     }
   }
 
-  window.MyDimensionApp = { toast: toast, showError: showError, confirmDialog: confirmDialog, showRoute: showRoute };
+  window.MyDimensionApp = { toast: toast, showError: showError, confirmDialog: confirmDialog, showRoute: showRoute, version: SHELL_VERSION };
   document.addEventListener('DOMContentLoaded', init);
 })();
