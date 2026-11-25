@@ -22,7 +22,7 @@
 
   // Shell version: the live re-test reads this to confirm the browser
   // is running the fixed JS, not a stale service-worker copy.
-  var SHELL_VERSION = '2026-11-25-voice-mime-fix';
+  var SHELL_VERSION = '2026-11-25-detail-loading';
   window.addEventListener('error', function (e) {
     try { showError(e.message || 'Something went wrong.'); } catch (err) { /* ignore */ }
   });
@@ -305,6 +305,9 @@
     hideError();
     var box = document.getElementById('entryDetail');
     if (!id) { box.innerHTML = '<p class="muted">' + t('entry.noEntry') + '</p>'; return; }
+    // Clear the previous entry at once: without this, navigating from one
+    // entry to another briefly shows the old title under the new URL.
+    box.innerHTML = '<p class="muted">' + t('entry.loading') + '</p>';
     var entry = window.MyDimensionJournal.findCached(id);
     if (!entry) {
       try { entry = (await window.MyDimensionJournal.loadEntries({})).find(function (e) { return String(e.id) === String(id); }); }
