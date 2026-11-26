@@ -2,7 +2,8 @@
 from __future__ import annotations
 
 import calendar as calmod
-from datetime import date
+from datetime import datetime
+from zoneinfo import ZoneInfo
 
 from fastapi import APIRouter, Depends, Query
 
@@ -17,7 +18,9 @@ router = APIRouter(tags=["calendar"])
 @router.get("/api/calendar", response_model=list[CalendarDay])
 def get_calendar(year: int = Query(default=None), month: int = Query(default=None),
                  user: dict = Depends(require_user)):
-    today = date.today()
+    # Fix B: 'today' is the owner's local date in Asia/Dhaka, not the
+    # server's (UTC on Vercel) date.
+    today = datetime.now(ZoneInfo("Asia/Dhaka")).date()
     year = year or today.year
     month = month or today.month
     if not 1 <= month <= 12:

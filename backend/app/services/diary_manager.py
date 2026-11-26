@@ -12,8 +12,23 @@ that user, so one user can never see or touch another user's entries.
 from __future__ import annotations
 
 import uuid
+from datetime import datetime, timezone
+from zoneinfo import ZoneInfo
 
 from ..models.models import DiaryEntry
+
+# Fix B (2026-11-26): entry dates are the owner's local date, Asia/Dhaka
+# (UTC+6, no DST). Timestamps are stored in UTC; truncating them in UTC
+# moved a late-evening Dhaka entry to the next UTC day, so the calendar
+# dot and the trend spike landed on the wrong date.
+DHAKA = ZoneInfo("Asia/Dhaka")
+
+
+def dhaka_date(value: datetime) -> str:
+    """Return the YYYY-MM-DD date of *value* in Asia/Dhaka."""
+    if value.tzinfo is None:
+        value = value.replace(tzinfo=timezone.utc)
+    return value.astimezone(DHAKA).strftime("%Y-%m-%d")
 from .database_manager import DatabaseManager, db_manager
 
 
@@ -57,7 +72,7 @@ class DiaryManager:
         entries = self.db.list_entries(search=search, mood=mood,
                                        user_id=self._scope(user_id))
         if month:
-            entries = [e for e in entries if e.created_at.strftime("%Y-%m") == month]
+            entries = [e for e in entries if dhaka_date(e.created_at)[:7] == month]
         return entries
 
     def update_entry(self, entry_id: str, user_id: str | None = None, **changes) -> DiaryEntry | None:
@@ -90,7 +105,7 @@ class DiaryManager:
         """Map YYYY-MM-DD -> entry count for one calendar month."""
         counts: dict[str, int] = {}
         for entry in self.db.list_entries(limit=1000, user_id=self._scope(user_id)):
-            if entry.created_at.year == year and entry.created_at.month == month:
-                day = entry.created_at.strftime("%Y-%m-%d")
+            day = dhaka_date(entry.created_at)
+            if day[:4] == f"{year:04d}" and day[5:7] == f"{month:02d}":
                 counts[day] = counts.get(day, 0) + 1
         return counts

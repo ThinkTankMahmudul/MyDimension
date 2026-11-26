@@ -23,9 +23,18 @@
   var editingId = null;
   var DRAFT_KEY = 'mydimension-draft-v1';
 
+  // Fix B (2026-11-26): the owner's local date is Asia/Dhaka, not the
+  // browser's timezone and not UTC. All entry dates, "today" and
+  // "this month" use this, so the calendar dot and trend spike land on
+  // the date the owner actually wrote the entry.
+  function dhakaDate(d) {
+    var parts = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Dhaka', year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(d);
+    var byType = {};
+    parts.forEach(function (part) { byType[part.type] = part.value; });
+    return byType.year + '-' + byType.month + '-' + byType.day;
+  }
   function todayLocal() {
-    var d = new Date();
-    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    return dhakaDate(new Date());
   }
   function fmtDate(iso) {
     if (!iso) return '';
@@ -53,8 +62,18 @@
       return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
     });
   }
-  // Entry "date" is created_at's date (the API has no entry_date).
-  function entryDate(e) { return (e.created_at || '').slice(0, 10); }
+  // Entry "date" is created_at's date in Asia/Dhaka (the API has no
+  // entry_date). created_at is stored in UTC, so slicing the first 10
+  // characters gave the UTC date — a 25 Nov evening entry in Dhaka
+  // (e.g. 19:30 +06 = 13:30 UTC) could still be 25 Nov in UTC, while
+  // a 26 Nov 00:30 Dhaka entry is 25 Nov in UTC and was shown a day
+  // early. Converting to Asia/Dhaka first fixes the calendar/trend.
+  function entryDate(e) {
+    if (!e.created_at) return '';
+    var d = new Date(e.created_at);
+    if (isNaN(d)) return e.created_at.slice(0, 10);
+    return dhakaDate(d);
+  }
 
   // Normalise backend shapes: { entries: [...] } or a bare array.
   // Internal shape keeps `body` as the display alias of `content`.
@@ -64,7 +83,7 @@
       return {
         id: e.id, title: e.title || t('journal.untitled'),
         body: e.content || e.body || '', content: e.content || e.body || '',
-        date: (e.created_at || '').slice(0, 10),
+        date: entryDate(e),
         mood: e.mood || '', tags: Array.isArray(e.tags) ? e.tags : (e.tags ? String(e.tags).split(',').map(function (t) { return t.trim(); }).filter(Boolean) : []),
         summary: e.summary || '',
         theme: e.theme || 'default',
@@ -392,7 +411,7 @@
     THEMES: THEMES, themeById: themeById, setFormTheme: setFormTheme,
     renderThemePicker: renderThemePicker, loadEntryAttachments: loadEntryAttachments,
     isAudioMedia: isAudioMedia, isImageMedia: isImageMedia,
-    todayLocal: todayLocal, fmtDate: fmtDate, fmtTime: fmtTime, relTime: relTime, esc: esc,
+    todayLocal: todayLocal, dhakaDate: dhakaDate, fmtDate: fmtDate, fmtTime: fmtTime, relTime: relTime, esc: esc,
     entryDate: entryDate, coverClass: coverClass, coverArt: coverArt, coverArtAlt: coverArtAlt, COVER_ART: COVER_ART,
     loadEntries: loadEntries, getCached: getCached, findCached: findCached,
     sortedEntries: sortedEntries, renderList: renderList, refreshJournalList: refreshJournalList,

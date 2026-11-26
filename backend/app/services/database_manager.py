@@ -621,21 +621,26 @@ class DatabaseManager:
         return record
 
     def mood_counts(self, user_id: str | None = None) -> list[dict]:
+        # Fix A (2026-11-26): Insights must count the same diary entries
+        # as the Dashboard (GET /api/entries), not the separate
+        # mood_records table. mood_records can hold a mood check-in with
+        # no diary entry, so counting it made Insights say "Total 1"
+        # while the Dashboard (entries list) said "Total 0". Count only
+        # moods stored on diary_entries, in both Postgres and the dev
+        # fallback, so the two screens can never disagree.
         if self.using_postgres:
             with self._connect() as conn, conn.cursor() as cur:
                 if user_id is not None:
-                    cur.execute("SELECT mood, COUNT(*) FROM mood_records"
-                                " WHERE user_id = %s GROUP BY mood ORDER BY COUNT(*) DESC",
+                    cur.execute("SELECT mood, COUNT(*) FROM diary_entries"
+                                " WHERE mood IS NOT NULL AND mood <> ''"
+                                " AND user_id = %s GROUP BY mood ORDER BY COUNT(*) DESC",
                                 (user_id,))
                 else:
-                    cur.execute("SELECT mood, COUNT(*) FROM mood_records GROUP BY mood"
-                                " ORDER BY COUNT(*) DESC")
+                    cur.execute("SELECT mood, COUNT(*) FROM diary_entries"
+                                " WHERE mood IS NOT NULL AND mood <> ''"
+                                " GROUP BY mood ORDER BY COUNT(*) DESC")
                 return [{"mood": m, "count": c} for m, c in cur.fetchall()]
         counts: dict[str, int] = {}
-        for record in self._moods:
-            if self._matches_user(record.get("user_id"), user_id):
-                counts[record["mood"]] = counts.get(record["mood"], 0) + 1
-        # Also count moods stored on entries themselves.
         for entry in self._entries.values():
             if entry.get("mood") and self._matches_user(entry.get("user_id"), user_id):
                 counts[entry["mood"]] = counts.get(entry["mood"], 0) + 1

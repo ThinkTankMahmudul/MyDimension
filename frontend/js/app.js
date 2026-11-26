@@ -539,14 +539,14 @@
   async function loadInsights() {
     hideError();
     var entries = window.MyDimensionJournal.getCached().length ? window.MyDimensionJournal.getCached() : await window.MyDimensionJournal.loadEntries({});
+    // Fix A (2026-11-26): mood counts come from the same diary entries
+    // list as the Dashboard — never from /api/insights/moods, which
+    // counted the separate mood_records table and could say "Total 1"
+    // while the Dashboard (entries list) said "Total 0". The backend
+    // endpoint was fixed the same way, but the frontend no longer
+    // trusts it for the Insights total either.
     var counts = {};
-    try {
-      var data = await window.MyDimensionApi.getMoodInsights();
-      if (Array.isArray(data)) data.forEach(function (r) { if (r.mood) counts[r.mood] = r.count || 0; });
-    } catch (e) { /* fall through to entry-derived counts */ }
-    if (!Object.keys(counts).length) {
-      entries.forEach(function (e) { if (e.mood) counts[e.mood] = (counts[e.mood] || 0) + 1; });
-    }
+    entries.forEach(function (e) { if (e.mood) counts[e.mood] = (counts[e.mood] || 0) + 1; });
     var total = Object.values(counts).reduce(function (a, b) { return a + b; }, 0);
     document.getElementById('insightsTotal').textContent = total + ' ' + t(total === 1 ? 'ins.moodTaggedOne' : 'ins.moodTaggedMany');
     var box = document.getElementById('moodChart');
@@ -581,9 +581,14 @@
   function renderTrend(entries) {
     var box = document.getElementById('moodTrend');
     if (!box) return;
+    // Fix B: trend days are Asia/Dhaka dates (todayLocal is Dhaka),
+    // matching e.date, which is now the Dhaka date of created_at.
     var days = [];
+    var todayIso = window.MyDimensionJournal.todayLocal();
+    var todayParts = todayIso.split('-');
     for (var i = 29; i >= 0; i--) {
-      var d = new Date(); d.setDate(d.getDate() - i);
+      var d = new Date(Number(todayParts[0]), Number(todayParts[1]) - 1, Number(todayParts[2]));
+      d.setDate(d.getDate() - i);
       days.push(d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'));
     }
     var perDay = days.map(function (iso) { return entries.filter(function (e) { return e.date === iso; }).length; });
