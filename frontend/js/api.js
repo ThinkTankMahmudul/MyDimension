@@ -192,6 +192,7 @@
     aiMood: function (payload) { return json('/api/ai/mood', 'POST', payload); },
     aiSummary: function (payload) { return json('/api/ai/summary', 'POST', payload); },
     aiImprove: function (payload) { return json('/api/ai/improve', 'POST', payload); },
+    aiChat: function (payload) { return json('/api/ai/chat', 'POST', payload); },
     aiTranscribe: function (formData) {
       // Audio upload for transcription; FormData so the file travels as multipart.
       return request('/api/ai/transcribe', { method: 'POST', body: formData });

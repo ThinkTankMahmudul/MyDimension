@@ -65,8 +65,11 @@ class BaseAIService(ABC):
     """Abstract AI interface. Subclasses decide *how* each task is done."""
 
     @abstractmethod
-    def process_text(self, text: str, task: str) -> str:
-        """Run a text task (``mood`` / ``summary`` / ``improve`` / ``prompt``)."""
+    def process_text(self, text: str, task: str, language: str = "en") -> str:
+        """Run a text task (``mood`` / ``summary`` / ``improve`` / ``prompt`` / ``chat``).
+
+        ``language`` is "bn" for Bengali, anything else for English.
+        """
 
     @abstractmethod
     def transcribe_audio(self, audio_bytes: bytes, mime_type: str,
@@ -129,7 +132,16 @@ class GeminiAIService(BaseAIService):
             return False
         return True
 
-    def process_text(self, text: str, task: str) -> str:
+    def process_text(self, text: str, task: str, language: str = "en") -> str:
+        # Answer language (2026-11-27): the UI language toggle used to
+        # change only buttons and labels, while Gemini always answered
+        # in English. "bn" asks for Bengali in Bengali script, never
+        # Romanised — the same rule transcription already used.
+        if (language or "en").lower().startswith("bn"):
+            lang_line = ("Answer in Bengali (Bangla), using Bengali script "
+                         "(বাংলা লিপি) — never Romanised Bengali.")
+        else:
+            lang_line = "Answer in English."
         prompts = {
             "mood": ("Suggest one mood for this diary text (happy, calm, grateful, "
                      "sad, anxious, tired, excited, or angry) and one short sentence "
@@ -139,9 +151,13 @@ class GeminiAIService(BaseAIService):
                         "Do not rewrite it entirely; list small suggestions and keep "
                         "the owner's voice."),
             "prompt": "Write one short, thoughtful reflection prompt inspired by this diary text.",
+            # General Q&A (2026-11-27): answer the question directly.
+            # No diary entry is attached to this task, so the answer
+            # must not invent or reflect on a diary entry.
+            "chat": "Answer the owner's question directly and briefly, in a helpful tone.",
         }
         prompt = prompts.get(task, prompts["summary"])
-        response = self._generate(f"{prompt}\n\n{text}")
+        response = self._generate(f"{lang_line} {prompt}\n\n{text}")
         return (response.text or "").strip() or "Gemini returned an empty response."
 
     def transcribe_audio(self, audio_bytes: bytes, mime_type: str,
@@ -161,7 +177,7 @@ class OfflineAIService(BaseAIService):
     returns a friendly message instead of calling any API.
     """
 
-    def process_text(self, text: str, task: str) -> str:
+    def process_text(self, text: str, task: str, language: str = "en") -> str:
         raise AINotConfiguredError(
             "AI is unavailable right now because Gemini is not configured. "
             "Add GEMINI_API_KEY to enable summaries, mood suggestions and "

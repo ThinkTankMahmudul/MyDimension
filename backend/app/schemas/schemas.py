@@ -56,6 +56,9 @@ class MediaResponse(BaseModel):
 class AIRequest(BaseModel):
     text: str = Field(min_length=1, max_length=100_000)
     entry_id: str | None = None
+    # Answer language: "bn" for Bengali (Bangla script), anything else
+    # for English. Sent by the frontend from the UI language toggle.
+    language: str = "en"
 
 
 class AIResponse(BaseModel):

@@ -17,6 +17,17 @@
 
   function esc(s) { return window.MyDimensionJournal.esc(s); }
 
+  // Answer language (2026-11-27): follow the UI language toggle.
+  // getLanguage() returns 'bn' or 'en'; the backend answers in
+  // Bengali script when it is 'bn', English otherwise.
+  function aiLang() {
+    return (window.MyDimensionI18n && window.MyDimensionI18n.getLanguage) ? window.MyDimensionI18n.getLanguage() : 'en';
+  }
+  function isGeneralChat() {
+    var box = document.getElementById('aiGeneralChat');
+    return !!(box && box.checked);
+  }
+
   function aiEnabled() {
     var pref = document.getElementById('aiPrefEnabled');
     return !pref || pref.checked;
@@ -70,7 +81,7 @@
     try {
       if (action === 'mood') {
         showLoading(t('ai.loadingMood'));
-        var mood = await window.MyDimensionApi.aiMood({ entry_id: entry ? entry.id : undefined, text: text });
+        var mood = await window.MyDimensionApi.aiMood({ entry_id: entry ? entry.id : undefined, text: text, language: aiLang() });
         var label = resultText(mood) || t('ai.noSuggestion');
         showResult('<p><strong>' + t('ai.suggestedMood') + ' ' + esc(label) + '</strong></p>' +
           (source ? '<p class="small muted">' + esc(source) + '</p>' : '') +
@@ -78,11 +89,11 @@
           (mood.note ? '<p class="small muted">' + esc(mood.note) + '</p>' : ''));
       } else if (action === 'summary') {
         showLoading(t('ai.loadingSummary'));
-        var sum = await window.MyDimensionApi.aiSummary({ entry_id: entry ? entry.id : undefined, text: text });
+        var sum = await window.MyDimensionApi.aiSummary({ entry_id: entry ? entry.id : undefined, text: text, language: aiLang() });
         showResult('<p><strong>' + t('ai.summaryTitle') + (title ? ' — ' + esc(title) : '') + '</strong></p>' + (source ? '<p class="small muted">' + esc(source) + '</p>' : '') + '<p>' + esc(resultText(sum) || t('ai.noSummary')) + '</p><p class="small muted">' + t('ai.originalUnchanged') + '</p>');
       } else if (action === 'improve') {
         showLoading(t('ai.loadingImprove'));
-        var imp = await window.MyDimensionApi.aiImprove({ entry_id: entry ? entry.id : undefined, text: text });
+        var imp = await window.MyDimensionApi.aiImprove({ entry_id: entry ? entry.id : undefined, text: text, language: aiLang() });
         var improved = resultText(imp);
         showResult('<p><strong>' + t('ai.improvedTitle') + '</strong></p>' + (source ? '<p class="small muted">' + esc(source) + '</p>' : '') + '<p>' + esc(improved || t('ai.noImproved')) + '</p>' +
           '<p class="small muted">' + t('ai.originalNotOverwritten') + '</p>' +
@@ -98,6 +109,7 @@
         var entryText = freeText ? freeText : (entry ? ('Diary entry "' + entry.title + '" (' + entry.date + '):\n' + entry.body) : text);
         var ref = await window.MyDimensionApi.aiSummary({
           entry_id: entry ? entry.id : undefined,
+          language: aiLang(),
           text: 'Give a short, kind daily reflection on this diary entry — one insight and one gentle question for tomorrow:\n\n' + entryText
         });
         showResult('<p><strong>' + t('ai.reflectionTitle') + (entry ? ' — ' + esc(entry.title) : '') + '</strong></p>' + (source ? '<p class="small muted">' + esc(source) + '</p>' : '') + '<p>' + esc(resultText(ref) || t('ai.noReflection')) + '</p><p class="small muted">' + t('ai.reflectionNote') + '</p>');
@@ -122,7 +134,12 @@
     setBusy(false);
   }
 
-  // Chat: reflect on the chosen entry, answering the owner's question.
+  // Chat (2026-11-27): two modes.
+  // - General question (checkbox on, or no entry exists): ask Gemini
+  //   directly via /api/ai/chat — only the question is sent, no diary
+  //   entry is attached, so it can answer any topic.
+  // - Diary question: reflect on the chosen entry, as before.
+  // Both modes answer in the UI language (Bangla when 'bn').
   async function askChat(question) {
     if (!aiEnabled()) {
       appendChat('ai', t('ai.off'));
@@ -132,13 +149,18 @@
     if (!q) return;
     appendChat('user', q);
     var entry = selectedEntry();
-    if (!entry) { appendChat('ai', t('ai.needEntry')); return; }
     setBusy(true);
     try {
-      var res = await window.MyDimensionApi.aiSummary({
-        entry_id: entry.id,
-        text: 'The owner asks about this diary entry: "' + q + '"\n\nDiary entry "' + entry.title + '" (' + entry.date + '):\n' + entry.body + '\n\nAnswer briefly, as a reflection on the entry.'
-      });
+      var res;
+      if (isGeneralChat() || !entry) {
+        res = await window.MyDimensionApi.aiChat({ text: q, language: aiLang() });
+      } else {
+        res = await window.MyDimensionApi.aiSummary({
+          entry_id: entry.id,
+          language: aiLang(),
+          text: 'The owner asks about this diary entry: "' + q + '"\n\nDiary entry "' + entry.title + '" (' + entry.date + '):\n' + entry.body + '\n\nAnswer briefly, as a reflection on the entry.'
+        });
+      }
       appendChat('ai', resultText(res) || t('ai.noAnswer'));
     } catch (err) {
       appendChat('ai', t('ai.answerFailed') + ' ' + (err.message || err));

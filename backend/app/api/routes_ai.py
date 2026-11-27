@@ -44,7 +44,8 @@ def ai_status(_user: dict = Depends(require_user)):
 
 def _run(task: str, payload: AIRequest) -> AIResponse:
     try:
-        result = get_ai_service().process_text(payload.text, task)
+        result = get_ai_service().process_text(payload.text, task,
+                                               language=payload.language)
     except AINotConfiguredError as exc:
         raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
                             detail=str(exc)) from exc
@@ -71,6 +72,13 @@ def ai_summary(payload: AIRequest, _user: dict = Depends(require_user)):
 @router.post("/improve", response_model=AIResponse)
 def ai_improve(payload: AIRequest, _user: dict = Depends(require_user)):
     return _run("improve", payload)
+
+
+@router.post("/chat", response_model=AIResponse)
+def ai_chat(payload: AIRequest, _user: dict = Depends(require_user)):
+    """General Q&A: answer the question directly, with no diary entry
+    attached. Only the question itself is sent to Gemini."""
+    return _run("chat", payload)
 
 
 @router.post("/transcribe", response_model=AIResponse)
